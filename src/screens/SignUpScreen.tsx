@@ -1,7 +1,8 @@
-import { Link } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   SafeAreaView,
   StyleSheet,
@@ -10,39 +11,65 @@ import {
   View,
 } from 'react-native';
 
-import { supabase } from '../../src/lib/supabase';
+import { supabase } from '../lib/supabase';
 
-export default function SignInScreen() {
+export default function SignUpScreen() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmation, setConfirmation] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  async function handleSignIn() {
+  async function handleSignUp() {
     setErrorMessage(null);
+
+    if (password.length < 8) {
+      setErrorMessage('Password must be at least 8 characters.');
+      return;
+    }
+
+    if (password !== confirmation) {
+      setErrorMessage('Passwords do not match.');
+      return;
+    }
+
     setIsSubmitting(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
     });
 
+    setIsSubmitting(false);
+
     if (error) {
       setErrorMessage(error.message);
+      return;
     }
 
-    setIsSubmitting(false);
+    if (!data.session) {
+      Alert.alert(
+        'Check your email',
+        'Open the confirmation email from IronForge, then return to sign in.',
+        [{ text: 'OK', onPress: () => router.back() }],
+      );
+    }
   }
 
-  const isDisabled = !email.trim() || !password || isSubmitting;
+  const isDisabled =
+    !email.trim() ||
+    !password ||
+    !confirmation ||
+    isSubmitting;
 
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.content}>
         <Text style={styles.eyebrow}>IRONFORGE</Text>
-        <Text style={styles.title}>Welcome back</Text>
+        <Text style={styles.title}>Create account</Text>
         <Text style={styles.subtitle}>
-          Sign in to continue building your strongest self.
+          Start tracking your training and progress.
         </Text>
 
         <TextInput
@@ -58,7 +85,7 @@ export default function SignInScreen() {
 
         <TextInput
           autoCapitalize="none"
-          autoComplete="password"
+          autoComplete="new-password"
           onChangeText={setPassword}
           placeholder="Password"
           placeholderTextColor="#727885"
@@ -67,40 +94,36 @@ export default function SignInScreen() {
           value={password}
         />
 
+        <TextInput
+          autoCapitalize="none"
+          autoComplete="new-password"
+          onChangeText={setConfirmation}
+          placeholder="Confirm password"
+          placeholderTextColor="#727885"
+          secureTextEntry
+          style={styles.input}
+          value={confirmation}
+        />
+
         {errorMessage ? (
           <Text style={styles.error}>{errorMessage}</Text>
         ) : null}
 
         <Pressable
           disabled={isDisabled}
-          onPress={handleSignIn}
+          onPress={handleSignUp}
           style={[styles.button, isDisabled && styles.buttonDisabled]}
         >
           {isSubmitting ? (
             <ActivityIndicator color="#0B0D10" />
           ) : (
-            <Text style={styles.buttonText}>Sign in</Text>
+            <Text style={styles.buttonText}>Create account</Text>
           )}
         </Pressable>
-             <Link href="/sign-up" asChild>
-          <Pressable
-            style={{
-              alignItems: 'center',
-              marginTop: 22,
-              paddingVertical: 8,
-            }}
-          >
-            <Text
-              style={{
-                color: '#F59E0B',
-                fontSize: 15,
-                fontWeight: '600',
-              }}
-            >
-              Create an account
-            </Text>
-          </Pressable>
-        </Link>
+
+        <Pressable onPress={() => router.back()} style={styles.link}>
+          <Text style={styles.linkText}>Already have an account? Sign in</Text>
+        </Pressable>
       </View>
     </SafeAreaView>
   );
@@ -154,9 +177,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#F59E0B',
     borderRadius: 12,
-    minHeight: 52,
     justifyContent: 'center',
-    marginTop: 4,
+    minHeight: 52,
   },
   buttonDisabled: {
     opacity: 0.45,
@@ -165,5 +187,15 @@ const styles = StyleSheet.create({
     color: '#0B0D10',
     fontSize: 16,
     fontWeight: '800',
+  },
+  link: {
+    alignItems: 'center',
+    marginTop: 22,
+    paddingVertical: 8,
+  },
+  linkText: {
+    color: '#F59E0B',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
