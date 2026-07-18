@@ -6,10 +6,18 @@ import {
   Text,
   View,
 } from "react-native";
+ import { useProfile } from "../../src/hooks/useProfile";
  import { useAuth } from "../../src/providers/AuthProvider";
 
 export default function App() {
-  const { signOut } = useAuth();
+  const { session, signOut } = useAuth();
+  const { errorMessage, isLoading, profile } = useProfile();
+
+  const fallbackName =
+    session?.user.email?.split("@")[0] ?? "Athlete";
+
+  const displayName =
+    profile?.display_name?.trim() || fallbackName;
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
@@ -21,11 +29,18 @@ export default function App() {
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Welcome, Greg 👋</Text>
-        <Text style={styles.cardText}>
-          IronForge is officially alive!
-        </Text>
-      </View>     
+          <Text style={styles.cardTitle}>
+            Welcome, {isLoading ? "Athlete" : displayName} 👋
+          </Text>
+
+          <Text style={styles.cardText}>
+            {errorMessage
+              ? `Profile unavailable: ${errorMessage}`
+              : `Preferred weight unit: ${
+                  profile?.preferred_weight_unit ?? "lb"
+                }`}
+          </Text>
+        </View>     
         <Pressable
         onPress={() => void signOut()}
         style={styles.signOutButton}
@@ -33,7 +48,7 @@ export default function App() {
         <Text style={styles.signOutText}>Sign out</Text>
       </Pressable>
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
