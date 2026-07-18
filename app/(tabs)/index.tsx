@@ -1,7 +1,15 @@
 import { StatusBar } from "expo-status-bar";
-import { SafeAreaView, StyleSheet, Text, View } from "react-native";
+import {
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+ import { useAuth } from "../../src/providers/AuthProvider";
 
 export default function App() {
+  const { signOut } = useAuth();
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
@@ -17,7 +25,13 @@ export default function App() {
         <Text style={styles.cardText}>
           IronForge is officially alive!
         </Text>
-      </View>
+      </View>     
+        <Pressable
+        onPress={() => void signOut()}
+        style={styles.signOutButton}
+      >
+        <Text style={styles.signOutText}>Sign out</Text>
+      </Pressable>
     </SafeAreaView>
   );
 }
@@ -71,5 +85,19 @@ const styles = StyleSheet.create({
   cardText: {
     color: "#D1D5DB",
     fontSize: 16,
+  },
+  signOutButton: {
+    borderColor: "#F97316",
+    borderRadius: 12,
+    borderWidth: 1,
+    marginTop: 24,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+  },
+
+  signOutText: {
+    color: "#F97316",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
