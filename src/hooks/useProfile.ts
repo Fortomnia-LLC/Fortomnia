@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
 
 import { useAuth } from '../providers/AuthProvider';
 import { supabase } from '../lib/supabase';
@@ -41,9 +42,11 @@ export function useProfile() {
     setIsLoading(false);
   }, [session?.user.id]);
 
-  useEffect(() => {
-    void loadProfile();
-  }, [loadProfile]);
+  useFocusEffect(
+    useCallback(() => {
+      void loadProfile();
+    }, [loadProfile]),
+  );
 
   return {
     errorMessage,
