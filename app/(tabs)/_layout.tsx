@@ -6,9 +6,10 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: "#F97316",
+        tabBarHideOnKeyboard: true,
         tabBarInactiveTintColor: "#6B7280",
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: "600",
         },
         tabBarStyle: {
@@ -24,6 +25,27 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Home",
+        }}
+      />
+
+      <Tabs.Screen
+        name="training"
+        options={{
+          title: "Training",
+        }}
+      />
+
+      <Tabs.Screen
+        name="nutrition"
+        options={{
+          title: "Nutrition",
+        }}
+      />
+
+      <Tabs.Screen
+        name="supplements"
+        options={{
+          title: "Supps",
         }}
       />
 
