@@ -101,32 +101,42 @@ export default function TrainingScreen() {
                 No workouts logged yet.
               </Text>
             ) : (
-              workoutSessions.map((workout) => (
-                <View key={workout.id} style={styles.sessionCard}>
-                  <View style={styles.sessionHeader}>
-                    <Text style={styles.sessionName}>
-                      {workout.name}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.sessionStatus,
-                        workout.completed_at
-                          ? styles.completedStatus
-                          : styles.activeStatus,
-                      ]}
-                    >
-                      {workout.completed_at
-                        ? "COMPLETED"
-                        : "ACTIVE"}
-                    </Text>
-                  </View>
+             workoutSessions.map((workout) => (
+                <Link
+                  key={workout.id}
+                  href={{
+                    pathname: "/workout/[id]",
+                    params: { id: workout.id },
+                  }}
+                  asChild
+                >
+                  <Pressable style={styles.sessionCard}>
+                    <View style={styles.sessionHeader}>
+                      <Text style={styles.sessionName}>
+                        {workout.name}
+                      </Text>
 
-                  <Text style={styles.sessionDate}>
-                    {new Date(
-                      workout.started_at,
-                    ).toLocaleDateString()}
-                  </Text>
-                </View>
+                      <Text
+                        style={[
+                          styles.sessionStatus,
+                          workout.completed_at
+                            ? styles.completedStatus
+                            : styles.activeStatus,
+                        ]}
+                      >
+                        {workout.completed_at
+                          ? "COMPLETED"
+                          : "ACTIVE"}
+                      </Text>
+                    </View>
+
+                    <Text style={styles.sessionDate}>
+                      {new Date(
+                        workout.started_at,
+                      ).toLocaleDateString()}
+                    </Text>
+                  </Pressable>
+                </Link>
               ))
             )}
             <View style={styles.summary}>
