@@ -50,6 +50,12 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
+        name="new-workout"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",

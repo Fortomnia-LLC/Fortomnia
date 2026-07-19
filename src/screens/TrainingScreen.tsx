@@ -1,6 +1,8 @@
+import { Link } from "expo-router";
 import {
   ActivityIndicator,
   FlatList,
+  Pressable,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -11,6 +13,7 @@ import {
   type Exercise,
   useExercises,
 } from "../hooks/useExercises";
+import { useWorkoutSessions } from "../hooks/useWorkoutSessions";
 
 function ExerciseCard({ exercise }: { exercise: Exercise }) {
   return (
@@ -39,6 +42,13 @@ export default function TrainingScreen() {
     refreshExercises,
   } = useExercises();
 
+  const {
+    errorMessage: workoutError,
+    isLoading: workoutsLoading,
+    refreshWorkoutSessions,
+    workoutSessions,
+  } = useWorkoutSessions();
+
   if (isLoading && exercises.length === 0) {
     return (
       <SafeAreaView style={styles.loadingScreen}>
@@ -53,8 +63,14 @@ export default function TrainingScreen() {
         contentContainerStyle={styles.listContent}
         data={exercises}
         keyExtractor={(exercise) => exercise.id}
-        onRefresh={() => void refreshExercises()}
-        refreshing={isLoading}
+        onRefresh={() => {
+          void Promise.all([
+            refreshExercises(),
+            refreshWorkoutSessions(),
+          ]);
+        }}
+        refreshing={isLoading || workoutsLoading}
+       
         renderItem={({ item }) => (
           <ExerciseCard exercise={item} />
         )}
@@ -65,7 +81,54 @@ export default function TrainingScreen() {
             <Text style={styles.subtitle}>
               Your exercise library is ready for workout logging.
             </Text>
+            <Link href="/new-workout" asChild>
+              <Pressable style={styles.startButton}>
+                <Text style={styles.startButtonText}>
+                  Start workout
+                </Text>
+              </Pressable>
+            </Link>
+            <Text style={styles.sectionTitle}>
+              Recent workouts
+            </Text>
 
+            {workoutError ? (
+              <Text style={styles.error}>{workoutError}</Text>
+            ) : null}
+
+            {workoutSessions.length === 0 ? (
+              <Text style={styles.sessionEmpty}>
+                No workouts logged yet.
+              </Text>
+            ) : (
+              workoutSessions.map((workout) => (
+                <View key={workout.id} style={styles.sessionCard}>
+                  <View style={styles.sessionHeader}>
+                    <Text style={styles.sessionName}>
+                      {workout.name}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.sessionStatus,
+                        workout.completed_at
+                          ? styles.completedStatus
+                          : styles.activeStatus,
+                      ]}
+                    >
+                      {workout.completed_at
+                        ? "COMPLETED"
+                        : "ACTIVE"}
+                    </Text>
+                  </View>
+
+                  <Text style={styles.sessionDate}>
+                    {new Date(
+                      workout.started_at,
+                    ).toLocaleDateString()}
+                  </Text>
+                </View>
+              ))
+            )}
             <View style={styles.summary}>
               <Text style={styles.summaryNumber}>
                 {exercises.length}
@@ -195,5 +258,57 @@ const styles = StyleSheet.create({
     color: "#9CA3AF",
     paddingVertical: 30,
     textAlign: "center",
+  },
+startButton: {
+    alignItems: "center",
+    backgroundColor: "#F97316",
+    borderRadius: 12,
+    justifyContent: "center",
+    marginBottom: 20,
+    minHeight: 52,
+  },
+  startButtonText: {
+    color: "#0B0B0B",
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  sessionEmpty: {
+    color: "#9CA3AF",
+    marginBottom: 24,
+  },
+  sessionCard: {
+    backgroundColor: "#171717",
+    borderColor: "#292929",
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 10,
+    padding: 16,
+  },
+  sessionHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  sessionName: {
+    color: "#FFFFFF",
+    flex: 1,
+    fontSize: 17,
+    fontWeight: "700",
+  },
+  sessionStatus: {
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 1,
+  },
+  activeStatus: {
+    color: "#F97316",
+  },
+  completedStatus: {
+    color: "#34D399",
+  },
+  sessionDate: {
+    color: "#9CA3AF",
+    fontSize: 14,
+    marginTop: 7,
   },
 });
