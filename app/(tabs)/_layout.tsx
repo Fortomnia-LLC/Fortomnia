@@ -56,11 +56,12 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="workout/[id]"
+        name="workout"
         options={{
           href: null,
         }}
       />
+
       <Tabs.Screen
         name="profile"
         options={{

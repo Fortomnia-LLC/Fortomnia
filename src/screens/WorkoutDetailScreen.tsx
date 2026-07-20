@@ -1,4 +1,7 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import {
+  useLocalSearchParams,
+  useRouter,
+} from "expo-router";
 import {
   ActivityIndicator,
   FlatList,
@@ -56,7 +59,7 @@ export default function WorkoutDetailScreen() {
     );
   }
 
-  if (!workout) {
+    if (!workout) {
     return (
       <SafeAreaView style={styles.loadingScreen}>
         <Text style={styles.error}>
@@ -72,6 +75,7 @@ export default function WorkoutDetailScreen() {
       </SafeAreaView>
     );
   }
+
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -106,7 +110,17 @@ export default function WorkoutDetailScreen() {
               <Text style={styles.summaryNumber}>{sets.length}</Text>
               <Text style={styles.summaryLabel}>logged sets</Text>
             </View>
-
+              <Pressable
+                onPress={() =>
+                  router.push({
+                    pathname: "/workout/[id]/add-set",
+                    params: { id: workoutId },
+                  })
+                }
+                style={styles.logSetButton}
+              >
+                <Text style={styles.logSetText}>Log set</Text>
+              </Pressable>
             <Text style={styles.sectionTitle}>Workout sets</Text>
           </View>
         }
@@ -262,5 +276,18 @@ const styles = StyleSheet.create({
   backText: {
     color: "#F97316",
     fontWeight: "700",
+  },
+  logSetButton: {
+    alignItems: "center",
+    backgroundColor: "#F97316",
+    borderRadius: 12,
+    justifyContent: "center",
+    marginBottom: 24,
+    minHeight: 52,
+  },
+  logSetText: {
+    color: "#0B0B0B",
+    fontSize: 16,
+    fontWeight: "800",
   },
 });

@@ -24,9 +24,10 @@ export type WorkoutDetail = {
 
 type WorkoutSetRow = {
   exercise_id: string;
-  exercises: {
-    name: string;
-  }[] | null;
+  exercises:
+  | { name: string }
+  | { name: string }[]
+  | null;
   id: string;
   reps: number;
   reps_in_reserve: number | null;
@@ -93,19 +94,24 @@ export function useWorkoutSession(workoutId: string | undefined) {
       return;
     }
 
-    const normalizedSets = (setsResult.data as WorkoutSetRow[]).map(
-      (set) => ({
-        exercise_id: set.exercise_id,
-        exercise_name:
-  set.exercises?.[0]?.name ?? "Unknown exercise",
-        id: set.id,
-        reps: set.reps,
-        reps_in_reserve: set.reps_in_reserve,
-        set_number: set.set_number,
-        weight: Number(set.weight),
-        weight_unit: set.weight_unit,
-      }),
-    );
+       const normalizedSets = (setsResult.data as WorkoutSetRow[]).map(
+  (set) => {
+    const exercise = Array.isArray(set.exercises)
+      ? set.exercises[0]
+      : set.exercises;
+
+    return {
+      exercise_id: set.exercise_id,
+      exercise_name: exercise?.name ?? "Unknown exercise",
+      id: set.id,
+      reps: set.reps,
+      reps_in_reserve: set.reps_in_reserve,
+      set_number: set.set_number,
+      weight: Number(set.weight),
+      weight_unit: set.weight_unit,
+    };
+  },
+);
 
     setWorkout(workoutResult.data as WorkoutDetail);
     setSets(normalizedSets);
