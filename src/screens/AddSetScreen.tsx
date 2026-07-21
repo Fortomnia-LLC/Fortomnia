@@ -13,6 +13,7 @@ import {
 
 import { useExercises } from "../hooks/useExercises";
 import { useProfile } from "../hooks/useProfile";
+import { usePreviousExerciseSet } from "../hooks/usePreviousExerciseSet";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
 
@@ -50,7 +51,12 @@ export default function AddSetScreen() {
   const [rir, setRir] = useState(initialRir ?? "2");
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  useEffect(() => {
+  const {
+    isLoadingPrevious,
+    previousError,
+    previousSet,
+  } = usePreviousExerciseSet(exerciseId, workoutId);
+   useEffect(() => {
     if (!exerciseId && exercises.length > 0) {
       setExerciseId(exercises[0].id);
     }
@@ -251,6 +257,34 @@ export default function AddSetScreen() {
             );
           })}
         </View>
+                  <View style={styles.previousCard}>
+            <Text style={styles.previousEyebrow}>LAST TIME</Text>
+
+            {isLoadingPrevious ? (
+              <ActivityIndicator color="#F97316" size="small" />
+            ) : previousError ? (
+              <Text style={styles.previousError}>{previousError}</Text>
+            ) : previousSet ? (
+              <>
+                <Text style={styles.previousPerformance}>
+                  {previousSet.weight} {previousSet.weight_unit} ×{" "}
+                  {previousSet.reps} reps
+                </Text>
+                <Text style={styles.previousDetails}>
+                  {new Date(
+                    previousSet.performed_at,
+                  ).toLocaleDateString()}
+                  {previousSet.reps_in_reserve !== null
+                    ? ` • ${previousSet.reps_in_reserve} RIR`
+                    : ""}
+                </Text>
+              </>
+            ) : (
+              <Text style={styles.previousEmpty}>
+                No previous workout data for this exercise.
+              </Text>
+            )}
+          </View>
 
         <Text style={styles.label}>
           Weight ({profile?.preferred_weight_unit ?? "lb"})
@@ -381,6 +415,39 @@ const styles = StyleSheet.create({
     color: "#9CA3AF",
     fontSize: 12,
     marginTop: 4,
+  },
+    previousCard: {
+    backgroundColor: "#171717",
+    borderColor: "#333333",
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 20,
+    padding: 16,
+  },
+  previousEyebrow: {
+    color: "#F97316",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1.5,
+    marginBottom: 8,
+  },
+  previousPerformance: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "800",
+  },
+  previousDetails: {
+    color: "#9CA3AF",
+    fontSize: 13,
+    marginTop: 6,
+  },
+  previousEmpty: {
+    color: "#9CA3AF",
+    fontSize: 14,
+  },
+  previousError: {
+    color: "#F87171",
+    fontSize: 13,
   },
   input: {
     backgroundColor: "#171717",
