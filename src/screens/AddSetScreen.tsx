@@ -18,20 +18,38 @@ import { useAuth } from "../providers/AuthProvider";
 
 export default function AddSetScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const {
+    exerciseId: initialExerciseId,
+    id,
+    reps: initialReps,
+    rir: initialRir,
+    setId,
+    weight: initialWeight,
+  } = useLocalSearchParams<{
+    exerciseId?: string;
+    id: string;
+    reps?: string;
+    rir?: string;
+    setId?: string;
+    weight?: string;
+  }>();
+
   const workoutId = Array.isArray(id) ? id[0] : id;
+  const editingSetId = Array.isArray(setId) ? setId[0] : setId;
+  const isEditing = Boolean(editingSetId);
 
   const { session } = useAuth();
   const { exercises, isLoading } = useExercises();
   const { profile } = useProfile();
 
-  const [exerciseId, setExerciseId] = useState<string | null>(null);
-  const [weight, setWeight] = useState("0");
-  const [reps, setReps] = useState("");
-  const [rir, setRir] = useState("2");
+  const [exerciseId, setExerciseId] = useState<string | null>(
+    initialExerciseId ?? null,
+  );
+  const [weight, setWeight] = useState(initialWeight ?? "0");
+  const [reps, setReps] = useState(initialReps ?? "");
+  const [rir, setRir] = useState(initialRir ?? "2");
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
   useEffect(() => {
     if (!exerciseId && exercises.length > 0) {
       setExerciseId(exercises[0].id);
@@ -74,7 +92,54 @@ export default function AddSetScreen() {
     setIsSaving(true);
     setErrorMessage(null);
 
-    const { data: latestSet, error: latestSetError } =
+        const { data: activeWorkout, error: workoutError } = await supabase
+      .from("workout_sessions")
+      .select("id")
+      .eq("id", workoutId)
+      .eq("user_id", session.user.id)
+      .is("completed_at", null)
+      .maybeSingle();
+
+    if (workoutError || !activeWorkout) {
+      setErrorMessage(
+        workoutError?.message ?? "Completed workouts cannot be changed.",
+      );
+      setIsSaving(false);
+      return;
+    }
+
+    if (isEditing && editingSetId) {
+      const { data, error } = await supabase
+        .from("workout_sets")
+        .update({
+          exercise_id: exerciseId,
+          reps: parsedReps,
+          reps_in_reserve: parsedRir,
+          weight: parsedWeight,
+          weight_unit: profile?.preferred_weight_unit ?? "lb",
+        })
+        .eq("id", editingSetId)
+        .eq("session_id", workoutId)
+        .eq("user_id", session.user.id)
+        .select("id")
+        .maybeSingle();
+
+      setIsSaving(false);
+
+      if (error || !data) {
+        setErrorMessage(
+          error?.message ?? "The set was not updated.",
+        );
+        return;
+      }
+
+      router.replace({
+        pathname: "/workout/[id]",
+        params: { id: workoutId },
+      });
+      return;
+    }
+      const { data: latestSet, error: latestSetError } =
       await supabase
         .from("workout_sets")
         .select("set_number")
@@ -146,11 +211,15 @@ export default function AddSetScreen() {
           <Text style={styles.navigationText}>‹ Workout</Text>
         </Pressable>
 
-        <Text style={styles.eyebrow}>IRONFORGE</Text>
-        <Text style={styles.title}>Log set</Text>
-        <Text style={styles.subtitle}>
-          Choose an exercise and record your performance.
-        </Text>
+                  <Text style={styles.eyebrow}>IRONFORGE</Text>
+          <Text style={styles.title}>
+            {isEditing ? "Edit set" : "Log set"}
+          </Text>
+          <Text style={styles.subtitle}>
+            {isEditing
+              ? "Correct the exercise or performance values."
+              : "Choose an exercise and record your performance."}
+          </Text>
 
         <Text style={styles.label}>Exercise</Text>
 
@@ -226,7 +295,9 @@ export default function AddSetScreen() {
           {isSaving ? (
             <ActivityIndicator color="#0B0B0B" />
           ) : (
-            <Text style={styles.saveText}>Save set</Text>
+              <Text style={styles.saveText}>
+                {isEditing ? "Save changes" : "Save set"}
+              </Text>
           )}
         </Pressable>
       </ScrollView>

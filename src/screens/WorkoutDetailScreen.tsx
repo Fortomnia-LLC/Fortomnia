@@ -23,12 +23,18 @@ import { useAuth } from "../providers/AuthProvider";
 import { useState } from "react";
 
 type SetCardProps = {
-  canDelete: boolean;
+  canModify: boolean;
   onDelete: (set: LoggedSet) => void;
+  onEdit: (set: LoggedSet) => void;
   set: LoggedSet;
 };
 
-function SetCard({ canDelete, onDelete, set }: SetCardProps) {
+function SetCard({
+  canModify,
+  onDelete,
+  onEdit,
+  set,
+}: SetCardProps) {
   return (
     <View style={styles.setCard}>
       <View style={styles.setHeader}>
@@ -46,13 +52,22 @@ function SetCard({ canDelete, onDelete, set }: SetCardProps) {
         </Text>
       ) : null}
 
-      {canDelete ? (
-        <Pressable
-          onPress={() => onDelete(set)}
-          style={styles.deleteSetButton}
-        >
-          <Text style={styles.deleteSetText}>Delete set</Text>
-        </Pressable>
+      {canModify ? (
+        <View style={styles.setActions}>
+          <Pressable
+            onPress={() => onEdit(set)}
+            style={styles.editSetButton}
+          >
+            <Text style={styles.editSetText}>Edit set</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => onDelete(set)}
+            style={styles.deleteSetButton}
+          >
+            <Text style={styles.deleteSetText}>Delete set</Text>
+          </Pressable>
+        </View>
       ) : null}
     </View>
   );
@@ -72,7 +87,23 @@ export default function WorkoutDetailScreen() {
     workout,
   } = useWorkoutSession(workoutId);
 
-  function handleCompleteWorkout() {
+    function handleEditSet(set: LoggedSet) {
+    router.push({
+      pathname: "/workout/[id]/add-set",
+      params: {
+        exerciseId: set.exercise_id,
+        id: workoutId,
+        reps: String(set.reps),
+        rir:
+          set.reps_in_reserve === null
+            ? ""
+            : String(set.reps_in_reserve),
+        setId: set.id,
+        weight: String(set.weight),
+      },
+    });
+  }
+    function handleCompleteWorkout() {
     if (!session?.user.id || !workoutId) {
       Alert.alert("Unable to complete workout", "Your session is missing.");
       return;
@@ -191,13 +222,14 @@ if (isLoading) {
         keyExtractor={(set) => set.id}
         onRefresh={() => void refreshWorkout()}
         refreshing={isLoading}
-        renderItem={({ item }) => (
-  <SetCard
-    canDelete={!workout.completed_at}
-    onDelete={handleDeleteSet}
-    set={item}
-  />
-)}
+                  renderItem={({ item }) => (
+            <SetCard
+              canModify={!workout.completed_at}
+              onDelete={handleDeleteSet}
+              onEdit={handleEditSet}
+              set={item}
+            />
+          )}
         ListHeaderComponent={
           <View>
             <Pressable
@@ -378,12 +410,27 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 5,
   },
-    deleteSetButton: {
-    alignSelf: "flex-start",
+      setActions: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 14,
+  },
+  editSetButton: {
+    borderColor: "#F97316",
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  editSetText: {
+    color: "#F97316",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  deleteSetButton: {
     borderColor: "#F87171",
     borderRadius: 8,
     borderWidth: 1,
-    marginTop: 14,
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
