@@ -17,23 +17,30 @@ import { useWorkoutSessions } from "../hooks/useWorkoutSessions";
 
 function ExerciseCard({ exercise }: { exercise: Exercise }) {
   return (
-    <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.exerciseName}>{exercise.name}</Text>
+    <Link
+      href={{
+        pathname: "/exercise/[id]",
+        params: { id: exercise.id },
+      }}
+      asChild
+    >
+      <Pressable style={styles.card}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.exerciseName}>{exercise.name}</Text>
 
-        {exercise.owner_id ? (
-          <Text style={styles.customBadge}>CUSTOM</Text>
-        ) : null}
-      </View>
+          {exercise.owner_id ? (
+            <Text style={styles.customBadge}>CUSTOM</Text>
+          ) : null}
+        </View>
 
-      <Text style={styles.exerciseDetails}>
-        {exercise.muscle_group}
-        {exercise.equipment ? ` • ${exercise.equipment}` : ""}
-      </Text>
-    </View>
+        <Text style={styles.exerciseDetails}>
+          {exercise.muscle_group}
+          {exercise.equipment ? ` • ${exercise.equipment}` : ""}
+        </Text>
+      </Pressable>
+    </Link>
   );
 }
-
 export default function TrainingScreen() {
   const {
     errorMessage,
