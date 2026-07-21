@@ -14,6 +14,7 @@ import {
 import { useExercises } from "../hooks/useExercises";
 import { useProfile } from "../hooks/useProfile";
 import { usePreviousExerciseSet } from "../hooks/usePreviousExerciseSet";
+import { getRepsFirstSuggestion } from "../lib/progression";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
 
@@ -56,6 +57,24 @@ export default function AddSetScreen() {
     previousError,
     previousSet,
   } = usePreviousExerciseSet(exerciseId, workoutId);
+
+  const progressionSuggestion = previousSet
+    ? getRepsFirstSuggestion({
+        reps: previousSet.reps,
+        repsInReserve: previousSet.reps_in_reserve,
+        weight: previousSet.weight,
+        weightUnit: previousSet.weight_unit,
+      })
+    : null;
+
+  function applyProgressionSuggestion() {
+    if (!progressionSuggestion) {
+      return;
+    }
+
+    setWeight(String(progressionSuggestion.weight));
+    setReps(String(progressionSuggestion.reps));
+  }
    useEffect(() => {
     if (!exerciseId && exercises.length > 0) {
       setExerciseId(exercises[0].id);
@@ -285,6 +304,26 @@ export default function AddSetScreen() {
               </Text>
             )}
           </View>
+                  {!isEditing && progressionSuggestion ? (
+            <View style={styles.suggestionCard}>
+              <Text style={styles.suggestionEyebrow}>NEXT TARGET</Text>
+              <Text style={styles.suggestionPerformance}>
+                {progressionSuggestion.weight}{" "}
+                {progressionSuggestion.weightUnit} ×{" "}
+                {progressionSuggestion.reps} reps
+              </Text>
+              <Text style={styles.suggestionExplanation}>
+                {progressionSuggestion.explanation}
+              </Text>
+
+              <Pressable
+                onPress={applyProgressionSuggestion}
+                style={styles.useTargetButton}
+              >
+                <Text style={styles.useTargetText}>Use target</Text>
+              </Pressable>
+            </View>
+          ) : null}
 
         <Text style={styles.label}>
           Weight ({profile?.preferred_weight_unit ?? "lb"})
@@ -448,6 +487,45 @@ const styles = StyleSheet.create({
   previousError: {
     color: "#F87171",
     fontSize: 13,
+  },
+  suggestionCard: {
+    backgroundColor: "#21170D",
+    borderColor: "#F97316",
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 20,
+    padding: 16,
+  },
+  suggestionEyebrow: {
+    color: "#F97316",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1.5,
+    marginBottom: 8,
+  },
+  suggestionPerformance: {
+    color: "#FFFFFF",
+    fontSize: 20,
+    fontWeight: "800",
+  },
+  suggestionExplanation: {
+    color: "#D1D5DB",
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 6,
+  },
+  useTargetButton: {
+    alignItems: "center",
+    backgroundColor: "#F97316",
+    borderRadius: 8,
+    marginTop: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  useTargetText: {
+    color: "#0B0B0B",
+    fontSize: 14,
+    fontWeight: "800",
   },
   input: {
     backgroundColor: "#171717",
