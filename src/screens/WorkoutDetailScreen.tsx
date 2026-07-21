@@ -22,7 +22,13 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
 import { useState } from "react";
 
-function SetCard({ set }: { set: LoggedSet }) {
+type SetCardProps = {
+  canDelete: boolean;
+  onDelete: (set: LoggedSet) => void;
+  set: LoggedSet;
+};
+
+function SetCard({ canDelete, onDelete, set }: SetCardProps) {
   return (
     <View style={styles.setCard}>
       <View style={styles.setHeader}>
@@ -38,6 +44,15 @@ function SetCard({ set }: { set: LoggedSet }) {
         <Text style={styles.rir}>
           {set.reps_in_reserve} reps in reserve
         </Text>
+      ) : null}
+
+      {canDelete ? (
+        <Pressable
+          onPress={() => onDelete(set)}
+          style={styles.deleteSetButton}
+        >
+          <Text style={styles.deleteSetText}>Delete set</Text>
+        </Pressable>
       ) : null}
     </View>
   );
@@ -104,7 +119,45 @@ export default function WorkoutDetailScreen() {
       ],
     );
   }
-  if (isLoading) {
+    function handleDeleteSet(set: LoggedSet) {
+    if (!session?.user.id || !workoutId || workout?.completed_at) {
+      Alert.alert(
+        "Unable to delete set",
+        "Only sets in an active workout can be deleted.",
+      );
+      return;
+    }
+
+    Alert.alert(
+      "Delete set?",
+      `${set.exercise_name}: ${set.weight} ${set.weight_unit} × ${set.reps}`,
+      [
+        {
+          style: "cancel",
+          text: "Cancel",
+        },
+        {
+          style: "destructive",
+          text: "Delete",
+          onPress: async () => {
+            const { error } = await supabase
+              .from("workout_sets")
+              .delete()
+              .eq("id", set.id)
+              .eq("user_id", session.user.id);
+
+            if (error) {
+              Alert.alert("Unable to delete set", error.message);
+              return;
+            }
+
+            await refreshWorkout();
+          },
+        },
+      ],
+    );
+  }
+if (isLoading) {
     return (
       <SafeAreaView style={styles.loadingScreen}>
         <ActivityIndicator color="#F97316" size="large" />
@@ -138,7 +191,13 @@ export default function WorkoutDetailScreen() {
         keyExtractor={(set) => set.id}
         onRefresh={() => void refreshWorkout()}
         refreshing={isLoading}
-        renderItem={({ item }) => <SetCard set={item} />}
+        renderItem={({ item }) => (
+  <SetCard
+    canDelete={!workout.completed_at}
+    onDelete={handleDeleteSet}
+    set={item}
+  />
+)}
         ListHeaderComponent={
           <View>
             <Pressable
@@ -165,34 +224,37 @@ export default function WorkoutDetailScreen() {
               <Text style={styles.summaryNumber}>{sets.length}</Text>
               <Text style={styles.summaryLabel}>logged sets</Text>
             </View>
-              <Pressable
-                onPress={() =>
-                  router.push({
-                    pathname: "/workout/[id]/add-set",
-                    params: { id: workoutId },
-                  })
-                }
-                style={styles.logSetButton}
-              >
-                  <Text style={styles.logSetText}>Log set</Text>
-                </Pressable>
                               {!workout.completed_at ? (
-                <Pressable
-                  disabled={isCompleting}
-                  onPress={handleCompleteWorkout}
-                  style={[
-                    styles.completeButton,
-                    isCompleting && styles.buttonDisabled,
-                  ]}
-                >
-                  {isCompleting ? (
-                    <ActivityIndicator color="#F97316" />
-                  ) : (
-                    <Text style={styles.completeText}>
-                      Complete workout
-                    </Text>
-                  )}
-                </Pressable>
+                <>
+                  <Pressable
+                    onPress={() =>
+                      router.push({
+                        pathname: "/workout/[id]/add-set",
+                        params: { id: workoutId },
+                      })
+                    }
+                    style={styles.logSetButton}
+                  >
+                    <Text style={styles.logSetText}>Log set</Text>
+                  </Pressable>
+
+                  <Pressable
+                    disabled={isCompleting}
+                    onPress={handleCompleteWorkout}
+                    style={[
+                      styles.completeButton,
+                      isCompleting && styles.buttonDisabled,
+                    ]}
+                  >
+                    {isCompleting ? (
+                      <ActivityIndicator color="#F97316" />
+                    ) : (
+                      <Text style={styles.completeText}>
+                        Complete workout
+                      </Text>
+                    )}
+                  </Pressable>
+                </>
               ) : null}
             <Text style={styles.sectionTitle}>Workout sets</Text>
           </View>
@@ -315,6 +377,20 @@ const styles = StyleSheet.create({
     color: "#9CA3AF",
     fontSize: 13,
     marginTop: 5,
+  },
+    deleteSetButton: {
+    alignSelf: "flex-start",
+    borderColor: "#F87171",
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  deleteSetText: {
+    color: "#F87171",
+    fontSize: 13,
+    fontWeight: "700",
   },
   emptyCard: {
     backgroundColor: "#171717",
