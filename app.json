@@ -10,7 +10,14 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#ffffff",
+      "scheme": "ironforge",
+      "experiments": {
+        "typedRoutes": true
+      },
+      "plugins": [
+        "expo-router"
+      ]
     },
     "ios": {
       "supportsTablet": true
@@ -25,6 +32,10 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store"
+    ]
   }
 }
