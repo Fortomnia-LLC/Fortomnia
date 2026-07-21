@@ -4,6 +4,7 @@ import {
 } from "expo-router";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Pressable,
   SafeAreaView,
@@ -16,6 +17,10 @@ import {
   type LoggedSet,
   useWorkoutSession,
 } from "../hooks/useWorkoutSession";
+
+import { supabase } from "../lib/supabase";
+import { useAuth } from "../providers/AuthProvider";
+import { useState } from "react";
 
 function SetCard({ set }: { set: LoggedSet }) {
   return (
@@ -42,7 +47,8 @@ export default function WorkoutDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const workoutId = Array.isArray(id) ? id[0] : id;
-
+  const { session } = useAuth();
+  const [isCompleting, setIsCompleting] = useState(false);
   const {
     errorMessage,
     isLoading,
@@ -51,6 +57,53 @@ export default function WorkoutDetailScreen() {
     workout,
   } = useWorkoutSession(workoutId);
 
+  function handleCompleteWorkout() {
+    if (!session?.user.id || !workoutId) {
+      Alert.alert("Unable to complete workout", "Your session is missing.");
+      return;
+    }
+
+    Alert.alert(
+      "Complete workout?",
+      "You can still view this workout after completing it.",
+      [
+        {
+          style: "cancel",
+          text: "Cancel",
+        },
+        {
+          style: "destructive",
+          text: "Complete",
+          onPress: async () => {
+            setIsCompleting(true);
+
+            const { data, error } = await supabase
+              .from("workout_sessions")
+              .update({
+                completed_at: new Date().toISOString(),
+              })
+              .eq("id", workoutId)
+              .eq("user_id", session.user.id)
+              .is("completed_at", null)
+              .select("id")
+              .maybeSingle();
+
+            setIsCompleting(false);
+
+            if (error || !data) {
+              Alert.alert(
+                "Unable to complete workout",
+                error?.message ?? "The workout was not updated.",
+              );
+              return;
+            }
+
+            router.replace("/training");
+          },
+        },
+      ],
+    );
+  }
   if (isLoading) {
     return (
       <SafeAreaView style={styles.loadingScreen}>
@@ -95,7 +148,9 @@ export default function WorkoutDetailScreen() {
               <Text style={styles.navigationText}>‹ Training</Text>
             </Pressable>
 
-            <Text style={styles.eyebrow}>ACTIVE WORKOUT</Text>
+            <Text style={styles.eyebrow}>
+            {workout.completed_at ? "COMPLETED WORKOUT" : "ACTIVE WORKOUT"}
+           </Text>
             <Text style={styles.title}>{workout.name}</Text>
             <Text style={styles.date}>
               Started{" "}
@@ -119,12 +174,30 @@ export default function WorkoutDetailScreen() {
                 }
                 style={styles.logSetButton}
               >
-                <Text style={styles.logSetText}>Log set</Text>
-              </Pressable>
+                  <Text style={styles.logSetText}>Log set</Text>
+                </Pressable>
+                              {!workout.completed_at ? (
+                <Pressable
+                  disabled={isCompleting}
+                  onPress={handleCompleteWorkout}
+                  style={[
+                    styles.completeButton,
+                    isCompleting && styles.buttonDisabled,
+                  ]}
+                >
+                  {isCompleting ? (
+                    <ActivityIndicator color="#F97316" />
+                  ) : (
+                    <Text style={styles.completeText}>
+                      Complete workout
+                    </Text>
+                  )}
+                </Pressable>
+              ) : null}
             <Text style={styles.sectionTitle}>Workout sets</Text>
           </View>
         }
-        ListEmptyComponent={
+            ListEmptyComponent={
           <View style={styles.emptyCard}>
             <Text style={styles.emptyTitle}>No sets logged yet</Text>
             <Text style={styles.emptyText}>
@@ -289,5 +362,22 @@ const styles = StyleSheet.create({
     color: "#0B0B0B",
     fontSize: 16,
     fontWeight: "800",
+  },
+    completeButton: {
+    alignItems: "center",
+    borderColor: "#F97316",
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: "center",
+    marginBottom: 24,
+    minHeight: 52,
+  },
+  completeText: {
+    color: "#F97316",
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  buttonDisabled: {
+    opacity: 0.5,
   },
 });
