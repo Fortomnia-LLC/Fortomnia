@@ -122,13 +122,25 @@ export default function TrainingScreen() {
                   No workout templates yet.
                 </Text>
               ) : (
-                templates.map((template) => (
-                  <View key={template.id} style={styles.templateCard}>
-                    <Text style={styles.templateName}>{template.name}</Text>
-                    <Text style={styles.templateNotes}>
-                      {template.notes ?? "Exercises not configured yet."}
-                    </Text>
-                  </View>
+                              templates.map((template) => (
+                  <Link
+                    key={template.id}
+                    href={{
+                      pathname: "/template/[id]",
+                      params: { id: template.id },
+                    }}
+                    asChild
+                  >
+                    <Pressable style={styles.templateCard}>
+                      <Text style={styles.templateName}>
+                        {template.name}
+                      </Text>
+                      <Text style={styles.templateNotes}>
+                        {template.notes ??
+                          "Exercises not configured yet."}
+                      </Text>
+                    </Pressable>
+                  </Link>
                 ))
               )}
             <Text style={styles.sectionTitle}>

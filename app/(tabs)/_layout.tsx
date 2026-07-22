@@ -73,6 +73,12 @@ export default function TabLayout() {
           href: null,
         }}
       />
+        <Tabs.Screen
+          name="template"
+          options={{
+            href: null,
+          }}
+        />
       <Tabs.Screen
         name="profile"
         options={{
