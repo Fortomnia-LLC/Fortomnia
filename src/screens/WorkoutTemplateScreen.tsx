@@ -1,6 +1,7 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Pressable,
   SafeAreaView,
@@ -8,11 +9,13 @@ import {
   Text,
   View,
 } from "react-native";
-
+import { useState } from "react";
 import {
   type TemplateExercise,
   useWorkoutTemplate,
 } from "../hooks/useWorkoutTemplate";
+import { supabase } from "../lib/supabase";
+import { useAuth } from "../providers/AuthProvider";
 
 function TemplateExerciseCard({
   exercise,
@@ -41,7 +44,8 @@ export default function WorkoutTemplateScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const templateId = Array.isArray(id) ? id[0] : id;
-
+  const { session } = useAuth();
+  const [isStarting, setIsStarting] = useState(false);
   const {
     errorMessage,
     isLoading,
@@ -49,6 +53,100 @@ export default function WorkoutTemplateScreen() {
     template,
     templateExercises,
   } = useWorkoutTemplate(templateId);
+
+  function handleStartWorkout() {
+    if (!session?.user.id || !template) {
+      Alert.alert(
+        "Unable to start workout",
+        "Your user session or template is missing.",
+      );
+      return;
+    }
+
+    if (templateExercises.length === 0) {
+      Alert.alert(
+        "Add an exercise first",
+        "A template needs at least one exercise.",
+      );
+      return;
+    }
+
+    const userId = session.user.id;
+    const templateName = template.name;
+
+    Alert.alert(
+      `Start ${templateName}?`,
+      `${templateExercises.length} exercises will be added to the workout.`,
+      [
+        {
+          style: "cancel",
+          text: "Cancel",
+        },
+        {
+          text: "Start",
+          onPress: async () => {
+            setIsStarting(true);
+
+            const { data: workout, error: workoutError } =
+              await supabase
+                .from("workout_sessions")
+                .insert({
+                  name: templateName,
+                  user_id: userId,
+                })
+                .select("id")
+                .single();
+
+            if (workoutError || !workout) {
+              setIsStarting(false);
+              Alert.alert(
+                "Unable to start workout",
+                workoutError?.message ?? "The workout was not created.",
+              );
+              return;
+            }
+
+            const snapshots = templateExercises.map((exercise) => ({
+              exercise_id: exercise.exercise_id,
+              position: exercise.position,
+              rep_max: exercise.rep_max,
+              rep_min: exercise.rep_min,
+              session_id: workout.id,
+              target_rir: exercise.target_rir,
+              target_sets: exercise.target_sets,
+              user_id: userId,
+            }));
+
+            const { error: snapshotError } = await supabase
+              .from("workout_session_exercises")
+              .insert(snapshots);
+
+            if (snapshotError) {
+              await supabase
+                .from("workout_sessions")
+                .delete()
+                .eq("id", workout.id)
+                .eq("user_id", userId);
+
+              setIsStarting(false);
+              Alert.alert(
+                "Unable to start workout",
+                snapshotError.message,
+              );
+              return;
+            }
+
+            setIsStarting(false);
+            router.replace({
+              pathname: "/workout/[id]",
+              params: { id: workout.id },
+            });
+          },
+        },
+      ],
+    );
+  }
+;
 
   if (isLoading && !template) {
     return (
@@ -102,6 +200,26 @@ export default function WorkoutTemplateScreen() {
                 "Build an ordered routine with progression targets."}
             </Text>
 
+              <Pressable
+                disabled={
+                  isStarting || templateExercises.length === 0
+                }
+                onPress={handleStartWorkout}
+                style={[
+                  styles.startButton,
+                  (isStarting ||
+                    templateExercises.length === 0) &&
+                    styles.buttonDisabled,
+                ]}
+              >
+                {isStarting ? (
+                  <ActivityIndicator color="#0B0B0B" />
+                ) : (
+                  <Text style={styles.startButtonText}>
+                    Start workout
+                  </Text>
+                )}
+              </Pressable>
             <Pressable
               onPress={() =>
                 router.push({
@@ -182,16 +300,33 @@ const styles = StyleSheet.create({
     marginBottom: 22,
     marginTop: 8,
   },
-  addButton: {
+  startButton: {
     alignItems: "center",
     backgroundColor: "#F97316",
     borderRadius: 12,
+    justifyContent: "center",
+    marginBottom: 12,
+    minHeight: 52,
+  },
+  startButtonText: {
+    color: "#0B0B0B",
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  buttonDisabled: {
+    opacity: 0.45,
+  },
+  addButton: {
+    alignItems: "center",
+    borderColor: "#F97316",
+    borderRadius: 12,
+    borderWidth: 1,
     justifyContent: "center",
     marginBottom: 26,
     minHeight: 52,
   },
   addButtonText: {
-    color: "#0B0B0B",
+    color: "#F97316",
     fontSize: 16,
     fontWeight: "800",
   },
