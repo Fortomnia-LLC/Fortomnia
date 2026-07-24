@@ -140,7 +140,9 @@ export default function WorkoutDetailScreen() {
       params: {
         exerciseId: exercise.exercise_id,
         id: workoutId,
-        reps: String(exercise.rep_min),
+         repMax: String(exercise.rep_max),
+         repMin: String(exercise.rep_min),
+         reps: String(exercise.rep_min),
         rir: String(exercise.target_rir),
       },
     });

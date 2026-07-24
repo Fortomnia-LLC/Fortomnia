@@ -20,9 +20,11 @@ import { useAuth } from "../providers/AuthProvider";
 
 export default function AddSetScreen() {
   const router = useRouter();
-  const {
+    const {
     exerciseId: initialExerciseId,
     id,
+    repMax: initialRepMax,
+    repMin: initialRepMin,
     reps: initialReps,
     rir: initialRir,
     setId,
@@ -30,6 +32,8 @@ export default function AddSetScreen() {
   } = useLocalSearchParams<{
     exerciseId?: string;
     id: string;
+    repMax?: string;
+    repMin?: string;
     reps?: string;
     rir?: string;
     setId?: string;
