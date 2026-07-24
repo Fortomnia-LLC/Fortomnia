@@ -73,11 +73,21 @@ function SetCard({
     </View>
   );
 }
-function PlannedExerciseCard({
-  exercise,
-}: {
+type PlannedExerciseCardProps = {
+  canLog: boolean;
+  completedSets: number;
   exercise: PlannedExercise;
-}) {
+  onLog: (exercise: PlannedExercise) => void;
+};
+
+function PlannedExerciseCard({
+  canLog,
+  completedSets,
+  exercise,
+  onLog,
+}: PlannedExerciseCardProps) {
+  const targetReached = completedSets >= exercise.target_sets;
+
   return (
     <View style={styles.planCard}>
       <View style={styles.planHeader}>
@@ -91,6 +101,21 @@ function PlannedExerciseCard({
         {exercise.target_sets} sets × {exercise.rep_min}–
         {exercise.rep_max} reps • {exercise.target_rir} RIR
       </Text>
+
+      <Text style={styles.planProgress}>
+        {completedSets} of {exercise.target_sets} sets logged
+      </Text>
+
+      {canLog && !targetReached ? (
+        <Pressable
+          onPress={() => onLog(exercise)}
+          style={styles.planLogButton}
+        >
+          <Text style={styles.planLogText}>Log next set</Text>
+        </Pressable>
+      ) : targetReached ? (
+        <Text style={styles.planComplete}>TARGET COMPLETE</Text>
+      ) : null}
     </View>
   );
 }
@@ -109,6 +134,17 @@ export default function WorkoutDetailScreen() {
     sets,
     workout,
   } = useWorkoutSession(workoutId);
+  function handleLogPlannedExercise(exercise: PlannedExercise) {
+    router.push({
+      pathname: "/workout/[id]/add-set",
+      params: {
+        exerciseId: exercise.exercise_id,
+        id: workoutId,
+        reps: String(exercise.rep_min),
+        rir: String(exercise.target_rir),
+      },
+    });
+  }
 
     function handleEditSet(set: LoggedSet) {
     router.push({
@@ -283,10 +319,18 @@ if (isLoading) {
                 <View style={styles.planList}>
                   <Text style={styles.sectionTitle}>Workout plan</Text>
 
-                  {plannedExercises.map((exercise) => (
+                                    {plannedExercises.map((exercise) => (
                     <PlannedExerciseCard
+                      canLog={!workout.completed_at}
+                      completedSets={
+                        sets.filter(
+                          (set) =>
+                            set.exercise_id === exercise.exercise_id,
+                        ).length
+                      }
                       exercise={exercise}
                       key={exercise.id}
+                      onLog={handleLogPlannedExercise}
                     />
                   ))}
                 </View>
@@ -436,6 +480,31 @@ const styles = StyleSheet.create({
     color: "#D1D5DB",
     fontSize: 13,
     marginTop: 8,
+  },
+    planProgress: {
+    color: "#9CA3AF",
+    fontSize: 13,
+    marginTop: 6,
+  },
+  planLogButton: {
+    alignItems: "center",
+    borderColor: "#F97316",
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 12,
+    paddingVertical: 9,
+  },
+  planLogText: {
+    color: "#F97316",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  planComplete: {
+    color: "#34D399",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1,
+    marginTop: 12,
   },
   sectionTitle: {
     color: "#FFFFFF",
