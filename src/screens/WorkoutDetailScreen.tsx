@@ -15,6 +15,7 @@ import {
 
 import {
   type LoggedSet,
+  type PlannedExercise,
   useWorkoutSession,
 } from "../hooks/useWorkoutSession";
 
@@ -72,6 +73,52 @@ function SetCard({
     </View>
   );
 }
+type PlannedExerciseCardProps = {
+  canLog: boolean;
+  completedSets: number;
+  exercise: PlannedExercise;
+  onLog: (exercise: PlannedExercise) => void;
+};
+
+function PlannedExerciseCard({
+  canLog,
+  completedSets,
+  exercise,
+  onLog,
+}: PlannedExerciseCardProps) {
+  const targetReached = completedSets >= exercise.target_sets;
+
+  return (
+    <View style={styles.planCard}>
+      <View style={styles.planHeader}>
+        <Text style={styles.planPosition}>{exercise.position}</Text>
+        <Text style={styles.planExerciseName}>
+          {exercise.exercise_name}
+        </Text>
+      </View>
+
+      <Text style={styles.planTarget}>
+        {exercise.target_sets} sets × {exercise.rep_min}–
+        {exercise.rep_max} reps • {exercise.target_rir} RIR
+      </Text>
+
+      <Text style={styles.planProgress}>
+        {completedSets} of {exercise.target_sets} sets logged
+      </Text>
+
+      {canLog && !targetReached ? (
+        <Pressable
+          onPress={() => onLog(exercise)}
+          style={styles.planLogButton}
+        >
+          <Text style={styles.planLogText}>Log next set</Text>
+        </Pressable>
+      ) : targetReached ? (
+        <Text style={styles.planComplete}>TARGET COMPLETE</Text>
+      ) : null}
+    </View>
+  );
+}
 
 export default function WorkoutDetailScreen() {
   const router = useRouter();
@@ -82,10 +129,24 @@ export default function WorkoutDetailScreen() {
   const {
     errorMessage,
     isLoading,
+    plannedExercises,
     refreshWorkout,
     sets,
     workout,
   } = useWorkoutSession(workoutId);
+  function handleLogPlannedExercise(exercise: PlannedExercise) {
+    router.push({
+      pathname: "/workout/[id]/add-set",
+      params: {
+        exerciseId: exercise.exercise_id,
+        id: workoutId,
+         repMax: String(exercise.rep_max),
+         repMin: String(exercise.rep_min),
+         reps: String(exercise.rep_min),
+        rir: String(exercise.target_rir),
+      },
+    });
+  }
 
     function handleEditSet(set: LoggedSet) {
     router.push({
@@ -256,6 +317,26 @@ if (isLoading) {
               <Text style={styles.summaryNumber}>{sets.length}</Text>
               <Text style={styles.summaryLabel}>logged sets</Text>
             </View>
+              {plannedExercises.length > 0 ? (
+                <View style={styles.planList}>
+                  <Text style={styles.sectionTitle}>Workout plan</Text>
+
+                                    {plannedExercises.map((exercise) => (
+                    <PlannedExerciseCard
+                      canLog={!workout.completed_at}
+                      completedSets={
+                        sets.filter(
+                          (set) =>
+                            set.exercise_id === exercise.exercise_id,
+                        ).length
+                      }
+                      exercise={exercise}
+                      key={exercise.id}
+                      onLog={handleLogPlannedExercise}
+                    />
+                  ))}
+                </View>
+              ) : null}
                               {!workout.completed_at ? (
                 <>
                   <Pressable
@@ -368,6 +449,64 @@ const styles = StyleSheet.create({
   summaryLabel: {
     color: "#D1D5DB",
     fontSize: 15,
+  },
+    planList: {
+    marginBottom: 18,
+  },
+    planCard: {
+    backgroundColor: "#21170D",
+    borderColor: "#4A2D12",
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 8,
+    padding: 14,
+  },
+  planHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+  },
+  planPosition: {
+    color: "#F97316",
+    fontSize: 16,
+    fontWeight: "800",
+    marginRight: 10,
+    minWidth: 20,
+  },
+  planExerciseName: {
+    color: "#FFFFFF",
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  planTarget: {
+    color: "#D1D5DB",
+    fontSize: 13,
+    marginTop: 8,
+  },
+    planProgress: {
+    color: "#9CA3AF",
+    fontSize: 13,
+    marginTop: 6,
+  },
+  planLogButton: {
+    alignItems: "center",
+    borderColor: "#F97316",
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 12,
+    paddingVertical: 9,
+  },
+  planLogText: {
+    color: "#F97316",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  planComplete: {
+    color: "#34D399",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1,
+    marginTop: 12,
   },
   sectionTitle: {
     color: "#FFFFFF",

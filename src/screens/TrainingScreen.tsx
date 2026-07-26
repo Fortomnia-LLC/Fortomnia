@@ -14,26 +14,33 @@ import {
   useExercises,
 } from "../hooks/useExercises";
 import { useWorkoutSessions } from "../hooks/useWorkoutSessions";
-
+import { useWorkoutTemplates } from "../hooks/useWorkoutTemplates";
 function ExerciseCard({ exercise }: { exercise: Exercise }) {
   return (
-    <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.exerciseName}>{exercise.name}</Text>
+    <Link
+      href={{
+        pathname: "/exercise/[id]",
+        params: { id: exercise.id },
+      }}
+      asChild
+    >
+      <Pressable style={styles.card}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.exerciseName}>{exercise.name}</Text>
 
-        {exercise.owner_id ? (
-          <Text style={styles.customBadge}>CUSTOM</Text>
-        ) : null}
-      </View>
+          {exercise.owner_id ? (
+            <Text style={styles.customBadge}>CUSTOM</Text>
+          ) : null}
+        </View>
 
-      <Text style={styles.exerciseDetails}>
-        {exercise.muscle_group}
-        {exercise.equipment ? ` • ${exercise.equipment}` : ""}
-      </Text>
-    </View>
+        <Text style={styles.exerciseDetails}>
+          {exercise.muscle_group}
+          {exercise.equipment ? ` • ${exercise.equipment}` : ""}
+        </Text>
+      </Pressable>
+    </Link>
   );
 }
-
 export default function TrainingScreen() {
   const {
     errorMessage,
@@ -48,6 +55,13 @@ export default function TrainingScreen() {
     refreshWorkoutSessions,
     workoutSessions,
   } = useWorkoutSessions();
+  const {
+    errorMessage: templateError,
+    isLoading: templatesLoading,
+    refreshTemplates,
+    templates,
+  } = useWorkoutTemplates();
+
 
   if (isLoading && exercises.length === 0) {
     return (
@@ -67,10 +81,11 @@ export default function TrainingScreen() {
           void Promise.all([
             refreshExercises(),
             refreshWorkoutSessions(),
+            refreshTemplates(),
           ]);
         }}
-        refreshing={isLoading || workoutsLoading}
-       
+        refreshing={isLoading || workoutsLoading || templatesLoading}
+
         renderItem={({ item }) => (
           <ExerciseCard exercise={item} />
         )}
@@ -88,6 +103,46 @@ export default function TrainingScreen() {
                 </Text>
               </Pressable>
             </Link>
+              <View style={styles.templateHeader}>
+                <Text style={styles.sectionTitle}>Workout templates</Text>
+
+                <Link href="/new-template" asChild>
+                  <Pressable style={styles.templateCreateButton}>
+                    <Text style={styles.templateCreateText}>New template</Text>
+                  </Pressable>
+                </Link>
+              </View>
+
+              {templateError ? (
+                <Text style={styles.error}>{templateError}</Text>
+              ) : null}
+
+              {templates.length === 0 ? (
+                <Text style={styles.sessionEmpty}>
+                  No workout templates yet.
+                </Text>
+              ) : (
+                              templates.map((template) => (
+                  <Link
+                    key={template.id}
+                    href={{
+                      pathname: "/template/[id]",
+                      params: { id: template.id },
+                    }}
+                    asChild
+                  >
+                    <Pressable style={styles.templateCard}>
+                      <Text style={styles.templateName}>
+                        {template.name}
+                      </Text>
+                      <Text style={styles.templateNotes}>
+                        {template.notes ??
+                          "Exercises not configured yet."}
+                      </Text>
+                    </Pressable>
+                  </Link>
+                ))
+              )}
             <Text style={styles.sectionTitle}>
               Recent workouts
             </Text>
@@ -281,6 +336,42 @@ startButton: {
     color: "#0B0B0B",
     fontSize: 16,
     fontWeight: "800",
+  },
+    templateHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  templateCreateButton: {
+    borderColor: "#F97316",
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  templateCreateText: {
+    color: "#F97316",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  templateCard: {
+    backgroundColor: "#171717",
+    borderColor: "#292929",
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 10,
+    padding: 16,
+  },
+  templateName: {
+    color: "#FFFFFF",
+    fontSize: 17,
+    fontWeight: "700",
+  },
+  templateNotes: {
+    color: "#9CA3AF",
+    fontSize: 13,
+    marginTop: 6,
   },
   sessionEmpty: {
     color: "#9CA3AF",

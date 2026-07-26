@@ -55,13 +55,30 @@ export default function TabLayout() {
           href: null,
         }}
       />
+        <Tabs.Screen
+          name="new-template"
+          options={{
+            href: null,
+          }}
+        />
       <Tabs.Screen
         name="workout"
         options={{
           href: null,
         }}
       />
-
+      <Tabs.Screen
+        name="exercise"
+        options={{
+          href: null,
+        }}
+      />
+        <Tabs.Screen
+          name="template"
+          options={{
+            href: null,
+          }}
+        />
       <Tabs.Screen
         name="profile"
         options={{
