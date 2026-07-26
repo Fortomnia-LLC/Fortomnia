@@ -45,7 +45,6 @@ export function usePreviousExerciseSet(
           "weight, weight_unit, reps, reps_in_reserve, performed_at",
         )
         .eq("exercise_id", exerciseId)
-        .neq("session_id", currentWorkoutId)
         .order("performed_at", { ascending: false })
         .limit(1)
         .maybeSingle();

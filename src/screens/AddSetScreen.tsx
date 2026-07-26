@@ -281,7 +281,7 @@ export default function AddSetScreen() {
           })}
         </View>
                   <View style={styles.previousCard}>
-            <Text style={styles.previousEyebrow}>LAST TIME</Text>
+            <Text style={styles.previousEyebrow}>PREVIOUS SET</Text>
 
             {isLoadingPrevious ? (
               <ActivityIndicator color="#F97316" size="small" />
