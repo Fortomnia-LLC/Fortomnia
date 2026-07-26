@@ -16,18 +16,60 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
 
 export default function AddTemplateExerciseScreen() {
-  const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+    const router = useRouter();
+  const {
+    exerciseId: exerciseIdParam,
+    id,
+    repMax: repMaxParam,
+    repMin: repMinParam,
+    targetRir: targetRirParam,
+    targetSets: targetSetsParam,
+    templateExerciseId: templateExerciseIdParam,
+  } = useLocalSearchParams<{
+    exerciseId?: string;
+    id: string;
+    repMax?: string;
+    repMin?: string;
+    targetRir?: string;
+    targetSets?: string;
+    templateExerciseId?: string;
+  }>();
+
   const templateId = Array.isArray(id) ? id[0] : id;
+  const initialExerciseId = Array.isArray(exerciseIdParam)
+    ? exerciseIdParam[0]
+    : exerciseIdParam;
+  const editingExerciseId = Array.isArray(templateExerciseIdParam)
+    ? templateExerciseIdParam[0]
+    : templateExerciseIdParam;
+  const initialRepMax = Array.isArray(repMaxParam)
+    ? repMaxParam[0]
+    : repMaxParam;
+  const initialRepMin = Array.isArray(repMinParam)
+    ? repMinParam[0]
+    : repMinParam;
+  const initialTargetRir = Array.isArray(targetRirParam)
+    ? targetRirParam[0]
+    : targetRirParam;
+  const initialTargetSets = Array.isArray(targetSetsParam)
+    ? targetSetsParam[0]
+    : targetSetsParam;
+  const isEditing = Boolean(editingExerciseId);
 
   const { session } = useAuth();
   const { exercises, isLoading } = useExercises();
 
-  const [exerciseId, setExerciseId] = useState<string | null>(null);
-  const [targetSets, setTargetSets] = useState("3");
-  const [repMin, setRepMin] = useState("8");
-  const [repMax, setRepMax] = useState("12");
-  const [targetRir, setTargetRir] = useState("2");
+    const [exerciseId, setExerciseId] = useState<string | null>(
+    initialExerciseId ?? null,
+  );
+  const [targetSets, setTargetSets] = useState(
+    initialTargetSets ?? "3",
+  );
+  const [repMin, setRepMin] = useState(initialRepMin ?? "8");
+  const [repMax, setRepMax] = useState(initialRepMax ?? "12");
+  const [targetRir, setTargetRir] = useState(
+    initialTargetRir ?? "2",
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -79,6 +121,41 @@ export default function AddTemplateExerciseScreen() {
 
     setIsSaving(true);
     setErrorMessage(null);
+       if (isEditing && editingExerciseId) {
+      const { data, error } = await supabase
+        .from("workout_template_exercises")
+        .update({
+          exercise_id: exerciseId,
+          rep_max: parsedMax,
+          rep_min: parsedMin,
+          target_rir: parsedRir,
+          target_sets: parsedSets,
+        })
+        .eq("id", editingExerciseId)
+        .eq("template_id", templateId)
+        .eq("user_id", session.user.id)
+        .select("id")
+        .maybeSingle();
+
+      setIsSaving(false);
+
+      if (error || !data) {
+        if (error?.code === "23505") {
+          setErrorMessage("This exercise is already in the template.");
+        } else {
+          setErrorMessage(
+            error?.message ?? "The template exercise was not updated.",
+          );
+        }
+        return;
+      }
+
+      router.replace({
+        pathname: "/template/[id]",
+        params: { id: templateId },
+      });
+      return;
+    }
 
     const { data: latestExercise, error: positionError } =
       await supabase
@@ -156,9 +233,13 @@ export default function AddTemplateExerciseScreen() {
         </Pressable>
 
         <Text style={styles.eyebrow}>WORKOUT TEMPLATE</Text>
-        <Text style={styles.title}>Add exercise</Text>
+                <Text style={styles.title}>
+          {isEditing ? "Edit exercise" : "Add exercise"}
+        </Text>
         <Text style={styles.subtitle}>
-          Choose an exercise and define its progression range.
+          {isEditing
+            ? "Update the exercise and its progression targets."
+            : "Choose an exercise and define its progression range."}
         </Text>
 
         <Text style={styles.label}>Exercise</Text>
@@ -241,7 +322,9 @@ export default function AddTemplateExerciseScreen() {
           {isSaving ? (
             <ActivityIndicator color="#0B0B0B" />
           ) : (
-            <Text style={styles.saveText}>Add to template</Text>
+            <Text style={styles.saveText}>
+  {isEditing ? "Save changes" : "Add to template"}
+</Text>
           )}
         </Pressable>
       </ScrollView>

@@ -19,11 +19,13 @@ import { useAuth } from "../providers/AuthProvider";
 type TemplateExerciseCardProps = {
   exercise: TemplateExercise;
   onDelete: (exercise: TemplateExercise) => void;
+  onEdit: (exercise: TemplateExercise) => void;
 };
 
 function TemplateExerciseCard({
   exercise,
   onDelete,
+  onEdit,
 }: TemplateExerciseCardProps) {
   return (
     <View style={styles.card}>
@@ -40,12 +42,21 @@ function TemplateExerciseCard({
       </Text>
       <Text style={styles.rir}>{exercise.target_rir} target RIR</Text>
 
-      <Pressable
-        onPress={() => onDelete(exercise)}
-        style={styles.deleteButton}
-      >
-        <Text style={styles.deleteButtonText}>Delete exercise</Text>
-      </Pressable>
+      <View style={styles.cardActions}>
+        <Pressable
+          onPress={() => onEdit(exercise)}
+          style={styles.editButton}
+        >
+          <Text style={styles.editButtonText}>Edit exercise</Text>
+        </Pressable>
+
+        <Pressable
+          onPress={() => onDelete(exercise)}
+          style={styles.deleteButton}
+        >
+          <Text style={styles.deleteButtonText}>Delete exercise</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -62,6 +73,20 @@ export default function WorkoutTemplateScreen() {
     template,
     templateExercises,
   } = useWorkoutTemplate(templateId);
+    function handleEditExercise(exercise: TemplateExercise) {
+    router.push({
+      pathname: "/template/[id]/add-exercise",
+      params: {
+        exerciseId: exercise.exercise_id,
+        id: templateId,
+        repMax: String(exercise.rep_max),
+        repMin: String(exercise.rep_min),
+        targetRir: String(exercise.target_rir),
+        targetSets: String(exercise.target_sets),
+        templateExerciseId: exercise.id,
+      },
+    });
+  }
 
   function handleStartWorkout() {
     if (!session?.user.id || !template) {
@@ -237,7 +262,8 @@ export default function WorkoutTemplateScreen() {
         <TemplateExerciseCard
         exercise={item}
         onDelete={handleDeleteExercise}
-      />
+        onEdit={handleEditExercise}
+       />
     )}
         ListHeaderComponent={
           <View>
@@ -426,12 +452,28 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 5,
   },
+    cardActions: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 14,
+  },
+  editButton: {
+    borderColor: "#F97316",
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  editButtonText: {
+    color: "#F97316",
+    fontSize: 13,
+    fontWeight: "700",
+  },
   deleteButton: {
     alignSelf: "flex-start",
     borderColor: "#F87171",
     borderRadius: 8,
     borderWidth: 1,
-    marginTop: 14,
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
