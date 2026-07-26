@@ -17,15 +17,26 @@ import {
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
 type TemplateExerciseCardProps = {
+  canMoveDown: boolean;
+  canMoveUp: boolean;
   exercise: TemplateExercise;
+  isMoving: boolean;
   onDelete: (exercise: TemplateExercise) => void;
   onEdit: (exercise: TemplateExercise) => void;
+  onMove: (
+    exercise: TemplateExercise,
+    direction: "up" | "down",
+  ) => void;
 };
 
 function TemplateExerciseCard({
+  canMoveDown,
+  canMoveUp,
   exercise,
+  isMoving,
   onDelete,
   onEdit,
+  onMove,
 }: TemplateExerciseCardProps) {
   return (
     <View style={styles.card}>
@@ -41,6 +52,30 @@ function TemplateExerciseCard({
         {exercise.rep_max} reps
       </Text>
       <Text style={styles.rir}>{exercise.target_rir} target RIR</Text>
+
+      <View style={styles.moveActions}>
+        <Pressable
+          disabled={!canMoveUp || isMoving}
+          onPress={() => onMove(exercise, "up")}
+          style={[
+            styles.moveButton,
+            (!canMoveUp || isMoving) && styles.buttonDisabled,
+          ]}
+        >
+          <Text style={styles.moveButtonText}>↑ Move up</Text>
+        </Pressable>
+
+        <Pressable
+          disabled={!canMoveDown || isMoving}
+          onPress={() => onMove(exercise, "down")}
+          style={[
+            styles.moveButton,
+            (!canMoveDown || isMoving) && styles.buttonDisabled,
+          ]}
+        >
+          <Text style={styles.moveButtonText}>↓ Move down</Text>
+        </Pressable>
+      </View>
 
       <View style={styles.cardActions}>
         <Pressable
@@ -65,6 +100,9 @@ export default function WorkoutTemplateScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const templateId = Array.isArray(id) ? id[0] : id;
   const { session } = useAuth();
+  const [movingExerciseId, setMovingExerciseId] = useState<string | null>(
+    null,
+  );
   const [isDeleting, setIsDeleting] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const {
@@ -101,6 +139,31 @@ export default function WorkoutTemplateScreen() {
         templateExerciseId: exercise.id,
       },
     });
+  }
+    async function handleMoveExercise(
+    exercise: TemplateExercise,
+    direction: "up" | "down",
+  ) {
+    setMovingExerciseId(exercise.id);
+
+    const { data, error } = await supabase.rpc(
+      "move_workout_template_exercise",
+      {
+        p_direction: direction,
+        p_exercise_id: exercise.id,
+      },
+    );
+
+    setMovingExerciseId(null);
+
+    if (error) {
+      Alert.alert("Unable to move exercise", error.message);
+      return;
+    }
+
+    if (data) {
+      await refreshTemplate();
+    }
   }
 
   function handleStartWorkout() {
@@ -320,13 +383,17 @@ export default function WorkoutTemplateScreen() {
         keyExtractor={(exercise) => exercise.id}
         onRefresh={() => void refreshTemplate()}
         refreshing={isLoading}
-        renderItem={({ item }) => (
+        renderItem={({ index, item }) => (
         <TemplateExerciseCard
-        exercise={item}
-        onDelete={handleDeleteExercise}
-        onEdit={handleEditExercise}
-       />
-    )}
+            canMoveDown={index < templateExercises.length - 1}
+            canMoveUp={index > 0}
+            exercise={item}
+            isMoving={movingExerciseId === item.id}
+            onDelete={handleDeleteExercise}
+            onEdit={handleEditExercise}
+            onMove={handleMoveExercise}
+          />
+        )}
         ListHeaderComponent={
           <View>
             <Pressable
@@ -550,6 +617,25 @@ const styles = StyleSheet.create({
     color: "#9CA3AF",
     fontSize: 13,
     marginTop: 5,
+  },
+  moveActions: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 14,
+  },
+  moveButton: {
+    borderColor: "#6B7280",
+    borderRadius: 8,
+    borderWidth: 1,
+    flex: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  moveButtonText: {
+    color: "#D1D5DB",
+    fontSize: 13,
+    fontWeight: "700",
+    textAlign: "center",
   },
     cardActions: {
     flexDirection: "row",
