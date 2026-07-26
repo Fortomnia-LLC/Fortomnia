@@ -74,7 +74,21 @@ export default function WorkoutTemplateScreen() {
     template,
     templateExercises,
   } = useWorkoutTemplate(templateId);
-    function handleEditExercise(exercise: TemplateExercise) {
+     function handleEditTemplate() {
+    if (!template) {
+      return;
+    }
+
+    router.push({
+      pathname: "/new-template",
+      params: {
+        name: template.name,
+        notes: template.notes ?? "",
+        templateId: template.id,
+      },
+    });
+  }
+ function handleEditExercise(exercise: TemplateExercise) {
     router.push({
       pathname: "/template/[id]/add-exercise",
       params: {
@@ -328,7 +342,14 @@ export default function WorkoutTemplateScreen() {
               {template.notes ??
                 "Build an ordered routine with progression targets."}
             </Text>
-
+                          <Pressable
+              onPress={handleEditTemplate}
+              style={styles.addButton}
+            >
+              <Text style={styles.addButtonText}>
+                Edit template details
+              </Text>
+            </Pressable>
               <Pressable
                 disabled={
                   isStarting || templateExercises.length === 0

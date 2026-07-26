@@ -1,5 +1,5 @@
-import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -16,13 +16,39 @@ import { useAuth } from "../providers/AuthProvider";
 
   export default function NewTemplateScreen() {
   const router = useRouter();
+  const {
+    name: nameParam,
+    notes: notesParam,
+    templateId: templateIdParam,
+  } = useLocalSearchParams<{
+    name?: string;
+    notes?: string;
+    templateId?: string;
+  }>();
+
+  const templateId = Array.isArray(templateIdParam)
+    ? templateIdParam[0]
+    : templateIdParam;
+  const initialName = Array.isArray(nameParam) ? nameParam[0] : nameParam;
+  const initialNotes = Array.isArray(notesParam)
+    ? notesParam[0]
+    : notesParam;
+  const isEditing = Boolean(templateId);
+
   const { session } = useAuth();
-  const [name, setName] = useState("");
+  const [name, setName] = useState(initialName ?? "");
+  const [notes, setNotes] = useState(initialNotes ?? "");
   const [isCreating, setIsCreating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+      useEffect(() => {
+    setName(initialName ?? "");
+    setNotes(initialNotes ?? "");
+    setErrorMessage(null);
+  }, [initialName, initialNotes, templateId]);
 
-  async function handleCreateTemplate() {
+    async function handleSaveTemplate() {
     const trimmedName = name.trim();
+    const trimmedNotes = notes.trim();
 
     if (!session?.user.id) {
       setErrorMessage("No authenticated user was found.");
@@ -37,17 +63,55 @@ import { useAuth } from "../providers/AuthProvider";
     setIsCreating(true);
     setErrorMessage(null);
 
+    if (isEditing && templateId) {
+      const { data, error } = await supabase
+        .from("workout_templates")
+        .update({
+          name: trimmedName,
+          notes: trimmedNotes || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", templateId)
+        .eq("user_id", session.user.id)
+        .select("id")
+        .maybeSingle();
+
+      setIsCreating(false);
+
+      if (error || !data) {
+        if (error?.code === "23505") {
+          setErrorMessage("You already have a template with this name.");
+        } else {
+          setErrorMessage(
+            error?.message ?? "The template was not updated.",
+          );
+        }
+        return;
+      }
+
+      router.replace({
+        pathname: "/template/[id]",
+        params: { id: templateId },
+      });
+      return;
+    }
+
     const { error } = await supabase
       .from("workout_templates")
       .insert({
         name: trimmedName,
+        notes: trimmedNotes || null,
         user_id: session.user.id,
       });
 
     setIsCreating(false);
 
     if (error) {
-      setErrorMessage(error.message);
+      if (error.code === "23505") {
+        setErrorMessage("You already have a template with this name.");
+      } else {
+        setErrorMessage(error.message);
+      }
       return;
     }
 
@@ -67,10 +131,14 @@ import { useAuth } from "../providers/AuthProvider";
     <SafeAreaView style={styles.screen}>
       <View style={styles.content}>
         <Text style={styles.eyebrow}>IRONFORGE</Text>
-        <Text style={styles.title}>Create template</Text>
-        <Text style={styles.subtitle}>
-          Save a reusable routine. Exercises and targets come next.
-        </Text>
+        <Text style={styles.title}>
+  {isEditing ? "Edit template" : "Create template"}
+</Text>
+<Text style={styles.subtitle}>
+  {isEditing
+    ? "Update the template name and notes."
+    : "Save a reusable routine. Exercises and targets come next."}
+</Text>
 
         <Text style={styles.label}>Template name</Text>
         <TextInput
@@ -82,6 +150,16 @@ import { useAuth } from "../providers/AuthProvider";
           style={styles.input}
           value={name}
         />
+                  <Text style={styles.label}>Notes</Text>
+        <TextInput
+          multiline
+          onChangeText={setNotes}
+          placeholder="Describe the workout focus or training goals..."
+          placeholderTextColor="#727885"
+          style={[styles.input, styles.notesInput]}
+          textAlignVertical="top"
+          value={notes}
+        />
 
         {errorMessage ? (
           <Text style={styles.error}>{errorMessage}</Text>
@@ -89,7 +167,7 @@ import { useAuth } from "../providers/AuthProvider";
 
         <Pressable
           disabled={isCreating}
-          onPress={handleCreateTemplate}
+          onPress={handleSaveTemplate}
           style={[
             styles.createButton,
             isCreating && styles.disabled,
@@ -98,7 +176,9 @@ import { useAuth } from "../providers/AuthProvider";
           {isCreating ? (
             <ActivityIndicator color="#0B0B0B" />
           ) : (
-            <Text style={styles.createText}>Create Template</Text>
+            <Text style={styles.createText}>
+             {isEditing ? "Save changes" : "Create template"}
+           </Text>
           )}
         </Pressable>
 
@@ -159,6 +239,9 @@ const styles = StyleSheet.create({
     marginBottom: 18,
     paddingHorizontal: 16,
     paddingVertical: 15,
+  },
+  notesInput: {
+    minHeight: 110,
   },
   error: {
     color: "#F87171",
