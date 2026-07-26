@@ -16,12 +16,15 @@ import {
 } from "../hooks/useWorkoutTemplate";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
+type TemplateExerciseCardProps = {
+  exercise: TemplateExercise;
+  onDelete: (exercise: TemplateExercise) => void;
+};
 
 function TemplateExerciseCard({
   exercise,
-}: {
-  exercise: TemplateExercise;
-}) {
+  onDelete,
+}: TemplateExerciseCardProps) {
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
@@ -36,10 +39,16 @@ function TemplateExerciseCard({
         {exercise.rep_max} reps
       </Text>
       <Text style={styles.rir}>{exercise.target_rir} target RIR</Text>
+
+      <Pressable
+        onPress={() => onDelete(exercise)}
+        style={styles.deleteButton}
+      >
+        <Text style={styles.deleteButtonText}>Delete exercise</Text>
+      </Pressable>
     </View>
   );
 }
-
 export default function WorkoutTemplateScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -146,8 +155,51 @@ export default function WorkoutTemplateScreen() {
       ],
     );
   }
-;
 
+  function handleDeleteExercise(exercise: TemplateExercise) {
+    if (!session?.user.id || !templateId) {
+      Alert.alert(
+        "Unable to delete exercise",
+        "Your user session or template is missing.",
+      );
+      return;
+    }
+
+    Alert.alert(
+      "Delete exercise?",
+      `${exercise.exercise_name} will be removed from this template.`,
+      [
+        {
+          style: "cancel",
+          text: "Cancel",
+        },
+        {
+          style: "destructive",
+          text: "Delete",
+          onPress: async () => {
+            const { data, error } = await supabase
+              .from("workout_template_exercises")
+              .delete()
+              .eq("id", exercise.id)
+              .eq("template_id", templateId)
+              .eq("user_id", session.user.id)
+              .select("id")
+              .maybeSingle();
+
+            if (error || !data) {
+              Alert.alert(
+                "Unable to delete exercise",
+                error?.message ?? "The exercise was not removed.",
+              );
+              return;
+            }
+
+            await refreshTemplate();
+          },
+        },
+      ],
+    );
+  }
   if (isLoading && !template) {
     return (
       <SafeAreaView style={styles.loadingScreen}>
@@ -182,8 +234,11 @@ export default function WorkoutTemplateScreen() {
         onRefresh={() => void refreshTemplate()}
         refreshing={isLoading}
         renderItem={({ item }) => (
-          <TemplateExerciseCard exercise={item} />
-        )}
+        <TemplateExerciseCard
+        exercise={item}
+        onDelete={handleDeleteExercise}
+      />
+    )}
         ListHeaderComponent={
           <View>
             <Pressable
@@ -370,6 +425,20 @@ const styles = StyleSheet.create({
     color: "#9CA3AF",
     fontSize: 13,
     marginTop: 5,
+  },
+  deleteButton: {
+    alignSelf: "flex-start",
+    borderColor: "#F87171",
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  deleteButtonText: {
+    color: "#F87171",
+    fontSize: 13,
+    fontWeight: "700",
   },
   emptyCard: {
     backgroundColor: "#171717",
