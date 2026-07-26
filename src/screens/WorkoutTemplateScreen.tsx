@@ -65,6 +65,7 @@ export default function WorkoutTemplateScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const templateId = Array.isArray(id) ? id[0] : id;
   const { session } = useAuth();
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const {
     errorMessage,
@@ -225,6 +226,53 @@ export default function WorkoutTemplateScreen() {
       ],
     );
   }
+    function handleDeleteTemplate() {
+    if (!session?.user.id || !templateId || !template) {
+      Alert.alert(
+        "Unable to delete template",
+        "Your user session or template is missing.",
+      );
+      return;
+    }
+
+    Alert.alert(
+      "Delete template?",
+      `${template.name} and its configured exercises will be deleted. Existing workouts will not be changed.`,
+      [
+        {
+          style: "cancel",
+          text: "Cancel",
+        },
+        {
+          style: "destructive",
+          text: "Delete",
+          onPress: async () => {
+            setIsDeleting(true);
+
+            const { data, error } = await supabase
+              .from("workout_templates")
+              .delete()
+              .eq("id", templateId)
+              .eq("user_id", session.user.id)
+              .select("id")
+              .maybeSingle();
+
+            if (error || !data) {
+              setIsDeleting(false);
+              Alert.alert(
+                "Unable to delete template",
+                error?.message ?? "The template was not removed.",
+              );
+              return;
+            }
+
+            router.replace("/training");
+          },
+        },
+      ],
+    );
+  }
+
   if (isLoading && !template) {
     return (
       <SafeAreaView style={styles.loadingScreen}>
@@ -311,6 +359,22 @@ export default function WorkoutTemplateScreen() {
               style={styles.addButton}
             >
               <Text style={styles.addButtonText}>Add exercise</Text>
+            </Pressable>
+            <Pressable
+              disabled={isDeleting}
+              onPress={handleDeleteTemplate}
+              style={[
+                styles.deleteTemplateButton,
+                isDeleting && styles.buttonDisabled,
+              ]}
+            >
+              {isDeleting ? (
+                <ActivityIndicator color="#F87171" />
+              ) : (
+                <Text style={styles.deleteTemplateText}>
+                  Delete template
+                </Text>
+              )}
             </Pressable>
 
             {errorMessage ? (
@@ -408,6 +472,20 @@ const styles = StyleSheet.create({
   },
   addButtonText: {
     color: "#F97316",
+    fontSize: 16,
+    fontWeight: "800",
+  },
+    deleteTemplateButton: {
+    alignItems: "center",
+    borderColor: "#F87171",
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: "center",
+    marginBottom: 26,
+    minHeight: 52,
+  },
+  deleteTemplateText: {
+    color: "#F87171",
     fontSize: 16,
     fontWeight: "800",
   },
