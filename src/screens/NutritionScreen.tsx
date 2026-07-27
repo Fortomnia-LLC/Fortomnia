@@ -1,0 +1,357 @@
+import { Link } from "expo-router";
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+
+import {
+  getLocalDateKey,
+  type NutritionEntry,
+  useDailyNutrition,
+} from "../hooks/useDailyNutrition";
+
+function NutritionEntryCard({ entry }: { entry: NutritionEntry }) {
+  return (
+    <View style={styles.entryCard}>
+      <View style={styles.entryHeader}>
+        <View style={styles.entryTitleGroup}>
+          <Text style={styles.entryName}>{entry.food_name}</Text>
+          <Text style={styles.mealType}>
+            {entry.meal_type.toUpperCase()}
+          </Text>
+        </View>
+
+        <Text style={styles.entryCalories}>
+          {entry.calories} cal
+        </Text>
+      </View>
+
+      {entry.serving_description ? (
+        <Text style={styles.serving}>
+          {entry.serving_description}
+        </Text>
+      ) : null}
+
+      <Text style={styles.entryMacros}>
+        P {entry.protein_g}g • C {entry.carbs_g}g • F {entry.fat_g}g
+      </Text>
+    </View>
+  );
+}
+
+function MacroCard({
+  label,
+  target,
+  value,
+}: {
+  label: string;
+  target: number;
+  value: number;
+}) {
+  return (
+    <View style={styles.macroCard}>
+      <Text style={styles.macroLabel}>{label}</Text>
+      <Text style={styles.macroValue}>{Math.round(value)}g</Text>
+      <Text style={styles.macroTarget}>
+        of {Math.round(target)}g
+      </Text>
+    </View>
+  );
+}
+
+export default function NutritionScreen() {
+  const today = getLocalDateKey();
+  const {
+    entries,
+    errorMessage,
+    goals,
+    isLoading,
+    refreshNutrition,
+    totals,
+  } = useDailyNutrition(today);
+
+  if (isLoading && entries.length === 0) {
+    return (
+      <SafeAreaView style={styles.loadingScreen}>
+        <ActivityIndicator color="#F97316" size="large" />
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.screen}>
+      <FlatList
+        contentContainerStyle={styles.listContent}
+        data={entries}
+        keyExtractor={(entry) => entry.id}
+        onRefresh={() => void refreshNutrition()}
+        refreshing={isLoading}
+        renderItem={({ item }) => (
+          <NutritionEntryCard entry={item} />
+        )}
+        ListHeaderComponent={
+          <View style={styles.header}>
+            <Text style={styles.eyebrow}>IRONFORGE</Text>
+            <Text style={styles.title}>Nutrition</Text>
+            <Text style={styles.date}>
+              {new Date(`${today}T12:00:00`).toLocaleDateString(
+                undefined,
+                {
+                  dateStyle: "full",
+                },
+              )}
+            </Text>
+                         <Link
+              href={{
+                pathname: "/new-nutrition-entry",
+                params: { date: today },
+              }}
+              asChild
+            >
+              <Pressable style={styles.logButton}>
+                <Text style={styles.logButtonText}>Log food</Text>
+              </Pressable>
+            </Link>
+
+            {errorMessage ? (
+              <Text style={styles.error}>{errorMessage}</Text>
+            ) : null}
+
+            <View style={styles.calorieCard}>
+              <Text style={styles.calorieLabel}>TODAY&apos;S CALORIES</Text>
+              <Text style={styles.calorieValue}>
+                {totals.calories}
+              </Text>
+              <Text style={styles.calorieTarget}>
+                of {goals.calorie_target} calories
+              </Text>
+            </View>
+
+            <View style={styles.macroRow}>
+              <MacroCard
+                label="Protein"
+                target={goals.protein_target_g}
+                value={totals.protein_g}
+              />
+              <MacroCard
+                label="Carbs"
+                target={goals.carbs_target_g}
+                value={totals.carbs_g}
+              />
+              <MacroCard
+                label="Fat"
+                target={goals.fat_target_g}
+                value={totals.fat_g}
+              />
+            </View>
+
+            <Text style={styles.fiber}>
+              Fiber: {Math.round(totals.fiber_g)}g of{" "}
+              {Math.round(goals.fiber_target_g)}g
+            </Text>
+
+            <Text style={styles.sectionTitle}>
+              Today&apos;s food
+            </Text>
+          </View>
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyTitle}>No food logged today</Text>
+            <Text style={styles.emptyText}>
+              Add your first meal to begin tracking calories and macros.
+            </Text>
+          </View>
+        }
+      />
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  loadingScreen: {
+    alignItems: "center",
+    backgroundColor: "#0B0B0B",
+    flex: 1,
+    justifyContent: "center",
+  },
+  screen: {
+    backgroundColor: "#0B0B0B",
+    flex: 1,
+  },
+  listContent: {
+    paddingBottom: 30,
+    paddingHorizontal: 20,
+  },
+  header: {
+    paddingTop: 24,
+  },
+  eyebrow: {
+    color: "#F97316",
+    fontSize: 13,
+    fontWeight: "800",
+    letterSpacing: 2,
+  },
+  title: {
+    color: "#FFFFFF",
+    fontSize: 36,
+    fontWeight: "800",
+    marginTop: 8,
+  },
+  date: {
+    color: "#9CA3AF",
+    fontSize: 15,
+    marginBottom: 24,
+    marginTop: 6,
+  },
+  error: {
+    color: "#F87171",
+    marginBottom: 18,
+  },
+  logButton: {
+    alignItems: "center",
+    backgroundColor: "#F97316",
+    borderRadius: 12,
+    justifyContent: "center",
+    marginBottom: 20,
+    minHeight: 52,
+  },
+  logButtonText: {
+    color: "#0B0B0B",
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  calorieCard: {
+    backgroundColor: "#1A1A1A",
+    borderColor: "#2A2A2A",
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 20,
+  },
+  calorieLabel: {
+    color: "#F97316",
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 1.5,
+  },
+  calorieValue: {
+    color: "#FFFFFF",
+    fontSize: 42,
+    fontWeight: "800",
+    marginTop: 8,
+  },
+  calorieTarget: {
+    color: "#9CA3AF",
+    fontSize: 14,
+    marginTop: 3,
+  },
+  macroRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 10,
+  },
+  macroCard: {
+    backgroundColor: "#171717",
+    borderColor: "#292929",
+    borderRadius: 12,
+    borderWidth: 1,
+    flex: 1,
+    padding: 12,
+  },
+  macroLabel: {
+    color: "#9CA3AF",
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  macroValue: {
+    color: "#FFFFFF",
+    fontSize: 20,
+    fontWeight: "800",
+    marginTop: 7,
+  },
+  macroTarget: {
+    color: "#6B7280",
+    fontSize: 11,
+    marginTop: 2,
+  },
+  fiber: {
+    color: "#9CA3AF",
+    fontSize: 13,
+    marginBottom: 28,
+    marginTop: 12,
+  },
+  sectionTitle: {
+    color: "#FFFFFF",
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: 14,
+  },
+  entryCard: {
+    backgroundColor: "#171717",
+    borderColor: "#292929",
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 10,
+    padding: 16,
+  },
+  entryHeader: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  entryTitleGroup: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  entryName: {
+    color: "#FFFFFF",
+    fontSize: 17,
+    fontWeight: "700",
+  },
+  mealType: {
+    color: "#F97316",
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 1,
+    marginTop: 5,
+  },
+  entryCalories: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  serving: {
+    color: "#9CA3AF",
+    fontSize: 13,
+    marginTop: 10,
+  },
+  entryMacros: {
+    color: "#D1D5DB",
+    fontSize: 13,
+    marginTop: 8,
+  },
+  emptyCard: {
+    backgroundColor: "#171717",
+    borderColor: "#292929",
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 20,
+  },
+  emptyTitle: {
+    color: "#FFFFFF",
+    fontSize: 17,
+    fontWeight: "700",
+  },
+  emptyText: {
+    color: "#9CA3AF",
+    fontSize: 14,
+    lineHeight: 21,
+    marginTop: 8,
+  },
+});
+
