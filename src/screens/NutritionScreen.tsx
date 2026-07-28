@@ -1,7 +1,8 @@
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import {
   ActivityIndicator,
   FlatList,
+  Alert,
   Pressable,
   SafeAreaView,
   StyleSheet,
@@ -14,8 +15,19 @@ import {
   type NutritionEntry,
   useDailyNutrition,
 } from "../hooks/useDailyNutrition";
+import { supabase } from "../lib/supabase";
+import { useAuth } from "../providers/AuthProvider";
+type NutritionEntryCardProps = {
+  entry: NutritionEntry;
+  onDelete: (entry: NutritionEntry) => void;
+  onEdit: (entry: NutritionEntry) => void;
+};
 
-function NutritionEntryCard({ entry }: { entry: NutritionEntry }) {
+function NutritionEntryCard({
+  entry,
+  onDelete,
+  onEdit,
+}: NutritionEntryCardProps) {
   return (
     <View style={styles.entryCard}>
       <View style={styles.entryHeader}>
@@ -40,6 +52,22 @@ function NutritionEntryCard({ entry }: { entry: NutritionEntry }) {
       <Text style={styles.entryMacros}>
         P {entry.protein_g}g • C {entry.carbs_g}g • F {entry.fat_g}g
       </Text>
+
+      <View style={styles.entryActions}>
+        <Pressable
+          onPress={() => onEdit(entry)}
+          style={styles.editButton}
+        >
+          <Text style={styles.editButtonText}>Edit food</Text>
+        </Pressable>
+
+        <Pressable
+          onPress={() => onDelete(entry)}
+          style={styles.deleteButton}
+        >
+          <Text style={styles.deleteButtonText}>Delete food</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -65,6 +93,8 @@ function MacroCard({
 }
 
 export default function NutritionScreen() {
+  const router = useRouter();
+  const { session } = useAuth();
   const today = getLocalDateKey();
   const {
     entries,
@@ -74,6 +104,67 @@ export default function NutritionScreen() {
     refreshNutrition,
     totals,
   } = useDailyNutrition(today);
+  function handleEditEntry(entry: NutritionEntry) {
+    router.push({
+      pathname: "/new-nutrition-entry",
+      params: {
+        calories: String(entry.calories),
+        carbs: String(entry.carbs_g),
+        date: entry.entry_date,
+        entryId: entry.id,
+        fat: String(entry.fat_g),
+        fiber: String(entry.fiber_g),
+        foodName: entry.food_name,
+        mealType: entry.meal_type,
+        protein: String(entry.protein_g),
+        serving: entry.serving_description ?? "",
+      },
+    });
+  }
+
+  function handleDeleteEntry(entry: NutritionEntry) {
+    if (!session?.user.id) {
+      Alert.alert(
+        "Unable to delete food",
+        "Your user session is missing.",
+      );
+      return;
+    }
+
+    Alert.alert(
+      "Delete food?",
+      `${entry.food_name} will be removed from today's nutrition log.`,
+      [
+        {
+          style: "cancel",
+          text: "Cancel",
+        },
+        {
+          style: "destructive",
+          text: "Delete",
+          onPress: async () => {
+            const { data, error } = await supabase
+              .from("nutrition_entries")
+              .delete()
+              .eq("id", entry.id)
+              .eq("user_id", session.user.id)
+              .select("id")
+              .maybeSingle();
+
+            if (error || !data) {
+              Alert.alert(
+                "Unable to delete food",
+                error?.message ?? "The food entry was not removed.",
+              );
+              return;
+            }
+
+            await refreshNutrition();
+          },
+        },
+      ],
+    );
+  }
 
   if (isLoading && entries.length === 0) {
     return (
@@ -92,8 +183,12 @@ export default function NutritionScreen() {
         onRefresh={() => void refreshNutrition()}
         refreshing={isLoading}
         renderItem={({ item }) => (
-          <NutritionEntryCard entry={item} />
-        )}
+  <NutritionEntryCard
+    entry={item}
+    onDelete={handleDeleteEntry}
+    onEdit={handleEditEntry}
+  />
+)}
         ListHeaderComponent={
           <View style={styles.header}>
             <Text style={styles.eyebrow}>IRONFORGE</Text>
@@ -334,6 +429,35 @@ const styles = StyleSheet.create({
     color: "#D1D5DB",
     fontSize: 13,
     marginTop: 8,
+  },
+  entryActions: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 14,
+  },
+  editButton: {
+    borderColor: "#F97316",
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  editButtonText: {
+    color: "#F97316",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  deleteButton: {
+    borderColor: "#F87171",
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  deleteButtonText: {
+    color: "#F87171",
+    fontSize: 13,
+    fontWeight: "700",
   },
   emptyCard: {
     backgroundColor: "#171717",

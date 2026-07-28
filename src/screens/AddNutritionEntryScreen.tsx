@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -24,27 +24,84 @@ const mealTypes: MealType[] = [
   "dinner",
   "snack",
 ];
-
+function firstParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
 export default function AddNutritionEntryScreen() {
-  const router = useRouter();
-  const { date: dateParam } = useLocalSearchParams<{
+    const router = useRouter();
+  const {
+    calories: caloriesParam,
+    carbs: carbsParam,
+    date: dateParam,
+    entryId: entryIdParam,
+    fat: fatParam,
+    fiber: fiberParam,
+    foodName: foodNameParam,
+    mealType: mealTypeParam,
+    protein: proteinParam,
+    serving: servingParam,
+  } = useLocalSearchParams<{
+    calories?: string;
+    carbs?: string;
     date?: string;
+    entryId?: string;
+    fat?: string;
+    fiber?: string;
+    foodName?: string;
+    mealType?: string;
+    protein?: string;
+    serving?: string;
   }>();
-  const entryDate = Array.isArray(dateParam)
-    ? dateParam[0]
-    : dateParam ?? getLocalDateKey();
+
+  const entryDate = firstParam(dateParam) ?? getLocalDateKey();
+  const editingEntryId = firstParam(entryIdParam);
+  const initialMealType = firstParam(mealTypeParam) as
+    | MealType
+    | undefined;
+  const initialFoodName = firstParam(foodNameParam);
+  const initialServing = firstParam(servingParam);
+  const initialCalories = firstParam(caloriesParam);
+  const initialProtein = firstParam(proteinParam);
+  const initialCarbs = firstParam(carbsParam);
+  const initialFat = firstParam(fatParam);
+  const initialFiber = firstParam(fiberParam);
+  const isEditing = Boolean(editingEntryId);
 
   const { session } = useAuth();
-  const [mealType, setMealType] = useState<MealType>("breakfast");
-  const [foodName, setFoodName] = useState("");
-  const [serving, setServing] = useState("");
-  const [calories, setCalories] = useState("");
-  const [protein, setProtein] = useState("");
-  const [carbs, setCarbs] = useState("");
-  const [fat, setFat] = useState("");
-  const [fiber, setFiber] = useState("");
+  const [mealType, setMealType] = useState<MealType>(
+    initialMealType ?? "breakfast",
+  );
+  const [foodName, setFoodName] = useState(initialFoodName ?? "");
+  const [serving, setServing] = useState(initialServing ?? "");
+  const [calories, setCalories] = useState(initialCalories ?? "");
+  const [protein, setProtein] = useState(initialProtein ?? "");
+  const [carbs, setCarbs] = useState(initialCarbs ?? "");
+  const [fat, setFat] = useState(initialFat ?? "");
+  const [fiber, setFiber] = useState(initialFiber ?? "");
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMealType(initialMealType ?? "breakfast");
+    setFoodName(initialFoodName ?? "");
+    setServing(initialServing ?? "");
+    setCalories(initialCalories ?? "");
+    setProtein(initialProtein ?? "");
+    setCarbs(initialCarbs ?? "");
+    setFat(initialFat ?? "");
+    setFiber(initialFiber ?? "");
+    setErrorMessage(null);
+  }, [
+    editingEntryId,
+    initialCalories,
+    initialCarbs,
+    initialFat,
+    initialFiber,
+    initialFoodName,
+    initialMealType,
+    initialProtein,
+    initialServing,
+  ]);
 
   async function handleSave() {
     const trimmedName = foodName.trim();
@@ -98,6 +155,38 @@ export default function AddNutritionEntryScreen() {
 
     setIsSaving(true);
     setErrorMessage(null);
+    if (isEditing && editingEntryId) {
+      const { data, error } = await supabase
+        .from("nutrition_entries")
+        .update({
+          calories: parsedCalories,
+          carbs_g: parsedCarbs,
+          entry_date: entryDate,
+          fat_g: parsedFat,
+          fiber_g: parsedFiber,
+          food_name: trimmedName,
+          meal_type: mealType,
+          protein_g: parsedProtein,
+          serving_description: serving.trim() || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", editingEntryId)
+        .eq("user_id", session.user.id)
+        .select("id")
+        .maybeSingle();
+
+      setIsSaving(false);
+
+      if (error || !data) {
+        setErrorMessage(
+          error?.message ?? "The food entry was not updated.",
+        );
+        return;
+      }
+
+      router.replace("/nutrition");
+      return;
+    }
 
     const { error } = await supabase
       .from("nutrition_entries")
@@ -140,10 +229,14 @@ export default function AddNutritionEntryScreen() {
         </Pressable>
 
         <Text style={styles.eyebrow}>IRONFORGE</Text>
-        <Text style={styles.title}>Log food</Text>
-        <Text style={styles.subtitle}>
-          Record calories and macros for today.
+        <Text style={styles.title}>
+          {isEditing ? "Edit food" : "Log food"}
         </Text>
+        <Text style={styles.subtitle}>
+        {isEditing
+        ? "Correct the meal, serving, calories, or macros."
+        : "Record calories and macros for today."}
+     </Text>
 
         <Text style={styles.label}>Meal</Text>
         <View style={styles.mealRow}>
@@ -265,7 +358,9 @@ export default function AddNutritionEntryScreen() {
           {isSaving ? (
             <ActivityIndicator color="#0B0B0B" />
           ) : (
-            <Text style={styles.saveText}>Save food</Text>
+            <Text style={styles.saveText}>
+             {isEditing ? "Save changes" : "Save food"}
+        </Text>
           )}
         </Pressable>
       </ScrollView>
