@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useRouter } from "expo-router";
 import {
   ActivityIndicator,
@@ -91,11 +92,18 @@ function MacroCard({
     </View>
   );
 }
+function shiftDate(dateKey: string, days: number) {
+  const date = new Date(`${dateKey}T12:00:00`);
+  date.setDate(date.getDate() + days);
 
+  return getLocalDateKey(date);
+}
 export default function NutritionScreen() {
   const router = useRouter();
   const { session } = useAuth();
   const today = getLocalDateKey();
+  const [selectedDate, setSelectedDate] = useState(today);
+  const isToday = selectedDate === today;
   const {
     entries,
     errorMessage,
@@ -103,7 +111,7 @@ export default function NutritionScreen() {
     isLoading,
     refreshNutrition,
     totals,
-  } = useDailyNutrition(today);
+  } = useDailyNutrition(selectedDate);
   function handleEditEntry(entry: NutritionEntry) {
     router.push({
       pathname: "/new-nutrition-entry",
@@ -133,7 +141,7 @@ export default function NutritionScreen() {
 
     Alert.alert(
       "Delete food?",
-      `${entry.food_name} will be removed from today's nutrition log.`,
+      `${entry.food_name} will be removed from this nutrition log.`,
       [
         {
           style: "cancel",
@@ -194,17 +202,50 @@ export default function NutritionScreen() {
             <Text style={styles.eyebrow}>IRONFORGE</Text>
             <Text style={styles.title}>Nutrition</Text>
             <Text style={styles.date}>
-              {new Date(`${today}T12:00:00`).toLocaleDateString(
-                undefined,
-                {
-                  dateStyle: "full",
-                },
-              )}
+              {new Date(
+                `${selectedDate}T12:00:00`,
+              ).toLocaleDateString(undefined, {
+                dateStyle: "full",
+              })}
             </Text>
+            <View style={styles.dateNavigation}>
+              <Pressable
+                onPress={() =>
+                  setSelectedDate((current) => shiftDate(current, -1))
+                }
+                style={styles.dateButton}
+              >
+                <Text style={styles.dateButtonText}>‹ Previous</Text>
+              </Pressable>
+
+              <Pressable
+                disabled={isToday}
+                onPress={() => setSelectedDate(today)}
+                style={[
+                  styles.todayButton,
+                  isToday && styles.dateButtonDisabled,
+                ]}
+              >
+                <Text style={styles.todayButtonText}>Today</Text>
+              </Pressable>
+
+              <Pressable
+                disabled={isToday}
+                onPress={() =>
+                  setSelectedDate((current) => shiftDate(current, 1))
+                }
+                style={[
+                  styles.dateButton,
+                  isToday && styles.dateButtonDisabled,
+                ]}
+              >
+                <Text style={styles.dateButtonText}>Next ›</Text>
+              </Pressable>
+            </View>
                          <Link
               href={{
                 pathname: "/new-nutrition-entry",
-                params: { date: today },
+                params: { date: selectedDate },
               }}
               asChild
             >
@@ -218,7 +259,9 @@ export default function NutritionScreen() {
             ) : null}
 
             <View style={styles.calorieCard}>
-              <Text style={styles.calorieLabel}>TODAY&apos;S CALORIES</Text>
+              <Text style={styles.calorieLabel}>
+  {isToday ? "TODAY'S CALORIES" : "DAILY CALORIES"}
+</Text>
               <Text style={styles.calorieValue}>
                 {totals.calories}
               </Text>
@@ -307,6 +350,42 @@ const styles = StyleSheet.create({
   error: {
     color: "#F87171",
     marginBottom: 18,
+  },
+  dateNavigation: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 16,
+  },
+  dateButton: {
+    alignItems: "center",
+    borderColor: "#333333",
+    borderRadius: 10,
+    borderWidth: 1,
+    flex: 1,
+    justifyContent: "center",
+    minHeight: 42,
+  },
+  dateButtonText: {
+    color: "#D1D5DB",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  todayButton: {
+    alignItems: "center",
+    borderColor: "#F97316",
+    borderRadius: 10,
+    borderWidth: 1,
+    justifyContent: "center",
+    minHeight: 42,
+    paddingHorizontal: 14,
+  },
+  todayButtonText: {
+    color: "#F97316",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  dateButtonDisabled: {
+    opacity: 0.35,
   },
   logButton: {
     alignItems: "center",
