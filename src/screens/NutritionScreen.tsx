@@ -82,12 +82,23 @@ function MacroCard({
   target: number;
   value: number;
 }) {
+  const remaining = Math.round(target - value);
   return (
     <View style={styles.macroCard}>
       <Text style={styles.macroLabel}>{label}</Text>
       <Text style={styles.macroValue}>{Math.round(value)}g</Text>
       <Text style={styles.macroTarget}>
         of {Math.round(target)}g
+      </Text>
+      <Text
+        style={[
+          styles.remaining,
+          remaining < 0 && styles.overTarget,
+        ]}
+      >
+        {remaining >= 0
+          ? `${remaining}g left`
+          : `${Math.abs(remaining)}g over`}
       </Text>
     </View>
   );
@@ -112,6 +123,8 @@ export default function NutritionScreen() {
     refreshNutrition,
     totals,
   } = useDailyNutrition(selectedDate);
+  const calorieRemaining =
+    goals.calorie_target - totals.calories;
   function handleEditEntry(entry: NutritionEntry) {
     router.push({
       pathname: "/new-nutrition-entry",
@@ -268,6 +281,16 @@ export default function NutritionScreen() {
               <Text style={styles.calorieTarget}>
                 of {goals.calorie_target} calories
               </Text>
+              <Text
+                style={[
+                  styles.remaining,
+                  calorieRemaining < 0 && styles.overTarget,
+                ]}
+              >
+                {calorieRemaining >= 0
+                  ? `${calorieRemaining} calories remaining`
+                  : `${Math.abs(calorieRemaining)} calories over`}
+              </Text>
             </View>
 
             <View style={styles.macroRow}>
@@ -294,13 +317,15 @@ export default function NutritionScreen() {
             </Text>
 
             <Text style={styles.sectionTitle}>
-              Today&apos;s food
-            </Text>
+  {isToday ? "Today's food" : "Food log"}
+</Text>
           </View>
         }
         ListEmptyComponent={
           <View style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>No food logged today</Text>
+            <Text style={styles.emptyTitle}>
+  {isToday ? "No food logged today" : "No food logged for this day"}
+</Text>
             <Text style={styles.emptyText}>
               Add your first meal to begin tracking calories and macros.
             </Text>
@@ -452,6 +477,15 @@ const styles = StyleSheet.create({
     color: "#6B7280",
     fontSize: 11,
     marginTop: 2,
+  },
+  remaining: {
+    color: "#34D399",
+    fontSize: 11,
+    fontWeight: "700",
+    marginTop: 5,
+  },
+  overTarget: {
+    color: "#F87171",
   },
   fiber: {
     color: "#9CA3AF",
