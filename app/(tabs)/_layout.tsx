@@ -67,6 +67,12 @@ export default function TabLayout() {
             href: null,
           }}
         />
+        <Tabs.Screen
+          name="nutrition-goals"
+          options={{
+            href: null,
+          }}
+        />
       <Tabs.Screen
         name="workout"
         options={{

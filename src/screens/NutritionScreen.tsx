@@ -266,6 +266,25 @@ export default function NutritionScreen() {
                 <Text style={styles.logButtonText}>Log food</Text>
               </Pressable>
             </Link>
+                         <Link
+              href={{
+                pathname: "/nutrition-goals",
+                params: {
+                  calories: String(goals.calorie_target),
+                  carbs: String(goals.carbs_target_g),
+                  fat: String(goals.fat_target_g),
+                  fiber: String(goals.fiber_target_g),
+                  protein: String(goals.protein_target_g),
+                },
+              }}
+              asChild
+            >
+              <Pressable style={styles.goalsButton}>
+                <Text style={styles.goalsButtonText}>
+                  Edit nutrition goals
+                </Text>
+              </Pressable>
+            </Link>
 
             {errorMessage ? (
               <Text style={styles.error}>{errorMessage}</Text>
@@ -417,8 +436,22 @@ const styles = StyleSheet.create({
     backgroundColor: "#F97316",
     borderRadius: 12,
     justifyContent: "center",
+    marginBottom: 12,
+    minHeight: 52,
+  },
+  goalsButton: {
+    alignItems: "center",
+    borderColor: "#F97316",
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: "center",
     marginBottom: 20,
     minHeight: 52,
+  },
+  goalsButtonText: {
+    color: "#F97316",
+    fontSize: 16,
+    fontWeight: "800",
   },
   logButtonText: {
     color: "#0B0B0B",
