@@ -97,6 +97,12 @@ export default function TabLayout() {
           title: "Profile",
         }}
       />
-    </Tabs>
+            <Tabs.Screen
+          name="new-supplement"
+          options={{
+            href: null,
+          }}
+        />
+      </Tabs>
   );
 }
