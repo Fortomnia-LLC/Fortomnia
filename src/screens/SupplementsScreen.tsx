@@ -21,6 +21,7 @@ import { useAuth } from "../providers/AuthProvider";
 
 type ProtocolCardProps = {
   log: SupplementLog | undefined;
+  onDelete: (protocol: SupplementProtocol) => void;
   onEdit: (protocol: SupplementProtocol) => void;
   onLog: (
     protocol: SupplementProtocol,
@@ -32,6 +33,7 @@ type ProtocolCardProps = {
 
 function ProtocolCard({
   log,
+  onDelete,
   onEdit,
   onLog,
   onToggleActive,
@@ -121,6 +123,16 @@ function ProtocolCard({
           {protocol.is_active ? "Deactivate" : "Reactivate"}
         </Text>
       </Pressable>
+           {!protocol.is_active ? (
+        <Pressable
+          onPress={() => onDelete(protocol)}
+          style={styles.deleteButton}
+        >
+          <Text style={styles.deleteButtonText}>
+            Delete permanently
+          </Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -159,6 +171,59 @@ export default function SupplementsScreen() {
         scheduledTime: protocol.scheduled_time?.slice(0, 5) ?? "",
       },
     });
+  }
+  function handleDeleteProtocol(protocol: SupplementProtocol) {
+    if (!session?.user.id) {
+      Alert.alert(
+        "Unable to delete protocol",
+        "Your user session is missing.",
+      );
+      return;
+    }
+
+    if (protocol.is_active) {
+      Alert.alert(
+        "Deactivate protocol first",
+        "Only inactive protocols can be permanently deleted.",
+      );
+      return;
+    }
+
+    const userId = session.user.id;
+
+    Alert.alert(
+      "Delete supplement permanently?",
+      `${protocol.name} and all of its adherence history will be permanently deleted. This cannot be undone.`,
+      [
+        {
+          style: "cancel",
+          text: "Cancel",
+        },
+        {
+          style: "destructive",
+          text: "Delete permanently",
+          onPress: async () => {
+            const { data, error } = await supabase
+              .from("supplement_protocols")
+              .delete()
+              .eq("id", protocol.id)
+              .eq("user_id", userId)
+              .select("id")
+              .maybeSingle();
+
+            if (error || !data) {
+              Alert.alert(
+                "Unable to delete protocol",
+                error?.message ?? "The protocol was not deleted.",
+              );
+              return;
+            }
+
+            await refreshSupplements();
+          },
+        },
+      ],
+    );
   }
   function handleToggleActive(protocol: SupplementProtocol) {
     if (!session?.user.id) {
@@ -284,6 +349,7 @@ export default function SupplementsScreen() {
         renderItem={({ item }) => (
           <ProtocolCard
             log={latestLogByProtocol.get(item.id)}
+            onDelete={handleDeleteProtocol}
             onEdit={handleEditProtocol}
             onLog={handleLog}
             onToggleActive={handleToggleActive}
@@ -532,6 +598,20 @@ const styles = StyleSheet.create({
   },
   toggleButtonText: {
     color: "#D1D5DB",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  deleteButton: {
+    alignItems: "center",
+    borderColor: "#F87171",
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  deleteButtonText: {
+    color: "#F87171",
     fontSize: 13,
     fontWeight: "700",
   },
