@@ -1,5 +1,5 @@
-import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -48,23 +48,94 @@ const frequencies: SupplementFrequency[] = [
 function formatOption(value: string) {
   return value.replace("_", " ");
 }
-
+function firstParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
 export default function NewSupplementScreen() {
   const router = useRouter();
-  const { session } = useAuth();
+  const {
+    category: categoryParam,
+    doseAmount: doseAmountParam,
+    doseUnit: doseUnitParam,
+    frequency: frequencyParam,
+    name: nameParam,
+    notes: notesParam,
+    protocolId: protocolIdParam,
+    route: routeParam,
+    scheduledTime: scheduledTimeParam,
+  } = useLocalSearchParams<{
+    category?: string;
+    doseAmount?: string;
+    doseUnit?: string;
+    frequency?: string;
+    name?: string;
+    notes?: string;
+    protocolId?: string;
+    route?: string;
+    scheduledTime?: string;
+  }>();
 
-  const [name, setName] = useState("");
-  const [category, setCategory] =
-    useState<SupplementCategory>("other");
-  const [doseAmount, setDoseAmount] = useState("");
-  const [doseUnit, setDoseUnit] = useState("");
-  const [route, setRoute] = useState<SupplementRoute>("oral");
+  const editingProtocolId = firstParam(protocolIdParam);
+  const initialName = firstParam(nameParam);
+  const initialCategory = firstParam(categoryParam) as
+    | SupplementCategory
+    | undefined;
+  const initialDoseAmount = firstParam(doseAmountParam);
+  const initialDoseUnit = firstParam(doseUnitParam);
+  const initialRoute = firstParam(routeParam) as
+    | SupplementRoute
+    | undefined;
+  const initialFrequency = firstParam(frequencyParam) as
+    | SupplementFrequency
+    | undefined;
+  const initialScheduledTime = firstParam(scheduledTimeParam);
+  const initialNotes = firstParam(notesParam);
+  const isEditing = Boolean(editingProtocolId);
+
+  const { session } = useAuth();
+  const [name, setName] = useState(initialName ?? "");
+  const [category, setCategory] = useState<SupplementCategory>(
+    initialCategory ?? "other",
+  );
+  const [doseAmount, setDoseAmount] = useState(
+    initialDoseAmount ?? "",
+  );
+  const [doseUnit, setDoseUnit] = useState(initialDoseUnit ?? "");
+  const [route, setRoute] = useState<SupplementRoute>(
+    initialRoute ?? "oral",
+  );
   const [frequency, setFrequency] =
-    useState<SupplementFrequency>("daily");
-  const [scheduledTime, setScheduledTime] = useState("");
-  const [notes, setNotes] = useState("");
+    useState<SupplementFrequency>(
+      initialFrequency ?? "daily",
+    );
+  const [scheduledTime, setScheduledTime] = useState(
+    initialScheduledTime ?? "",
+  );
+  const [notes, setNotes] = useState(initialNotes ?? "");
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setName(initialName ?? "");
+    setCategory(initialCategory ?? "other");
+    setDoseAmount(initialDoseAmount ?? "");
+    setDoseUnit(initialDoseUnit ?? "");
+    setRoute(initialRoute ?? "oral");
+    setFrequency(initialFrequency ?? "daily");
+    setScheduledTime(initialScheduledTime ?? "");
+    setNotes(initialNotes ?? "");
+    setErrorMessage(null);
+  }, [
+    editingProtocolId,
+    initialCategory,
+    initialDoseAmount,
+    initialDoseUnit,
+    initialFrequency,
+    initialName,
+    initialNotes,
+    initialRoute,
+    initialScheduledTime,
+  ]);
 
   async function handleSave() {
     const trimmedName = name.trim();
@@ -109,6 +180,37 @@ export default function NewSupplementScreen() {
     setIsSaving(true);
     setErrorMessage(null);
 
+    if (isEditing && editingProtocolId) {
+      const { data, error } = await supabase
+        .from("supplement_protocols")
+        .update({
+          category,
+          dose_amount: parsedDose,
+          dose_unit: trimmedUnit,
+          frequency,
+          name: trimmedName,
+          notes: notes.trim() || null,
+          route,
+          scheduled_time: trimmedTime || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", editingProtocolId)
+        .eq("user_id", session.user.id)
+        .select("id")
+        .maybeSingle();
+
+      setIsSaving(false);
+
+      if (error || !data) {
+        setErrorMessage(
+          error?.message ?? "The supplement was not updated.",
+        );
+        return;
+      }
+
+      router.replace("/supplements");
+      return;
+    }
     const { error } = await supabase
       .from("supplement_protocols")
       .insert({
@@ -149,10 +251,14 @@ export default function NewSupplementScreen() {
         </Pressable>
 
         <Text style={styles.eyebrow}>IRONFORGE</Text>
-        <Text style={styles.title}>Add supplement</Text>
-        <Text style={styles.subtitle}>
-          Create a private protocol and schedule.
-        </Text>
+        <Text style={styles.title}>
+  {isEditing ? "Edit supplement" : "Add supplement"}
+</Text>
+<Text style={styles.subtitle}>
+  {isEditing
+    ? "Update the protocol, dose, or schedule."
+    : "Create a private protocol and schedule."}
+</Text>
 
         <Text style={styles.label}>Name</Text>
         <TextInput
@@ -304,7 +410,9 @@ export default function NewSupplementScreen() {
           {isSaving ? (
             <ActivityIndicator color="#0B0B0B" />
           ) : (
-            <Text style={styles.saveText}>Save supplement</Text>
+            <Text style={styles.saveText}>
+  {isEditing ? "Save changes" : "Save supplement"}
+</Text>
           )}
         </Pressable>
       </ScrollView>

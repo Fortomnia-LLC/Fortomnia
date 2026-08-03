@@ -1,4 +1,4 @@
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import {
   ActivityIndicator,
   Alert,
@@ -21,16 +21,20 @@ import { useAuth } from "../providers/AuthProvider";
 
 type ProtocolCardProps = {
   log: SupplementLog | undefined;
+  onEdit: (protocol: SupplementProtocol) => void;
   onLog: (
     protocol: SupplementProtocol,
     status: "taken" | "skipped",
   ) => void;
+  onToggleActive: (protocol: SupplementProtocol) => void;
   protocol: SupplementProtocol;
 };
 
 function ProtocolCard({
   log,
+  onEdit,
   onLog,
+  onToggleActive,
   protocol,
 }: ProtocolCardProps) {
   return (
@@ -43,7 +47,11 @@ function ProtocolCard({
           </Text>
         </View>
 
-        {log ? (
+        {!protocol.is_active ? (
+          <Text style={[styles.status, styles.inactiveStatus]}>
+            INACTIVE
+          </Text>
+        ) : log ? (
           <Text
             style={[
               styles.status,
@@ -72,34 +80,53 @@ function ProtocolCard({
           : ""}
       </Text>
 
-      <View style={styles.actions}>
-        <Pressable
-          disabled={log?.status === "taken"}
-          onPress={() => onLog(protocol, "taken")}
-          style={[
-            styles.takenButton,
-            log?.status === "taken" && styles.disabled,
-          ]}
-        >
-          <Text style={styles.takenButtonText}>Mark taken</Text>
-        </Pressable>
+      {protocol.is_active ? (
+        <View style={styles.actions}>
+          <Pressable
+            disabled={log?.status === "taken"}
+            onPress={() => onLog(protocol, "taken")}
+            style={[
+              styles.takenButton,
+              log?.status === "taken" && styles.disabled,
+            ]}
+          >
+            <Text style={styles.takenButtonText}>Mark taken</Text>
+          </Pressable>
 
-        <Pressable
-          disabled={log?.status === "skipped"}
-          onPress={() => onLog(protocol, "skipped")}
-          style={[
-            styles.skippedButton,
-            log?.status === "skipped" && styles.disabled,
-          ]}
-        >
-          <Text style={styles.skippedButtonText}>Skip</Text>
-        </Pressable>
-      </View>
+          <Pressable
+            disabled={log?.status === "skipped"}
+            onPress={() => onLog(protocol, "skipped")}
+            style={[
+              styles.skippedButton,
+              log?.status === "skipped" && styles.disabled,
+            ]}
+          >
+            <Text style={styles.skippedButtonText}>Skip</Text>
+          </Pressable>
+        </View>
+      ) : null}
+
+      <Pressable
+        onPress={() => onEdit(protocol)}
+        style={styles.editButton}
+      >
+        <Text style={styles.editButtonText}>Edit protocol</Text>
+      </Pressable>
+
+      <Pressable
+        onPress={() => onToggleActive(protocol)}
+        style={styles.toggleButton}
+      >
+        <Text style={styles.toggleButtonText}>
+          {protocol.is_active ? "Deactivate" : "Reactivate"}
+        </Text>
+      </Pressable>
     </View>
   );
 }
 
 export default function SupplementsScreen() {
+  const router = useRouter();
   const today = getLocalDateKey();
   const { session } = useAuth();
   const {
@@ -117,7 +144,72 @@ export default function SupplementsScreen() {
     (protocol) =>
       latestLogByProtocol.get(protocol.id)?.status === "taken",
   ).length;
+  function handleEditProtocol(protocol: SupplementProtocol) {
+    router.push({
+      pathname: "/new-supplement",
+      params: {
+        category: protocol.category,
+        doseAmount: String(protocol.dose_amount),
+        doseUnit: protocol.dose_unit,
+        frequency: protocol.frequency,
+        name: protocol.name,
+        notes: protocol.notes ?? "",
+        protocolId: protocol.id,
+        route: protocol.route,
+        scheduledTime: protocol.scheduled_time?.slice(0, 5) ?? "",
+      },
+    });
+  }
+  function handleToggleActive(protocol: SupplementProtocol) {
+    if (!session?.user.id) {
+      Alert.alert(
+        "Unable to update protocol",
+        "Your user session is missing.",
+      );
+      return;
+    }
 
+    const nextActiveState = !protocol.is_active;
+    const userId = session.user.id;
+
+    Alert.alert(
+      nextActiveState ? "Reactivate protocol?" : "Deactivate protocol?",
+      nextActiveState
+        ? `${protocol.name} will return to your daily tracking list.`
+        : `${protocol.name} will be hidden from daily adherence actions. Its history will be preserved.`,
+      [
+        {
+          style: "cancel",
+          text: "Cancel",
+        },
+        {
+          text: nextActiveState ? "Reactivate" : "Deactivate",
+          onPress: async () => {
+            const { data, error } = await supabase
+              .from("supplement_protocols")
+              .update({
+                is_active: nextActiveState,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", protocol.id)
+              .eq("user_id", userId)
+              .select("id")
+              .maybeSingle();
+
+            if (error || !data) {
+              Alert.alert(
+                "Unable to update protocol",
+                error?.message ?? "The protocol was not updated.",
+              );
+              return;
+            }
+
+            await refreshSupplements();
+          },
+        },
+      ],
+    );
+  }
   async function handleLog(
     protocol: SupplementProtocol,
     status: "taken" | "skipped",
@@ -185,14 +277,16 @@ export default function SupplementsScreen() {
     <SafeAreaView style={styles.screen}>
       <FlatList
         contentContainerStyle={styles.listContent}
-        data={activeProtocols}
+        data={protocols}
         keyExtractor={(protocol) => protocol.id}
         onRefresh={() => void refreshSupplements()}
         refreshing={isLoading}
         renderItem={({ item }) => (
           <ProtocolCard
             log={latestLogByProtocol.get(item.id)}
+            onEdit={handleEditProtocol}
             onLog={handleLog}
+            onToggleActive={handleToggleActive}
             protocol={item}
           />
         )}
@@ -369,6 +463,9 @@ const styles = StyleSheet.create({
   pendingStatus: {
     color: "#9CA3AF",
   },
+  inactiveStatus: {
+    color: "#6B7280",
+  },
   dose: {
     color: "#D1D5DB",
     fontSize: 15,
@@ -407,6 +504,34 @@ const styles = StyleSheet.create({
   },
   skippedButtonText: {
     color: "#F87171",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  editButton: {
+    alignItems: "center",
+    borderColor: "#F97316",
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  editButtonText: {
+    color: "#F97316",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  toggleButton: {
+    alignItems: "center",
+    borderColor: "#6B7280",
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  toggleButtonText: {
+    color: "#D1D5DB",
     fontSize: 13,
     fontWeight: "700",
   },
