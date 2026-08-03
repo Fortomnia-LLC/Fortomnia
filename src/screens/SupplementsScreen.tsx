@@ -18,7 +18,7 @@ import {
 } from "../hooks/useSupplements";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
-
+import { useState } from "react";
 type ProtocolCardProps = {
   log: SupplementLog | undefined;
   onDelete: (protocol: SupplementProtocol) => void;
@@ -136,18 +136,25 @@ function ProtocolCard({
     </View>
   );
 }
+function shiftDate(dateKey: string, days: number) {
+  const date = new Date(`${dateKey}T12:00:00`);
+  date.setDate(date.getDate() + days);
 
+  return getLocalDateKey(date);
+}
 export default function SupplementsScreen() {
   const router = useRouter();
   const today = getLocalDateKey();
-  const { session } = useAuth();
+const [selectedDate, setSelectedDate] = useState(today);
+const isToday = selectedDate === today;
+const { session } = useAuth();
   const {
     errorMessage,
     isLoading,
     latestLogByProtocol,
     protocols,
     refreshSupplements,
-  } = useSupplements(today);
+  } = useSupplements(selectedDate);
 
   const activeProtocols = protocols.filter(
     (protocol) => protocol.is_active,
@@ -316,7 +323,7 @@ export default function SupplementsScreen() {
         .from("supplement_logs")
         .insert({
           ...values,
-          log_date: today,
+          log_date:selectedDate,
           protocol_id: protocol.id,
           user_id: session.user.id,
         });
@@ -363,13 +370,57 @@ export default function SupplementsScreen() {
             <Text style={styles.subtitle}>
               Private protocols and daily adherence.
             </Text>
+<Text style={styles.date}>
+  {new Date(`${selectedDate}T12:00:00`).toLocaleDateString(
+    undefined,
+    {
+      dateStyle: "full",
+    },
+  )}
+</Text>
 
+<View style={styles.dateNavigation}>
+  <Pressable
+    onPress={() =>
+      setSelectedDate((current) => shiftDate(current, -1))
+    }
+    style={styles.dateButton}
+  >
+    <Text style={styles.dateButtonText}>‹ Previous</Text>
+  </Pressable>
+
+  <Pressable
+    disabled={isToday}
+    onPress={() => setSelectedDate(today)}
+    style={[
+      styles.todayButton,
+      isToday && styles.dateButtonDisabled,
+    ]}
+  >
+    <Text style={styles.todayButtonText}>Today</Text>
+  </Pressable>
+
+  <Pressable
+    disabled={isToday}
+    onPress={() =>
+      setSelectedDate((current) => shiftDate(current, 1))
+    }
+    style={[
+      styles.dateButton,
+      isToday && styles.dateButtonDisabled,
+    ]}
+  >
+    <Text style={styles.dateButtonText}>Next ›</Text>
+  </Pressable>
+</View>
             <View style={styles.summary}>
               <Text style={styles.summaryNumber}>
                 {takenCount}/{activeProtocols.length}
               </Text>
               <Text style={styles.summaryLabel}>
-                active protocols taken today
+                {isToday
+  ? "active protocols taken today"
+  : "active protocols taken this day"}
               </Text>
             </View>
 
@@ -386,7 +437,7 @@ export default function SupplementsScreen() {
             ) : null}
 
             <Text style={styles.sectionTitle}>
-              Today&apos;s protocols
+              {isToday ? "Today's protocols" : "Daily protocols"}
             </Text>
           </View>
         }
@@ -441,6 +492,46 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginBottom: 22,
     marginTop: 6,
+  },
+  date: {
+    color: "#D1D5DB",
+    fontSize: 15,
+    marginBottom: 14,
+  },
+  dateNavigation: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 20,
+  },
+  dateButton: {
+    alignItems: "center",
+    borderColor: "#374151",
+    borderRadius: 9,
+    borderWidth: 1,
+    flex: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 10,
+  },
+  dateButtonText: {
+    color: "#D1D5DB",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  todayButton: {
+    alignItems: "center",
+    backgroundColor: "#F97316",
+    borderRadius: 9,
+    flex: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 10,
+  },
+  todayButtonText: {
+    color: "#0B0B0B",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  dateButtonDisabled: {
+    opacity: 0.35,
   },
   summary: {
     alignItems: "baseline",
