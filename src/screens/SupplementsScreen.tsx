@@ -17,6 +17,10 @@ import {
   useSupplements,
 } from "../hooks/useSupplements";
 import { supabase } from "../lib/supabase";
+import {
+  isProtocolAvailable,
+  isProtocolDue,
+} from "../lib/supplementSchedule";
 import { useAuth } from "../providers/AuthProvider";
 import { useState } from "react";
 type ProtocolCardProps = {
@@ -150,49 +154,7 @@ function shiftDate(dateKey: string, days: number) {
   const date = new Date(`${dateKey}T12:00:00`);
   date.setDate(date.getDate() + days);
 
-  return getLocalDateKey(date);
-}
-
-function isWithinProtocolDates(
-  protocol: SupplementProtocol,
-  dateKey: string,
-) {
-  if (dateKey < protocol.start_date) {
-    return false;
-  }
-
-  if (protocol.end_date && dateKey > protocol.end_date) {
-    return false;
-  }
-
-  return true;
-}
-
-function isProtocolDue(
-  protocol: SupplementProtocol,
-  dateKey: string,
-) {
-  if (!isWithinProtocolDates(protocol, dateKey)) {
-    return false;
-  }
-
-  if (protocol.frequency === "daily") {
-    return true;
-  }
-
-  if (protocol.frequency === "as_needed") {
-    return false;
-  }
-
-  const selectedTime = new Date(`${dateKey}T00:00:00Z`).getTime();
-  const startTime = new Date(
-    `${protocol.start_date}T00:00:00Z`,
-  ).getTime();
-  const elapsedDays = Math.round(
-    (selectedTime - startTime) / 86_400_000,
-  );
-
-  return elapsedDays >= 0 && elapsedDays % 7 === 0;
+return getLocalDateKey(date);
 }
 export default function SupplementsScreen() {
   const router = useRouter();
@@ -412,11 +374,7 @@ const takenCount = scheduledProtocols.filter(
         refreshing={isLoading}
         renderItem={({ item }) => (
           <ProtocolCard
-            isAvailable={
-            isWithinProtocolDates(item, selectedDate) &&
-            (item.frequency === "as_needed" ||
-            isProtocolDue(item, selectedDate))
-        }
+            isAvailable={isProtocolAvailable(item, selectedDate)}
             log={latestLogByProtocol.get(item.id)}
             onDelete={handleDeleteProtocol}
             onEdit={handleEditProtocol}
