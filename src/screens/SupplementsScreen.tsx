@@ -23,6 +23,7 @@ type ProtocolCardProps = {
   log: SupplementLog | undefined;
   onDelete: (protocol: SupplementProtocol) => void;
   onEdit: (protocol: SupplementProtocol) => void;
+  isAvailable: boolean;
   onLog: (
     protocol: SupplementProtocol,
     status: "taken" | "skipped",
@@ -32,6 +33,7 @@ type ProtocolCardProps = {
 };
 
 function ProtocolCard({
+  isAvailable,
   log,
   onDelete,
   onEdit,
@@ -49,7 +51,7 @@ function ProtocolCard({
           </Text>
         </View>
 
-        {!protocol.is_active ? (
+                {!protocol.is_active ? (
           <Text style={[styles.status, styles.inactiveStatus]}>
             INACTIVE
           </Text>
@@ -63,6 +65,14 @@ function ProtocolCard({
             ]}
           >
             {log.status.toUpperCase()}
+          </Text>
+        ) : !isAvailable ? (
+          <Text style={[styles.status, styles.notDueStatus]}>
+            NOT DUE
+          </Text>
+        ) : protocol.frequency === "as_needed" ? (
+          <Text style={[styles.status, styles.availableStatus]}>
+            AVAILABLE
           </Text>
         ) : (
           <Text style={[styles.status, styles.pendingStatus]}>
@@ -82,7 +92,7 @@ function ProtocolCard({
           : ""}
       </Text>
 
-      {protocol.is_active ? (
+     {protocol.is_active && isAvailable ? (
         <View style={styles.actions}>
           <Pressable
             disabled={log?.status === "taken"}
@@ -142,6 +152,48 @@ function shiftDate(dateKey: string, days: number) {
 
   return getLocalDateKey(date);
 }
+
+function isWithinProtocolDates(
+  protocol: SupplementProtocol,
+  dateKey: string,
+) {
+  if (dateKey < protocol.start_date) {
+    return false;
+  }
+
+  if (protocol.end_date && dateKey > protocol.end_date) {
+    return false;
+  }
+
+  return true;
+}
+
+function isProtocolDue(
+  protocol: SupplementProtocol,
+  dateKey: string,
+) {
+  if (!isWithinProtocolDates(protocol, dateKey)) {
+    return false;
+  }
+
+  if (protocol.frequency === "daily") {
+    return true;
+  }
+
+  if (protocol.frequency === "as_needed") {
+    return false;
+  }
+
+  const selectedTime = new Date(`${dateKey}T00:00:00Z`).getTime();
+  const startTime = new Date(
+    `${protocol.start_date}T00:00:00Z`,
+  ).getTime();
+  const elapsedDays = Math.round(
+    (selectedTime - startTime) / 86_400_000,
+  );
+
+  return elapsedDays >= 0 && elapsedDays % 7 === 0;
+}
 export default function SupplementsScreen() {
   const router = useRouter();
   const today = getLocalDateKey();
@@ -159,10 +211,13 @@ const { session } = useAuth();
   const activeProtocols = protocols.filter(
     (protocol) => protocol.is_active,
   );
-  const takenCount = activeProtocols.filter(
-    (protocol) =>
-      latestLogByProtocol.get(protocol.id)?.status === "taken",
-  ).length;
+ const scheduledProtocols = activeProtocols.filter((protocol) =>
+  isProtocolDue(protocol, selectedDate),
+);
+const takenCount = scheduledProtocols.filter(
+  (protocol) =>
+    latestLogByProtocol.get(protocol.id)?.status === "taken",
+).length;
   function handleEditProtocol(protocol: SupplementProtocol) {
     router.push({
       pathname: "/new-supplement",
@@ -355,6 +410,11 @@ const { session } = useAuth();
         refreshing={isLoading}
         renderItem={({ item }) => (
           <ProtocolCard
+            isAvailable={
+            isWithinProtocolDates(item, selectedDate) &&
+            (item.frequency === "as_needed" ||
+            isProtocolDue(item, selectedDate))
+        }
             log={latestLogByProtocol.get(item.id)}
             onDelete={handleDeleteProtocol}
             onEdit={handleEditProtocol}
@@ -415,12 +475,12 @@ const { session } = useAuth();
 </View>
             <View style={styles.summary}>
               <Text style={styles.summaryNumber}>
-                {takenCount}/{activeProtocols.length}
+                {takenCount}/{scheduledProtocols.length}
               </Text>
               <Text style={styles.summaryLabel}>
                 {isToday
-  ? "active protocols taken today"
-  : "active protocols taken this day"}
+  ? "scheduled protocols taken today"
+  : "scheduled protocols taken this day"}
               </Text>
             </View>
 
@@ -619,6 +679,12 @@ const styles = StyleSheet.create({
   },
   pendingStatus: {
     color: "#9CA3AF",
+  },
+   availableStatus: {
+    color: "#60A5FA",
+  },
+  notDueStatus: {
+    color: "#6B7280",
   },
   inactiveStatus: {
     color: "#6B7280",
