@@ -10,7 +10,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-
+import { getLocalDateKey } from "../hooks/useDailyNutrition";
 import {
   type SupplementCategory,
   type SupplementFrequency,
@@ -51,6 +51,18 @@ function formatOption(value: string) {
 function firstParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
+function isValidDateKey(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+
+  const date = new Date(`${value}T00:00:00Z`);
+
+  return (
+    !Number.isNaN(date.getTime()) &&
+    date.toISOString().slice(0, 10) === value
+  );
+}
 export default function NewSupplementScreen() {
   const router = useRouter();
   const {
@@ -63,6 +75,8 @@ export default function NewSupplementScreen() {
     protocolId: protocolIdParam,
     route: routeParam,
     scheduledTime: scheduledTimeParam,
+    endDate: endDateParam,
+startDate: startDateParam,
   } = useLocalSearchParams<{
     category?: string;
     doseAmount?: string;
@@ -73,6 +87,8 @@ export default function NewSupplementScreen() {
     protocolId?: string;
     route?: string;
     scheduledTime?: string;
+    endDate?: string;
+    startDate?: string;
   }>();
 
   const editingProtocolId = firstParam(protocolIdParam);
@@ -88,10 +104,11 @@ export default function NewSupplementScreen() {
   const initialFrequency = firstParam(frequencyParam) as
     | SupplementFrequency
     | undefined;
-  const initialScheduledTime = firstParam(scheduledTimeParam);
+    const initialScheduledTime = firstParam(scheduledTimeParam);
+  const initialStartDate = firstParam(startDateParam);
+  const initialEndDate = firstParam(endDateParam);
   const initialNotes = firstParam(notesParam);
   const isEditing = Boolean(editingProtocolId);
-
   const { session } = useAuth();
   const [name, setName] = useState(initialName ?? "");
   const [category, setCategory] = useState<SupplementCategory>(
@@ -111,6 +128,10 @@ export default function NewSupplementScreen() {
   const [scheduledTime, setScheduledTime] = useState(
     initialScheduledTime ?? "",
   );
+    const [startDate, setStartDate] = useState(
+    initialStartDate ?? getLocalDateKey(),
+  );
+  const [endDate, setEndDate] = useState(initialEndDate ?? "");
   const [notes, setNotes] = useState(initialNotes ?? "");
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -122,6 +143,8 @@ export default function NewSupplementScreen() {
     setDoseUnit(initialDoseUnit ?? "");
     setRoute(initialRoute ?? "oral");
     setFrequency(initialFrequency ?? "daily");
+    setStartDate(initialStartDate ?? getLocalDateKey());
+    setEndDate(initialEndDate ?? "");
     setScheduledTime(initialScheduledTime ?? "");
     setNotes(initialNotes ?? "");
     setErrorMessage(null);
@@ -134,11 +157,15 @@ export default function NewSupplementScreen() {
     initialName,
     initialNotes,
     initialRoute,
+    initialEndDate,
+    initialStartDate,
     initialScheduledTime,
   ]);
 
   async function handleSave() {
     const trimmedName = name.trim();
+    const trimmedStartDate = startDate.trim();
+    const trimmedEndDate = endDate.trim();
     const trimmedUnit = doseUnit.trim();
     const trimmedTime = scheduledTime.trim();
     const parsedDose = Number(doseAmount);
@@ -176,6 +203,20 @@ export default function NewSupplementScreen() {
       setErrorMessage("Scheduled time must use 24-hour HH:MM format.");
       return;
     }
+      if (!isValidDateKey(trimmedStartDate)) {
+  setErrorMessage("Start date must use YYYY-MM-DD format.");
+  return;
+}
+
+if (trimmedEndDate && !isValidDateKey(trimmedEndDate)) {
+  setErrorMessage("End date must use YYYY-MM-DD format.");
+  return;
+}
+
+if (trimmedEndDate && trimmedEndDate < trimmedStartDate) {
+  setErrorMessage("End date cannot be before the start date.");
+  return;
+}
 
     setIsSaving(true);
     setErrorMessage(null);
@@ -191,6 +232,8 @@ export default function NewSupplementScreen() {
           name: trimmedName,
           notes: notes.trim() || null,
           route,
+          end_date: trimmedEndDate || null,
+          start_date: trimmedStartDate,
           scheduled_time: trimmedTime || null,
           updated_at: new Date().toISOString(),
         })
@@ -222,6 +265,8 @@ export default function NewSupplementScreen() {
         notes: notes.trim() || null,
         route,
         scheduled_time: trimmedTime || null,
+        end_date: trimmedEndDate || null,
+        start_date: trimmedStartDate,
         user_id: session.user.id,
       });
 
@@ -376,7 +421,30 @@ export default function NewSupplementScreen() {
             );
           })}
         </View>
+          <Text style={styles.label}>
 
+           Start date {frequency === "weekly" ? "(weekly anchor)" : ""}
+          </Text>
+          <TextInput
+            autoCapitalize="none"
+            keyboardType="numbers-and-punctuation"
+            onChangeText={setStartDate}
+            placeholder="YYYY-MM-DD"
+            placeholderTextColor="#727885"
+            style={styles.input}
+            value={startDate}
+          />
+
+          <Text style={styles.label}>End date (optional)</Text>
+          <TextInput
+            autoCapitalize="none"
+            keyboardType="numbers-and-punctuation"
+            onChangeText={setEndDate}
+            placeholder="YYYY-MM-DD"
+            placeholderTextColor="#727885"
+            style={styles.input}
+            value={endDate}
+          />
         <Text style={styles.label}>Scheduled time (optional)</Text>
         <TextInput
           keyboardType="numbers-and-punctuation"

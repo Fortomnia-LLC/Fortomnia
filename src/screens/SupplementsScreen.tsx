@@ -225,12 +225,14 @@ const takenCount = scheduledProtocols.filter(
         category: protocol.category,
         doseAmount: String(protocol.dose_amount),
         doseUnit: protocol.dose_unit,
+        endDate: protocol.end_date ?? "",
         frequency: protocol.frequency,
         name: protocol.name,
         notes: protocol.notes ?? "",
         protocolId: protocol.id,
         route: protocol.route,
         scheduledTime: protocol.scheduled_time?.slice(0, 5) ?? "",
+        startDate: protocol.start_date,
       },
     });
   }
