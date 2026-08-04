@@ -5,6 +5,15 @@ import type { SupplementProtocol } from "./useSupplements";
 import { isProtocolDue } from "../lib/supplementSchedule";
 import { supabase } from "../lib/supabase";
 
+export type WeeklyAnalyticsDay = {
+  calories: number;
+  date: string;
+  label: string;
+  nutritionLogged: boolean;
+  setsLogged: number;
+  supplementAdherencePercent: number | null;
+  workoutCompleted: boolean;
+};
 export type WeeklyAnalytics = {
   averageCalories: number;
   averageProteinG: number;
@@ -13,7 +22,16 @@ export type WeeklyAnalytics = {
   supplementsDue: number;
   supplementsTaken: number;
   setsLogged: number;
+  days: WeeklyAnalyticsDay[];
   workoutsCompleted: number;
+};
+
+type WorkoutRow = {
+  completed_at: string;
+};
+
+type WorkoutSetRow = {
+  performed_at: string;
 };
 
 type NutritionRow = {
@@ -41,12 +59,22 @@ const emptyAnalytics: WeeklyAnalytics = {
   supplementsTaken: 0,
   setsLogged: 0,
   workoutsCompleted: 0,
+  days: [],
 };
 
 function shiftDate(dateKey: string, days: number) {
   const date = new Date(`${dateKey}T12:00:00`);
   date.setDate(date.getDate() + days);
 
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function getTimestampDateKey(value: string) {
+  const date = new Date(value);
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
@@ -89,14 +117,14 @@ export function useWeeklyAnalytics(today: string) {
     ] = await Promise.all([
       supabase
         .from("workout_sessions")
-        .select("id")
+        .select("id, completed_at")
         .not("completed_at", "is", null)
         .gte("completed_at", startIso)
         .lte("completed_at", endIso),
 
       supabase
         .from("workout_sets")
-        .select("id")
+        .select("id, performed_at")
         .gte("performed_at", startIso)
         .lte("performed_at", endIso),
 
@@ -187,7 +215,22 @@ export function useWeeklyAnalytics(today: string) {
         .filter((log) => log.status === "taken")
         .map((log) => `${log.protocol_id}:${log.log_date}`),
     );
+const completedWorkoutDates = new Set(
+  ((workoutsResult.data ?? []) as WorkoutRow[]).map((workout) =>
+    getTimestampDateKey(workout.completed_at),
+  ),
+);
 
+const setsByDate = new Map<string, number>();
+
+for (const set of (setsResult.data ?? []) as WorkoutSetRow[]) {
+  const dateKey = getTimestampDateKey(set.performed_at);
+
+  setsByDate.set(dateKey, (setsByDate.get(dateKey) ?? 0) + 1);
+}
+
+const supplementsDueByDate = new Map<string, number>();
+const supplementsTakenByDate = new Map<string, number>();
     let supplementsDue = 0;
     let supplementsTaken = 0;
 
@@ -221,6 +264,7 @@ export function useWeeklyAnalytics(today: string) {
               nutritionTotals.proteinG / nutritionDaysLogged,
             )
           : 0,
+      days: [],
       nutritionDaysLogged,
       supplementAdherencePercent:
         supplementsDue > 0
