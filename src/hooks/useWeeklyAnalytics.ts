@@ -244,13 +244,39 @@ const supplementsTakenByDate = new Map<string, number>();
         }
 
         supplementsDue += 1;
-
+        supplementsDueByDate.set(
+  dateKey,
+  (supplementsDueByDate.get(dateKey) ?? 0) + 1,
+);
         if (takenLogKeys.has(`${protocol.id}:${dateKey}`)) {
-          supplementsTaken += 1;
-        }
+  supplementsTaken += 1;
+  supplementsTakenByDate.set(
+    dateKey,
+    (supplementsTakenByDate.get(dateKey) ?? 0) + 1,
+  );
+}
       }
     }
+const days = getDateKeys(startDate).map((dateKey) => {
+  const nutritionDay = nutritionByDate.get(dateKey);
+  const due = supplementsDueByDate.get(dateKey) ?? 0;
+  const taken = supplementsTakenByDate.get(dateKey) ?? 0;
 
+  return {
+    calories: nutritionDay?.calories ?? 0,
+    date: dateKey,
+    label: new Date(
+      `${dateKey}T12:00:00`,
+    ).toLocaleDateString(undefined, {
+      weekday: "short",
+    }),
+    nutritionLogged: Boolean(nutritionDay),
+    setsLogged: setsByDate.get(dateKey) ?? 0,
+    supplementAdherencePercent:
+      due > 0 ? Math.round((taken / due) * 100) : null,
+    workoutCompleted: completedWorkoutDates.has(dateKey),
+  };
+});
     setAnalytics({
       averageCalories:
         nutritionDaysLogged > 0
@@ -264,7 +290,7 @@ const supplementsTakenByDate = new Map<string, number>();
               nutritionTotals.proteinG / nutritionDaysLogged,
             )
           : 0,
-      days: [],
+      days,
       nutritionDaysLogged,
       supplementAdherencePercent:
         supplementsDue > 0

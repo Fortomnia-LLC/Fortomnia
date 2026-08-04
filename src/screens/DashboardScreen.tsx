@@ -311,7 +311,54 @@ export default function DashboardScreen() {
               </Text>
             </View>
           </View>
+          <View style={styles.activityStrip}>
+            {analytics.days.map((day) => (
+              <View key={day.date} style={styles.activityDay}>
+                <Text style={styles.activityDayLabel}>
+                  {day.label.slice(0, 1)}
+                </Text>
 
+                <Text
+                  style={[
+                    styles.activitySignal,
+                    day.workoutCompleted
+                      ? styles.trainingSignal
+                      : styles.inactiveSignal,
+                  ]}
+                >
+                  W
+                </Text>
+
+                <Text
+                  style={[
+                    styles.activitySignal,
+                    day.nutritionLogged
+                      ? styles.nutritionSignal
+                      : styles.inactiveSignal,
+                  ]}
+                >
+                  N
+                </Text>
+
+                <Text
+                  style={[
+                    styles.activitySignal,
+                    day.supplementAdherencePercent === null
+                      ? styles.inactiveSignal
+                      : day.supplementAdherencePercent === 100
+                        ? styles.supplementSignal
+                        : styles.partialSignal,
+                  ]}
+                >
+                  S
+                </Text>
+              </View>
+            ))}
+          </View>
+
+          <Text style={styles.activityLegend}>
+            W workout • N nutrition • S scheduled supplements
+          </Text>
           <Text style={styles.analyticsDetails}>
             Logged-day averages: {analytics.averageCalories} calories •{" "}
             {analytics.averageProteinG}g protein
@@ -478,6 +525,58 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 17,
     marginTop: 5,
+  },
+  activityStrip: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 18,
+  },
+  activityDay: {
+    alignItems: "center",
+    flex: 1,
+    gap: 5,
+  },
+  activityDayLabel: {
+    color: "#9CA3AF",
+    fontSize: 11,
+    fontWeight: "700",
+    marginBottom: 2,
+  },
+  activitySignal: {
+    borderRadius: 6,
+    fontSize: 11,
+    fontWeight: "800",
+    height: 24,
+    lineHeight: 24,
+    overflow: "hidden",
+    textAlign: "center",
+    width: 24,
+  },
+  trainingSignal: {
+    backgroundColor: "#F97316",
+    color: "#0B0B0B",
+  },
+  nutritionSignal: {
+    backgroundColor: "#60A5FA",
+    color: "#0B0B0B",
+  },
+  supplementSignal: {
+    backgroundColor: "#34D399",
+    color: "#0B0B0B",
+  },
+  partialSignal: {
+    backgroundColor: "#FBBF24",
+    color: "#0B0B0B",
+  },
+  inactiveSignal: {
+    backgroundColor: "#292929",
+    color: "#6B7280",
+  },
+  activityLegend: {
+    color: "#6B7280",
+    fontSize: 11,
+    marginTop: 12,
+    textAlign: "center",
   },
   analyticsDetails: {
     borderTopColor: "#333333",
