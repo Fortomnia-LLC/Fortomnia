@@ -9,7 +9,7 @@ import {
   Text,
   View,
 } from "react-native";
-
+import { useWeeklyAnalytics } from "../hooks/useWeeklyAnalytics";
 import {
   getLocalDateKey,
   useDailyNutrition,
@@ -54,6 +54,12 @@ export default function DashboardScreen() {
     workoutSessions,
   } = useWorkoutSessions();
 
+  const {
+    analytics,
+    errorMessage: analyticsError,
+    isLoading: analyticsLoading,
+    refreshAnalytics,
+  } = useWeeklyAnalytics(today);
   const displayName =
     profile?.display_name?.trim() ||
     session?.user.email?.split("@")[0] ||
@@ -87,12 +93,15 @@ export default function DashboardScreen() {
     profileLoading ||
     nutritionLoading ||
     supplementsLoading ||
+    analyticsLoading ||
     workoutsLoading;
+
 
   const errors = [
     profileError,
     nutritionError,
     supplementError,
+    analyticsError,
     workoutError,
   ].filter((error): error is string => Boolean(error));
 
@@ -117,6 +126,7 @@ export default function DashboardScreen() {
                 refreshProfile(),
                 refreshNutrition(),
                 refreshSupplements(),
+                refreshAnalytics(),
                 refreshWorkoutSessions(),
               ]);
             }}
@@ -261,6 +271,53 @@ export default function DashboardScreen() {
           )}
         </View>
 
+        <Text style={styles.sectionTitle}>Last 7 days</Text>
+
+        <View style={styles.card}>
+          <View style={styles.analyticsGrid}>
+            <View style={styles.metric}>
+              <Text style={styles.metricValue}>
+                {analytics.workoutsCompleted}
+              </Text>
+              <Text style={styles.metricLabel}>
+                workouts completed
+              </Text>
+            </View>
+
+            <View style={styles.metric}>
+              <Text style={styles.metricValue}>
+                {analytics.setsLogged}
+              </Text>
+              <Text style={styles.metricLabel}>sets logged</Text>
+            </View>
+
+            <View style={styles.metric}>
+              <Text style={styles.metricValue}>
+                {analytics.nutritionDaysLogged}/7
+              </Text>
+              <Text style={styles.metricLabel}>
+                nutrition days
+              </Text>
+            </View>
+
+            <View style={styles.metric}>
+              <Text style={styles.metricValue}>
+                {analytics.supplementAdherencePercent === null
+                  ? "—"
+                  : `${analytics.supplementAdherencePercent}%`}
+              </Text>
+              <Text style={styles.metricLabel}>
+                supplement adherence
+              </Text>
+            </View>
+          </View>
+
+          <Text style={styles.analyticsDetails}>
+            Logged-day averages: {analytics.averageCalories} calories •{" "}
+            {analytics.averageProteinG}g protein
+          </Text>
+        </View>
+
         <Text style={styles.sectionTitle}>Quick actions</Text>
 
         <View style={styles.quickActions}>
@@ -396,6 +453,40 @@ const styles = StyleSheet.create({
     color: "#0B0B0B",
     fontSize: 14,
     fontWeight: "800",
+  },
+  analyticsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  metric: {
+    backgroundColor: "#21170D",
+    borderColor: "#4A2D12",
+    borderRadius: 12,
+    borderWidth: 1,
+    flexBasis: "47%",
+    flexGrow: 1,
+    padding: 14,
+  },
+  metricValue: {
+    color: "#F97316",
+    fontSize: 24,
+    fontWeight: "800",
+  },
+  metricLabel: {
+    color: "#D1D5DB",
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: 5,
+  },
+  analyticsDetails: {
+    borderTopColor: "#333333",
+    borderTopWidth: 1,
+    color: "#9CA3AF",
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 14,
+    paddingTop: 14,
   },
   quickActions: {
     flexDirection: "row",
