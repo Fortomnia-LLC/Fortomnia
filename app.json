@@ -1,31 +1,27 @@
 {
   "expo": {
     "name": "IronForge",
-    "slug": "IronForge",
+    "slug": "ironforge",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "scheme": "ironforge",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff",
-      "scheme": "ironforge",
-      "experiments": {
-        "typedRoutes": true
-      },
-      "plugins": [
-        "expo-router"
-      ]
+      "backgroundColor": "#0B0B0B"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.grc0830source.ironforge"
     },
     "android": {
+      "package": "com.grc0830source.ironforge",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#0B0B0B"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
@@ -36,6 +32,9 @@
     "plugins": [
       "expo-router",
       "expo-secure-store"
-    ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
   }
 }

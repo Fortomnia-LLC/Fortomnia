@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  Alert,
   ActivityIndicator,
   Pressable,
   SafeAreaView,
@@ -27,6 +28,7 @@ export default function ProfileScreen() {
   const [displayName, setDisplayName] = useState("");
   const [weightUnit, setWeightUnit] = useState<WeightUnit>("lb");
   const [isSaving, setIsSaving] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -70,7 +72,38 @@ export default function ProfileScreen() {
 
     setIsSaving(false);
   }
+function handleSignOut() {
+  Alert.alert(
+    "Sign out?",
+    "You will need to sign in again to access your private data.",
+    [
+      {
+        style: "cancel",
+        text: "Cancel",
+      },
+      {
+        style: "destructive",
+        text: "Sign out",
+        onPress: async () => {
+          setIsSigningOut(true);
 
+          try {
+            await signOut();
+          } catch (error) {
+            Alert.alert(
+              "Unable to sign out",
+              error instanceof Error
+                ? error.message
+                : "An unexpected error occurred.",
+            );
+          } finally {
+            setIsSigningOut(false);
+          }
+        },
+      },
+    ],
+  );
+}
   if (isLoading) {
     return (
       <SafeAreaView style={styles.loadingScreen}>
@@ -146,17 +179,24 @@ export default function ProfileScreen() {
           )}
         </Pressable>
 
-        <Pressable
-          onPress={() => void signOut()}
-          style={styles.signOutButton}
+ <Pressable
+          disabled={isSaving || isSigningOut}
+          onPress={handleSignOut}
+          style={[
+            styles.signOutButton,
+            (isSaving || isSigningOut) && styles.disabled,
+          ]}
         >
-          <Text style={styles.signOutText}>Sign out</Text>
+          {isSigningOut ? (
+            <ActivityIndicator color="#F97316" />
+          ) : (
+            <Text style={styles.signOutText}>Sign out</Text>
+          )}
         </Pressable>
       </View>
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   loadingScreen: {
     alignItems: "center",
