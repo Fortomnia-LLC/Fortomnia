@@ -1,3 +1,4 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { Tabs } from "expo-router";
 
 export default function TabLayout() {
@@ -5,6 +6,9 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        sceneStyle: {
+          backgroundColor: "#0B0B0B",
+        },
         tabBarActiveTintColor: "#F97316",
         tabBarHideOnKeyboard: true,
         tabBarInactiveTintColor: "#6B7280",
@@ -24,6 +28,13 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
+          tabBarIcon: ({ color, focused, size }) => (
+            <Ionicons
+              color={color}
+              name={focused ? "home" : "home-outline"}
+              size={size}
+            />
+          ),
           title: "Home",
         }}
       />
@@ -31,6 +42,13 @@ export default function TabLayout() {
       <Tabs.Screen
         name="training"
         options={{
+          tabBarIcon: ({ color, focused, size }) => (
+            <Ionicons
+              color={color}
+              name={focused ? "barbell" : "barbell-outline"}
+              size={size}
+            />
+          ),
           title: "Training",
         }}
       />
@@ -38,6 +56,13 @@ export default function TabLayout() {
       <Tabs.Screen
         name="nutrition"
         options={{
+          tabBarIcon: ({ color, focused, size }) => (
+            <Ionicons
+              color={color}
+              name={focused ? "restaurant" : "restaurant-outline"}
+              size={size}
+            />
+          ),
           title: "Nutrition",
         }}
       />
@@ -45,64 +70,42 @@ export default function TabLayout() {
       <Tabs.Screen
         name="supplements"
         options={{
+          tabBarIcon: ({ color, focused, size }) => (
+            <Ionicons
+              color={color}
+              name={focused ? "medical" : "medical-outline"}
+              size={size}
+            />
+          ),
           title: "Supps",
         }}
       />
 
       <Tabs.Screen
-        name="new-workout"
-        options={{
-          href: null,
-        }}
-      />
-        <Tabs.Screen
-          name="new-template"
-          options={{
-            href: null,
-          }}
-        />
-        <Tabs.Screen
-          name="new-nutrition-entry"
-          options={{
-            href: null,
-          }}
-        />
-        <Tabs.Screen
-          name="nutrition-goals"
-          options={{
-            href: null,
-          }}
-        />
-      <Tabs.Screen
-        name="workout"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="exercise"
-        options={{
-          href: null,
-        }}
-      />
-        <Tabs.Screen
-          name="template"
-          options={{
-            href: null,
-          }}
-        />
-      <Tabs.Screen
         name="profile"
         options={{
+          tabBarIcon: ({ color, focused, size }) => (
+            <Ionicons
+              color={color}
+              name={focused ? "person" : "person-outline"}
+              size={size}
+            />
+          ),
           title: "Profile",
         }}
       />
-            <Tabs.Screen
-          name="new-supplement"
-          options={{
-            href: null,
-          }}
-        />
-      </Tabs>
+
+      <Tabs.Screen name="new-workout" options={{ href: null }} />
+      <Tabs.Screen name="new-template" options={{ href: null }} />
+      <Tabs.Screen
+        name="new-nutrition-entry"
+        options={{ href: null }}
+      />
+      <Tabs.Screen name="nutrition-goals" options={{ href: null }} />
+      <Tabs.Screen name="workout" options={{ href: null }} />
+      <Tabs.Screen name="exercise" options={{ href: null }} />
+      <Tabs.Screen name="template" options={{ href: null }} />
+      <Tabs.Screen name="new-supplement" options={{ href: null }} />
+    </Tabs>
   );
 }
