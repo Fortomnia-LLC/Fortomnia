@@ -10,7 +10,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-
+import { ExercisePicker } from "../components/ExercisePicker";
 import { useExercises } from "../hooks/useExercises";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
@@ -244,34 +244,11 @@ export default function AddTemplateExerciseScreen() {
 
         <Text style={styles.label}>Exercise</Text>
 
-        <View style={styles.exerciseList}>
-          {exercises.map((exercise) => {
-            const selected = exercise.id === exerciseId;
-
-            return (
-              <Pressable
-                key={exercise.id}
-                onPress={() => setExerciseId(exercise.id)}
-                style={[
-                  styles.exerciseButton,
-                  selected && styles.exerciseButtonSelected,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.exerciseText,
-                    selected && styles.exerciseTextSelected,
-                  ]}
-                >
-                  {exercise.name}
-                </Text>
-                <Text style={styles.exerciseDetail}>
-                  {exercise.muscle_group}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+        <ExercisePicker
+            exercises={exercises}
+            onSelect={setExerciseId}
+            selectedExerciseId={exerciseId}
+          />
 
         <Text style={styles.label}>Target sets</Text>
         <TextInput
