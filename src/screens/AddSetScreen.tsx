@@ -10,7 +10,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-
+import { ExercisePicker } from "../components/ExercisePicker";
 import { useExercises } from "../hooks/useExercises";
 import { useProfile } from "../hooks/useProfile";
 import { usePreviousExerciseSet } from "../hooks/usePreviousExerciseSet";
@@ -252,34 +252,11 @@ export default function AddSetScreen() {
 
         <Text style={styles.label}>Exercise</Text>
 
-        <View style={styles.exerciseList}>
-          {exercises.map((exercise) => {
-            const selected = exercise.id === exerciseId;
-
-            return (
-              <Pressable
-                key={exercise.id}
-                onPress={() => setExerciseId(exercise.id)}
-                style={[
-                  styles.exerciseButton,
-                  selected && styles.exerciseButtonSelected,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.exerciseText,
-                    selected && styles.exerciseTextSelected,
-                  ]}
-                >
-                  {exercise.name}
-                </Text>
-                <Text style={styles.exerciseDetail}>
-                  {exercise.muscle_group}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+          <ExercisePicker
+          exercises={exercises}
+          onSelect={setExerciseId}
+          selectedExerciseId={exerciseId}
+        />
                   <View style={styles.previousCard}>
             <Text style={styles.previousEyebrow}>PREVIOUS SET</Text>
 
