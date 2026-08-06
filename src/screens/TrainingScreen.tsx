@@ -207,10 +207,20 @@ export default function TrainingScreen() {
               <Text style={styles.error}>{errorMessage}</Text>
             ) : null}
 
-            <Text style={styles.sectionTitle}>
-              Exercise library
-            </Text>
-          </View>
+            <View style={styles.templateHeader}>
+              <Text style={styles.sectionTitle}>
+                Exercise library
+              </Text>
+
+              <Link href="/new-exercise" asChild>
+                <Pressable style={styles.templateCreateButton}>
+                  <Text style={styles.templateCreateText}>
+                    New custom
+                  </Text>
+                </Pressable>
+              </Link>
+            </View>
+        </View>
         }
         ListEmptyComponent={
           <Text style={styles.empty}>
