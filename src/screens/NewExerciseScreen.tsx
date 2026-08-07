@@ -1,5 +1,5 @@
-import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -46,6 +46,13 @@ function parseList(value: string) {
 
 export default function NewExerciseScreen() {
   const router = useRouter();
+  const { exerciseId: exerciseIdParam } = useLocalSearchParams<{
+    exerciseId?: string;
+  }>();
+  const editingExerciseId = Array.isArray(exerciseIdParam)
+    ? exerciseIdParam[0]
+    : exerciseIdParam;
+  const isEditing = Boolean(editingExerciseId);
   const { session } = useAuth();
 
   const [name, setName] = useState("");
@@ -58,9 +65,75 @@ export default function NewExerciseScreen() {
   const [instructions, setInstructions] = useState("");
   const [isUnilateral, setIsUnilateral] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingExercise, setIsLoadingExercise] = useState(
+    isEditing,
+  );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  useEffect(() => {
+    let isActive = true;
 
-  async function handleSave() {
+    async function loadExercise() {
+      if (!editingExerciseId || !session?.user.id) {
+        setIsLoadingExercise(false);
+        return;
+      }
+
+      setIsLoadingExercise(true);
+      setErrorMessage(null);
+
+      const { data, error } = await supabase
+        .from("exercises")
+        .select(
+          `
+            name,
+            muscle_group,
+            equipment,
+            aliases,
+            secondary_muscles,
+            movement_pattern,
+            instructions,
+            is_unilateral
+          `,
+        )
+        .eq("id", editingExerciseId)
+        .eq("owner_id", session.user.id)
+        .maybeSingle();
+
+      if (!isActive) {
+        return;
+      }
+
+      if (error || !data) {
+        setErrorMessage(
+          error?.message ?? "Custom exercise not found.",
+        );
+        setIsLoadingExercise(false);
+        return;
+      }
+
+      setName(data.name);
+      setMuscleGroup(data.muscle_group);
+      setEquipment(data.equipment ?? "");
+      setAliases((data.aliases ?? []).join(", "));
+      setSecondaryMuscles(
+        (data.secondary_muscles ?? []).join(", "),
+      );
+      setMovementPattern(
+        data.movement_pattern as ExerciseMovementPattern,
+      );
+      setInstructions(data.instructions ?? "");
+      setIsUnilateral(data.is_unilateral);
+      setIsLoadingExercise(false);
+    }
+
+    void loadExercise();
+
+    return () => {
+      isActive = false;
+    };
+  }, [editingExerciseId, session?.user.id]);
+
+    async function handleSave() {
     const trimmedName = name.trim();
     const trimmedMuscleGroup = muscleGroup.trim();
 
@@ -84,45 +157,88 @@ export default function NewExerciseScreen() {
       return;
     }
 
-    setIsSaving(true);
+        setIsSaving(true);
     setErrorMessage(null);
 
-    const { data, error } = await supabase
-      .from("exercises")
-      .insert({
-        aliases: parseList(aliases),
-        equipment: equipment.trim() || null,
-        instructions: instructions.trim() || null,
-        is_unilateral: isUnilateral,
-        movement_pattern: movementPattern,
-        muscle_group: trimmedMuscleGroup,
-        name: trimmedName,
-        owner_id: session.user.id,
-        secondary_muscles: parseList(secondaryMuscles),
-      })
-      .select("id")
-      .single();
+    const values = {
+      aliases: parseList(aliases),
+      equipment: equipment.trim() || null,
+      instructions: instructions.trim() || null,
+      is_unilateral: isUnilateral,
+      movement_pattern: movementPattern,
+      muscle_group: trimmedMuscleGroup,
+      name: trimmedName,
+      secondary_muscles: parseList(secondaryMuscles),
+    };
+
+    let savedExerciseId: string;
+
+    if (isEditing && editingExerciseId) {
+      const { data, error } = await supabase
+        .from("exercises")
+        .update(values)
+        .eq("id", editingExerciseId)
+        .eq("owner_id", session.user.id)
+        .select("id")
+        .maybeSingle();
+
+      if (error || !data) {
+        setIsSaving(false);
+
+        if (error?.code === "23505") {
+          setErrorMessage(
+            "You already have a custom exercise with this name.",
+          );
+        } else {
+          setErrorMessage(
+            error?.message ?? "The custom exercise was not updated.",
+          );
+        }
+        return;
+      }
+
+      savedExerciseId = data.id;
+    } else {
+      const { data, error } = await supabase
+        .from("exercises")
+        .insert({
+          ...values,
+          owner_id: session.user.id,
+        })
+        .select("id")
+        .single();
+
+      if (error) {
+        setIsSaving(false);
+
+        if (error.code === "23505") {
+          setErrorMessage(
+            "You already have a custom exercise with this name.",
+          );
+        } else {
+          setErrorMessage(error.message);
+        }
+        return;
+      }
+
+      savedExerciseId = data.id;
+    }
 
     setIsSaving(false);
 
-    if (error) {
-      if (error.code === "23505") {
-        setErrorMessage(
-          "You already have a custom exercise with this name.",
-        );
-      } else {
-        setErrorMessage(error.message);
-      }
-      return;
-    }
-
     router.replace({
       pathname: "/exercise/[id]",
-      params: { id: data.id },
+      params: { id: savedExerciseId },
     });
+   }
+if (isLoadingExercise) {
+    return (
+      <SafeAreaView style={styles.loadingScreen}>
+        <ActivityIndicator color="#F97316" size="large" />
+      </SafeAreaView>
+    );
   }
-
-  return (
+return (
     <SafeAreaView style={styles.screen}>
       <ScrollView
         automaticallyAdjustKeyboardInsets
@@ -131,19 +247,33 @@ export default function NewExerciseScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <Pressable
-          onPress={() => router.replace("/training")}
+          onPress={() => {
+            if (isEditing && editingExerciseId) {
+              router.replace({
+                pathname: "/exercise/[id]",
+                params: { id: editingExerciseId },
+              });
+            } else {
+              router.replace("/training");
+            }
+          }}
           style={styles.navigation}
         >
-          <Text style={styles.navigationText}>‹ Training</Text>
+          <Text style={styles.navigationText}>
+  {isEditing ? "‹ Exercise" : "‹ Training"}
+</Text>
         </Pressable>
 
         <Text style={styles.eyebrow}>EXERCISE LIBRARY</Text>
-        <Text style={styles.title}>Custom exercise</Text>
-        <Text style={styles.subtitle}>
-          Add a private exercise that only appears in your library.
+       <Text style={styles.title}>
+          {isEditing ? "Edit custom exercise" : "Custom exercise"}
         </Text>
-
-        <Text style={styles.label}>Exercise name</Text>
+        <Text style={styles.subtitle}>
+          {isEditing
+            ? "Update your private exercise details."
+            : "Add a private exercise that only appears in your library."}
+        </Text>
+       <Text style={styles.label}>Exercise name</Text>
         <TextInput
           autoCapitalize="words"
           onChangeText={setName}
@@ -271,7 +401,9 @@ export default function NewExerciseScreen() {
           {isSaving ? (
             <ActivityIndicator color="#0B0B0B" />
           ) : (
-            <Text style={styles.saveText}>Create exercise</Text>
+            <Text style={styles.saveText}>
+  {isEditing ? "Save changes" : "Create exercise"}
+</Text>
           )}
         </Pressable>
       </ScrollView>
@@ -280,6 +412,12 @@ export default function NewExerciseScreen() {
 }
 
 const styles = StyleSheet.create({
+loadingScreen: {
+    alignItems: "center",
+    backgroundColor: "#0B0B0B",
+    flex: 1,
+    justifyContent: "center",
+  },
   screen: {
     backgroundColor: "#0B0B0B",
     flex: 1,
