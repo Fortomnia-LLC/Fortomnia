@@ -2,12 +2,14 @@ import { Link } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  View,
 } from 'react-native';
 
 import { supabase } from '../../src/lib/supabase';
@@ -37,8 +39,16 @@ export default function SignInScreen() {
   const isDisabled = !email.trim() || !password || isSubmitting;
 
   return (
-    <SafeAreaView style={styles.screen}>
-      <View style={styles.content}>
+      <SafeAreaView style={styles.screen}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.keyboardView}
+        >
+          <ScrollView
+            contentContainerStyle={styles.content}
+            keyboardDismissMode="interactive"
+            keyboardShouldPersistTaps="handled"
+          >
         <Text style={styles.eyebrow}>IRONFORGE</Text>
         <Text style={styles.title}>Welcome back</Text>
         <Text style={styles.subtitle}>
@@ -46,6 +56,7 @@ export default function SignInScreen() {
         </Text>
 
         <TextInput
+          accessibilityLabel="Email address"
           autoCapitalize="none"
           autoComplete="email"
           keyboardType="email-address"
@@ -57,6 +68,7 @@ export default function SignInScreen() {
         />
 
         <TextInput
+          accessibilityLabel="Password"
           autoCapitalize="none"
           autoComplete="password"
           onChangeText={setPassword}
@@ -68,10 +80,22 @@ export default function SignInScreen() {
         />
 
         {errorMessage ? (
-          <Text style={styles.error}>{errorMessage}</Text>
+          <Text
+            accessibilityLiveRegion="polite"
+            accessibilityRole="alert"
+            style={styles.error}
+          >
+            {errorMessage}
+          </Text>
         ) : null}
 
         <Pressable
+          accessibilityLabel="Sign in"
+          accessibilityRole="button"
+          accessibilityState={{
+            busy: isSubmitting,
+            disabled: isDisabled,
+          }}
           disabled={isDisabled}
           onPress={handleSignIn}
           style={[styles.button, isDisabled && styles.buttonDisabled]}
@@ -84,6 +108,8 @@ export default function SignInScreen() {
         </Pressable>
              <Link href="/sign-up" asChild>
           <Pressable
+              accessibilityLabel="Create an account"
+              accessibilityRole="link"
             style={{
               alignItems: 'center',
               marginTop: 22,
@@ -101,8 +127,9 @@ export default function SignInScreen() {
             </Text>
           </Pressable>
         </Link>
-      </View>
-    </SafeAreaView>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
   );
 }
 
@@ -111,10 +138,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0B0D10',
   },
-  content: {
+  keyboardView: {
     flex: 1,
+  },
+  content: {
+    flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: 24,
+    paddingVertical: 32,
   },
   eyebrow: {
     color: '#F59E0B',
