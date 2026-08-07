@@ -24,6 +24,7 @@ export type Exercise = {
   equipment: string | null;
   id: string;
   instructions: string | null;
+  is_archived: boolean;
   is_unilateral: boolean;
   movement_pattern: ExerciseMovementPattern;
   muscle_group: string;
@@ -34,14 +35,16 @@ export type Exercise = {
 
 export function useExercises() {
   const [exercises, setExercises] = useState<Exercise[]>([]);
+   const [archivedExercises, setArchivedExercises] = useState<
+    Exercise[]
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const loadExercises = useCallback(async () => {
     setIsLoading(true);
     setErrorMessage(null);
-
-    const { data, error } = await supabase
+  const { data, error } = await supabase
       .from("exercises")
       .select(
                 `
@@ -54,6 +57,7 @@ export function useExercises() {
           secondary_muscles,
           movement_pattern,
           instructions,
+          is_archived,
           is_unilateral,
           created_at
         `,
@@ -64,7 +68,18 @@ export function useExercises() {
       setExercises([]);
       setErrorMessage(error.message);
     } else {
-      setExercises((data ?? []) as Exercise[]);
+      setArchivedExercises([]);
+      const loadedExercises = (data ?? []) as Exercise[];
+
+      setExercises(
+        loadedExercises.filter((exercise) => !exercise.is_archived),
+      );
+      setArchivedExercises(
+        loadedExercises.filter(
+          (exercise) =>
+            exercise.is_archived && Boolean(exercise.owner_id),
+        ),
+      );
     }
 
     setIsLoading(false);
@@ -79,6 +94,7 @@ export function useExercises() {
   return {
     errorMessage,
     exercises,
+    archivedExercises,
     isLoading,
     refreshExercises: loadExercises,
   };

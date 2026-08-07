@@ -59,6 +59,56 @@ export default function ExerciseHistoryScreen() {
     (best, set) => Math.max(best, set.weight),
     0,
   );
+  function handleToggleArchive() {
+    if (!session?.user.id || !exercise?.owner_id) {
+      Alert.alert(
+        "Unable to update exercise",
+        "Only your custom exercises can be archived.",
+      );
+      return;
+    }
+
+    const nextArchivedState = !exercise.is_archived;
+
+    Alert.alert(
+      nextArchivedState
+        ? "Archive custom exercise?"
+        : "Reactivate custom exercise?",
+      nextArchivedState
+        ? `${exercise.name} will be hidden from exercise pickers, but its workout history will be preserved.`
+        : `${exercise.name} will return to your exercise library and pickers.`,
+      [
+        {
+          style: "cancel",
+          text: "Cancel",
+        },
+        {
+          text: nextArchivedState ? "Archive" : "Reactivate",
+          onPress: async () => {
+            const { data, error } = await supabase
+              .from("exercises")
+              .update({
+                is_archived: nextArchivedState,
+              })
+              .eq("id", exercise.id)
+              .eq("owner_id", session.user.id)
+              .select("id")
+              .maybeSingle();
+
+            if (error || !data) {
+              Alert.alert(
+                "Unable to update exercise",
+                error?.message ?? "The custom exercise was not updated.",
+              );
+              return;
+            }
+
+            await refreshHistory();
+          },
+        },
+      ],
+    );
+  }
   async function handleDeleteExercise() {
     if (!session?.user.id || !exercise?.owner_id) {
       Alert.alert(
@@ -196,6 +246,9 @@ export default function ExerciseHistoryScreen() {
               {exercise.muscle_group}
               {exercise.equipment ? ` • ${exercise.equipment}` : ""}
             </Text>
+            {exercise.is_archived ? (
+              <Text style={styles.archivedStatus}>ARCHIVED</Text>
+            ) : null}
                         {exercise.owner_id ? (
               <View style={styles.customActions}>
                 <Pressable
@@ -211,7 +264,14 @@ export default function ExerciseHistoryScreen() {
                     Edit custom exercise
                   </Text>
                 </Pressable>
-
+                <Pressable
+                  onPress={handleToggleArchive}
+                  style={styles.archiveButton}
+                >
+                  <Text style={styles.archiveButtonText}>
+                    {exercise.is_archived ? "Reactivate" : "Archive"}
+                  </Text>
+                </Pressable>
                 <Pressable
                   onPress={() => void handleDeleteExercise()}
                   style={styles.deleteButton}
@@ -365,6 +425,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 6,
   },
+  archivedStatus: {
+    color: "#FBBF24",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1.2,
+    marginBottom: 18,
+    marginTop: -10,
+  },
   customActions: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -381,6 +449,18 @@ const styles = StyleSheet.create({
   },
   editButtonText: {
     color: "#F97316",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  archiveButton: {
+    borderColor: "#9CA3AF",
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+  },
+  archiveButtonText: {
+    color: "#D1D5DB",
     fontSize: 13,
     fontWeight: "700",
   },

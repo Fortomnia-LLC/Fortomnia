@@ -62,6 +62,7 @@ export function useExerciseHistory(exerciseId: string | undefined) {
               secondary_muscles,
               movement_pattern,
               instructions,
+              is_archived,
               is_unilateral,
               created_at
             `,
