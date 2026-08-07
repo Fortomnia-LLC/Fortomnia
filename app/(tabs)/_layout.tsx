@@ -105,7 +105,9 @@ export default function TabLayout() {
       <Tabs.Screen name="workout" options={{ href: null }} />
       <Tabs.Screen name="exercise" options={{ href: null }} />
       <Tabs.Screen name="template" options={{ href: null }} />
+      <Tabs.Screen name="new-exercise" options={{ href: null }} />
       <Tabs.Screen name="new-supplement" options={{ href: null }} />
+      <Tabs.Screen name="exercise-library" options={{ href: null }} />
     </Tabs>
   );
 }

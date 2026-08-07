@@ -52,8 +52,21 @@ export function useExerciseHistory(exerciseId: string | undefined) {
       supabase
         .from("exercises")
         .select(
-          "id, owner_id, name, muscle_group, equipment, created_at",
-        )
+            `
+              id,
+              owner_id,
+              name,
+              muscle_group,
+              equipment,
+              aliases,
+              secondary_muscles,
+              movement_pattern,
+              instructions,
+              is_archived,
+              is_unilateral,
+              created_at
+            `,
+          )
         .eq("id", exerciseId)
         .single(),
 

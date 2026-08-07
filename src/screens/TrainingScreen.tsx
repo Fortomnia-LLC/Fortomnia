@@ -75,7 +75,7 @@ export default function TrainingScreen() {
     <SafeAreaView style={styles.screen}>
       <FlatList
         contentContainerStyle={styles.listContent}
-        data={exercises}
+        data={exercises.slice(0, 5)}
         keyExtractor={(exercise) => exercise.id}
         onRefresh={() => {
           void Promise.all([
@@ -207,10 +207,20 @@ export default function TrainingScreen() {
               <Text style={styles.error}>{errorMessage}</Text>
             ) : null}
 
-            <Text style={styles.sectionTitle}>
-              Exercise library
-            </Text>
-          </View>
+            <View style={styles.templateHeader}>
+              <Text style={styles.sectionTitle}>
+                Exercise preview
+              </Text>
+
+              <Link href="/exercise-library" asChild>
+                <Pressable style={styles.templateCreateButton}>
+                  <Text style={styles.templateCreateText}>
+                    Browse all
+                  </Text>
+                </Pressable>
+              </Link>
+            </View>
+        </View>
         }
         ListEmptyComponent={
           <Text style={styles.empty}>
