@@ -2,6 +2,7 @@
   "expo": {
     "name": "IronForge",
     "slug": "ironforge",
+    "owner": "body-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -35,6 +36,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "48a69035-01c0-431f-8543-f47065f75bba"
+      }
     }
   }
 }
