@@ -143,7 +143,11 @@ export default function DashboardScreen() {
         </Text>
 
         {errors.length > 0 ? (
-          <Text style={styles.error}>
+          <Text
+            accessibilityLiveRegion="polite"
+            accessibilityRole="alert"
+            style={styles.error}
+          >
             Some dashboard data could not load: {errors.join(" • ")}
           </Text>
         ) : null}

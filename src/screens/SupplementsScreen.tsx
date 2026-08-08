@@ -489,8 +489,14 @@ const takenCount = scheduledProtocols.filter(
             </Link>
 
             {errorMessage ? (
-              <Text style={styles.error}>{errorMessage}</Text>
-            ) : null}
+          <Text
+            accessibilityLiveRegion="polite"
+            accessibilityRole="alert"
+            style={styles.error}
+          >
+           {errorMessage}
+          </Text>
+        ) : null}
 
             <Text style={styles.sectionTitle}>
               {isToday ? "Today's protocols" : "Daily protocols"}

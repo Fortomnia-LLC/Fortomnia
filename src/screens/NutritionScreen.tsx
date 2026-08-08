@@ -295,7 +295,13 @@ export default function NutritionScreen() {
             </Link>
 
             {errorMessage ? (
-              <Text style={styles.error}>{errorMessage}</Text>
+          <Text
+            accessibilityLiveRegion="polite"
+            accessibilityRole="alert"
+            style={styles.error}
+          >
+            {errorMessage}
+          </Text>
             ) : null}
 
             <View style={styles.calorieCard}>

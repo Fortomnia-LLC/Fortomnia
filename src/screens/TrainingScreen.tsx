@@ -114,7 +114,13 @@ export default function TrainingScreen() {
               </View>
 
               {templateError ? (
-                <Text style={styles.error}>{templateError}</Text>
+                 <Text
+                   accessibilityLiveRegion="polite"
+                   accessibilityRole="alert"
+                   style={styles.error}
+                  >
+                   {templateError}
+                  </Text>
               ) : null}
 
               {templates.length === 0 ? (
@@ -148,7 +154,13 @@ export default function TrainingScreen() {
             </Text>
 
             {workoutError ? (
-              <Text style={styles.error}>{workoutError}</Text>
+             <Text
+               accessibilityLiveRegion="polite"
+               accessibilityRole="alert"
+               style={styles.error}
+             >
+               {workoutError}
+             </Text>
             ) : null}
 
             {workoutSessions.length === 0 ? (
@@ -204,7 +216,13 @@ export default function TrainingScreen() {
             </View>
 
             {errorMessage ? (
-              <Text style={styles.error}>{errorMessage}</Text>
+             <Text
+               accessibilityLiveRegion="polite"
+               accessibilityRole="alert"
+               style={styles.error}
+             >
+               {errorMessage}
+             </Text>
             ) : null}
 
             <View style={styles.templateHeader}>
