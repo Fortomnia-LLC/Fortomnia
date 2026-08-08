@@ -177,10 +177,10 @@ function handleDeleteAccount() {
           keyboardDismissMode="interactive"
           keyboardShouldPersistTaps="handled"
         >
-        <Text style={styles.eyebrow}>IRONFORGE</Text>
+        <Text style={styles.eyebrow}>FORTOMNIA</Text>
         <Text style={styles.title}>Profile</Text>
         <Text style={styles.subtitle}>
-          Personalize how IronForge tracks your progress.
+          Personalize how Fortomnia tracks your progress.
         </Text>
 
         <Text style={styles.label}>Display name</Text>

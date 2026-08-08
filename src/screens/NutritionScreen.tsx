@@ -212,7 +212,7 @@ export default function NutritionScreen() {
 )}
         ListHeaderComponent={
           <View style={styles.header}>
-            <Text style={styles.eyebrow}>IRONFORGE</Text>
+            <Text style={styles.eyebrow}>FORTOMNIA</Text>
             <Text style={styles.title}>Nutrition</Text>
             <Text style={styles.date}>
               {new Date(

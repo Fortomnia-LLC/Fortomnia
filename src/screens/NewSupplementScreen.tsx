@@ -295,7 +295,7 @@ if (trimmedEndDate && trimmedEndDate < trimmedStartDate) {
           <Text style={styles.navigationText}>‹ Supplements</Text>
         </Pressable>
 
-        <Text style={styles.eyebrow}>IRONFORGE</Text>
+        <Text style={styles.eyebrow}>FORTOMNIA</Text>
         <Text style={styles.title}>
   {isEditing ? "Edit supplement" : "Add supplement"}
 </Text>

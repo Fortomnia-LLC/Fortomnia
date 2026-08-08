@@ -53,7 +53,7 @@ export default function ExerciseLibraryScreen() {
           <Text style={styles.navigationText}>‹ Training</Text>
         </Pressable>
 
-        <Text style={styles.eyebrow}>IRONFORGE</Text>
+        <Text style={styles.eyebrow}>FORTOMNIA</Text>
         <Text style={styles.title}>Exercise library</Text>
         <Text style={styles.subtitle}>
           Search built-in and custom exercises by name, alias, muscle,

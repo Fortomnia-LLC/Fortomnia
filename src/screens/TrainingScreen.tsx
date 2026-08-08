@@ -91,7 +91,7 @@ export default function TrainingScreen() {
         )}
         ListHeaderComponent={
           <View style={styles.header}>
-            <Text style={styles.eyebrow}>IRONFORGE</Text>
+            <Text style={styles.eyebrow}>FORTOMNIA</Text>
             <Text style={styles.title}>Training</Text>
             <Text style={styles.subtitle}>
               Your exercise library is ready for workout logging.
