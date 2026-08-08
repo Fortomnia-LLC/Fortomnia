@@ -223,7 +223,9 @@ export default function NutritionScreen() {
             </Text>
             <View style={styles.dateNavigation}>
               <Pressable
-                onPress={() =>
+                  accessibilityLabel="View previous day"
+                  accessibilityRole="button"
+                  onPress={() =>
                   setSelectedDate((current) => shiftDate(current, -1))
                 }
                 style={styles.dateButton}
@@ -232,6 +234,9 @@ export default function NutritionScreen() {
               </Pressable>
 
               <Pressable
+                  accessibilityLabel="Return to today"
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: isToday }}
                 disabled={isToday}
                 onPress={() => setSelectedDate(today)}
                 style={[
@@ -243,6 +248,9 @@ export default function NutritionScreen() {
               </Pressable>
 
               <Pressable
+                  accessibilityLabel="View next day"
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: isToday }}
                 disabled={isToday}
                 onPress={() =>
                   setSelectedDate((current) => shiftDate(current, 1))
@@ -287,7 +295,13 @@ export default function NutritionScreen() {
             </Link>
 
             {errorMessage ? (
-              <Text style={styles.error}>{errorMessage}</Text>
+          <Text
+            accessibilityLiveRegion="polite"
+            accessibilityRole="alert"
+            style={styles.error}
+          >
+            {errorMessage}
+          </Text>
             ) : null}
 
             <View style={styles.calorieCard}>

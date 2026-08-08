@@ -3,14 +3,15 @@ import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  View,
 } from 'react-native';
-
 import { supabase } from '../lib/supabase';
 
 export default function SignUpScreen() {
@@ -64,8 +65,16 @@ export default function SignUpScreen() {
     isSubmitting;
 
   return (
-    <SafeAreaView style={styles.screen}>
-      <View style={styles.content}>
+      <SafeAreaView style={styles.screen}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.keyboardView}
+        >
+          <ScrollView
+            contentContainerStyle={styles.content}
+            keyboardDismissMode="interactive"
+            keyboardShouldPersistTaps="handled"
+          >
         <Text style={styles.eyebrow}>IRONFORGE</Text>
         <Text style={styles.title}>Create account</Text>
         <Text style={styles.subtitle}>
@@ -73,6 +82,7 @@ export default function SignUpScreen() {
         </Text>
 
         <TextInput
+          accessibilityLabel="Email address"
           autoCapitalize="none"
           autoComplete="email"
           keyboardType="email-address"
@@ -84,6 +94,7 @@ export default function SignUpScreen() {
         />
 
         <TextInput
+          accessibilityLabel="Password"
           autoCapitalize="none"
           autoComplete="new-password"
           onChangeText={setPassword}
@@ -95,6 +106,7 @@ export default function SignUpScreen() {
         />
 
         <TextInput
+          accessibilityLabel="Confirm password"
           autoCapitalize="none"
           autoComplete="new-password"
           onChangeText={setConfirmation}
@@ -106,10 +118,22 @@ export default function SignUpScreen() {
         />
 
         {errorMessage ? (
-          <Text style={styles.error}>{errorMessage}</Text>
+          <Text
+            accessibilityLiveRegion="polite"
+            accessibilityRole="alert"
+            style={styles.error}
+          >
+            {errorMessage}
+          </Text>
         ) : null}
 
         <Pressable
+          accessibilityLabel="Create account"
+          accessibilityRole="button"
+          accessibilityState={{
+            busy: isSubmitting,
+            disabled: isDisabled,
+          }}
           disabled={isDisabled}
           onPress={handleSignUp}
           style={[styles.button, isDisabled && styles.buttonDisabled]}
@@ -121,11 +145,15 @@ export default function SignUpScreen() {
           )}
         </Pressable>
 
-        <Pressable onPress={() => router.back()} style={styles.link}>
+        <Pressable
+          accessibilityLabel="Already have an account? Sign in"
+          accessibilityRole="link"
+           onPress={() => router.back()} style={styles.link}>
           <Text style={styles.linkText}>Already have an account? Sign in</Text>
         </Pressable>
-      </View>
-    </SafeAreaView>
+                </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
   );
 }
 
@@ -134,10 +162,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0B0D10',
   },
-  content: {
+    keyboardView: {
     flex: 1,
+  },
+  content: {
+    flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: 24,
+    paddingVertical: 32,
   },
   eyebrow: {
     color: '#F59E0B',

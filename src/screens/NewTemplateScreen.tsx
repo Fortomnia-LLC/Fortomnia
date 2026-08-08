@@ -3,12 +3,14 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  View,
 } from "react-native";
 
 import { supabase } from "../lib/supabase";
@@ -129,7 +131,15 @@ import { useAuth } from "../providers/AuthProvider";
 
   return (
     <SafeAreaView style={styles.screen}>
-      <View style={styles.content}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={styles.keyboardView}
+      >
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardDismissMode="interactive"
+          keyboardShouldPersistTaps="handled"
+        >
         <Text style={styles.eyebrow}>IRONFORGE</Text>
         <Text style={styles.title}>
   {isEditing ? "Edit template" : "Create template"}
@@ -142,6 +152,7 @@ import { useAuth } from "../providers/AuthProvider";
 
         <Text style={styles.label}>Template name</Text>
         <TextInput
+          accessibilityLabel="Template name"
           autoCapitalize="words"
           autoFocus
           onChangeText={setName}
@@ -152,6 +163,7 @@ import { useAuth } from "../providers/AuthProvider";
         />
                   <Text style={styles.label}>Notes</Text>
         <TextInput
+          accessibilityLabel="Template notes"
           multiline
           onChangeText={setNotes}
           placeholder="Describe the workout focus or training goals..."
@@ -162,10 +174,24 @@ import { useAuth } from "../providers/AuthProvider";
         />
 
         {errorMessage ? (
-          <Text style={styles.error}>{errorMessage}</Text>
+          <Text
+            accessibilityLiveRegion="polite"
+            accessibilityRole="alert"
+            style={styles.error}
+          >
+            {errorMessage}
+          </Text>
         ) : null}
 
         <Pressable
+          accessibilityLabel={
+            isEditing ? "Save template changes" : "Create template"
+          }
+          accessibilityRole="button"
+          accessibilityState={{
+            busy: isCreating,
+            disabled: isCreating,
+          }}
           disabled={isCreating}
           onPress={handleSaveTemplate}
           style={[
@@ -183,13 +209,19 @@ import { useAuth } from "../providers/AuthProvider";
         </Pressable>
 
         <Pressable
+          accessibilityLabel={
+            isEditing ? "Cancel editing template" : "Cancel new template"
+          }
+          accessibilityRole="button"
+          accessibilityState={{ disabled: isCreating }}
           disabled={isCreating}
           onPress={() => router.back()}
           style={styles.cancelButton}
         >
           <Text style={styles.cancelText}>Cancel</Text>
         </Pressable>
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -199,8 +231,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#0B0B0B",
     flex: 1,
   },
-  content: {
+  keyboardView: {
     flex: 1,
+  },
+  content: {
+    flexGrow: 1,
+    paddingBottom: 32,
     paddingHorizontal: 24,
     paddingTop: 36,
   },

@@ -116,6 +116,9 @@ export function ExercisePicker({
             </Text>
 
             <Pressable
+              accessibilityHint="Opens the exercise search and filters"
+              accessibilityLabel={`Change selected exercise from ${selectedExercise.name}`}
+              accessibilityRole="button"
               onPress={() => setIsExpanded(true)}
               style={styles.filterButton}
             >
@@ -137,6 +140,8 @@ export function ExercisePicker({
   return (
     <View>
       <TextInput
+        accessibilityHint="Searches exercise names, aliases, muscles, movement patterns, and equipment"
+        accessibilityLabel="Search exercises"
         autoCapitalize="none"
         autoCorrect={false}
         onChangeText={setQuery}
@@ -158,6 +163,9 @@ export function ExercisePicker({
 
           return (
             <Pressable
+                accessibilityLabel={`Filter by muscle group: ${option}`}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
               key={option}
               onPress={() => setMuscleGroup(option)}
               style={[
@@ -189,6 +197,9 @@ export function ExercisePicker({
 
           return (
             <Pressable
+                accessibilityLabel={`Filter by equipment: ${option}`}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
               key={option}
               onPress={() => setEquipment(option)}
               style={[
@@ -233,6 +244,14 @@ export function ExercisePicker({
 
             return (
               <Pressable
+                  accessibilityHint="Selects this exercise"
+                  accessibilityLabel={`${exercise.name}, ${exercise.muscle_group}${
+                    exercise.equipment
+                      ? `, ${exercise.equipment}`
+                      : ""
+                  }${exercise.is_unilateral ? ", unilateral" : ""}`}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected }}
                 key={exercise.id}
                   onPress={() => {
                   onSelect(exercise.id);
