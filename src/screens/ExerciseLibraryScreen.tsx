@@ -5,6 +5,7 @@ import {
   SafeAreaView,
   ScrollView,
   StyleSheet,
+  RefreshControl,
   Text,
   View,
 } from "react-native";
@@ -18,6 +19,7 @@ export default function ExerciseLibraryScreen() {
     archivedExercises,
     errorMessage,
     exercises,
+    refreshExercises,
     isLoading,
   } = useExercises();
 
@@ -35,6 +37,14 @@ export default function ExerciseLibraryScreen() {
         contentContainerStyle={styles.content}
         keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl
+              colors={["#F97316"]}
+              onRefresh={() => void refreshExercises()}
+              refreshing={isLoading}
+              tintColor="#F97316"
+            />
+          }
       >
         <Pressable
           onPress={() => router.replace("/training")}
