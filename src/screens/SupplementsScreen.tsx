@@ -28,6 +28,7 @@ type ProtocolCardProps = {
   onDelete: (protocol: SupplementProtocol) => void;
   onEdit: (protocol: SupplementProtocol) => void;
   isAvailable: boolean;
+  isLogging: boolean;
   onLog: (
     protocol: SupplementProtocol,
     status: "taken" | "skipped",
@@ -42,6 +43,7 @@ function ProtocolCard({
   onDelete,
   onEdit,
   onLog,
+  isLogging,
   onToggleActive,
   protocol,
 }: ProtocolCardProps) {
@@ -99,22 +101,36 @@ function ProtocolCard({
      {protocol.is_active && isAvailable ? (
         <View style={styles.actions}>
           <Pressable
-            disabled={log?.status === "taken"}
+              accessibilityLabel={`Mark ${protocol.name} taken`}
+              accessibilityRole="button"
+              accessibilityState={{
+                busy: isLogging,
+                disabled: isLogging || log?.status === "taken",
+              }}
+            disabled={isLogging || log?.status === "taken"}
             onPress={() => onLog(protocol, "taken")}
             style={[
               styles.takenButton,
-              log?.status === "taken" && styles.disabled,
+                (isLogging || log?.status === "taken") &&
+                  styles.disabled,
             ]}
           >
             <Text style={styles.takenButtonText}>Mark taken</Text>
           </Pressable>
 
           <Pressable
-            disabled={log?.status === "skipped"}
+              accessibilityLabel={`Skip ${protocol.name}`}
+              accessibilityRole="button"
+              accessibilityState={{
+                busy: isLogging,
+                disabled: isLogging || log?.status === "skipped",
+              }}
+              disabled={isLogging || log?.status === "skipped"}
             onPress={() => onLog(protocol, "skipped")}
             style={[
               styles.skippedButton,
-              log?.status === "skipped" && styles.disabled,
+                (isLogging || log?.status === "skipped") &&
+                  styles.disabled,
             ]}
           >
             <Text style={styles.skippedButtonText}>Skip</Text>
@@ -161,6 +177,9 @@ export default function SupplementsScreen() {
   const today = getLocalDateKey();
 const [selectedDate, setSelectedDate] = useState(today);
 const isToday = selectedDate === today;
+const [loggingProtocolId, setLoggingProtocolId] = useState<
+    string | null
+  >(null);
 const { session } = useAuth();
   const {
     errorMessage,
@@ -312,7 +331,13 @@ const takenCount = scheduledProtocols.filter(
       );
       return;
     }
+    if (loggingProtocolId !== null) {
+      return;
+    }
 
+    setLoggingProtocolId(protocol.id);
+
+    try {
     const existingLog = latestLogByProtocol.get(protocol.id);
     const values = {
       completed_at: new Date().toISOString(),
@@ -342,7 +367,7 @@ const takenCount = scheduledProtocols.filter(
         .from("supplement_logs")
         .insert({
           ...values,
-          log_date:selectedDate,
+            log_date: selectedDate,
           protocol_id: protocol.id,
           user_id: session.user.id,
         });
@@ -353,9 +378,11 @@ const takenCount = scheduledProtocols.filter(
       }
     }
 
-    await refreshSupplements();
+      await refreshSupplements();
+    } finally {
+      setLoggingProtocolId(null);
+    }
   }
-
   if (isLoading && protocols.length === 0) {
     return (
       <SafeAreaView style={styles.loadingScreen}>
@@ -374,6 +401,7 @@ const takenCount = scheduledProtocols.filter(
         refreshing={isLoading}
         renderItem={({ item }) => (
           <ProtocolCard
+            isLogging={loggingProtocolId === item.id}
             isAvailable={isProtocolAvailable(item, selectedDate)}
             log={latestLogByProtocol.get(item.id)}
             onDelete={handleDeleteProtocol}
