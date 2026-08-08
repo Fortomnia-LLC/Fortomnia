@@ -30,6 +30,7 @@ export default function ProfileScreen() {
   const [displayName, setDisplayName] = useState("");
   const [weightUnit, setWeightUnit] = useState<WeightUnit>("lb");
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
@@ -101,6 +102,57 @@ function handleSignOut() {
           } finally {
             setIsSigningOut(false);
           }
+        },
+      },
+    ],
+  );
+}
+function handleDeleteAccount() {
+  Alert.alert(
+    "Delete account?",
+    "This permanently deletes your account and all workouts, nutrition, supplements, templates, and custom exercises.",
+    [
+      {
+        style: "cancel",
+        text: "Cancel",
+      },
+      {
+        style: "destructive",
+        text: "Continue",
+        onPress: () => {
+          Alert.alert(
+            "Delete permanently?",
+            "This action cannot be undone.",
+            [
+              {
+                style: "cancel",
+                text: "Keep account",
+              },
+              {
+                style: "destructive",
+                text: "Delete permanently",
+                onPress: async () => {
+                  setIsDeletingAccount(true);
+                  setStatusMessage(null);
+
+                  const { error } = await supabase.functions.invoke(
+                    "delete-account",
+                  );
+
+                  if (error) {
+                    setIsDeletingAccount(false);
+                    Alert.alert(
+                      "Unable to delete account",
+                      error.message,
+                    );
+                    return;
+                  }
+
+                  await supabase.auth.signOut({ scope: "local" });
+                },
+              },
+            ],
+          );
         },
       },
     ],
@@ -197,11 +249,15 @@ function handleSignOut() {
           accessibilityRole="button"
           accessibilityState={{
             busy: isSaving,
-            disabled: isSaving,
+          disabled: isSaving || isSigningOut || isDeletingAccount,
           }}
-          disabled={isSaving}
+          disabled={isSaving || isSigningOut || isDeletingAccount}
           onPress={handleSave}
-          style={[styles.saveButton, isSaving && styles.disabled]}
+          style={[
+  styles.saveButton,
+  (isSaving || isSigningOut || isDeletingAccount) &&
+    styles.disabled,
+]}
         >
           {isSaving ? (
             <ActivityIndicator color="#0B0B0B" />
@@ -215,9 +271,9 @@ function handleSignOut() {
           accessibilityRole="button"
           accessibilityState={{
             busy: isSigningOut,
-            disabled: isSaving || isSigningOut,
+            disabled: isSaving || isSigningOut || isDeletingAccount
           }}
-          disabled={isSaving || isSigningOut}
+          disabled={isSaving || isSigningOut || isDeletingAccount}
           onPress={handleSignOut}
           style={[
             styles.signOutButton,
@@ -230,6 +286,27 @@ function handleSignOut() {
             <Text style={styles.signOutText}>Sign out</Text>
           )}
         </Pressable>
+<Pressable
+  accessibilityLabel="Delete account permanently"
+  accessibilityRole="button"
+  accessibilityState={{
+    busy: isDeletingAccount,
+    disabled: isSaving || isSigningOut || isDeletingAccount,
+  }}
+  disabled={isSaving || isSigningOut || isDeletingAccount}
+  onPress={handleDeleteAccount}
+  style={[
+    styles.deleteAccountButton,
+    (isSaving || isSigningOut || isDeletingAccount) &&
+      styles.disabled,
+  ]}
+>
+  {isDeletingAccount ? (
+    <ActivityIndicator color="#F87171" />
+  ) : (
+    <Text style={styles.deleteAccountText}>Delete account</Text>
+  )}
+</Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -353,4 +430,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
+deleteAccountButton: {
+  alignItems: "center",
+  borderColor: "#F87171",
+  borderRadius: 12,
+  borderWidth: 1,
+  marginTop: 28,
+  paddingVertical: 14,
+},
+deleteAccountText: {
+  color: "#F87171",
+  fontSize: 16,
+  fontWeight: "700",
+},
 });
