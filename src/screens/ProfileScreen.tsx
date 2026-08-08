@@ -2,14 +2,16 @@ import { useEffect, useState } from "react";
 import {
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
-
 import { useProfile } from "../hooks/useProfile";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
@@ -114,7 +116,15 @@ function handleSignOut() {
 
   return (
     <SafeAreaView style={styles.screen}>
-      <View style={styles.content}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={styles.keyboardView}
+      >
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardDismissMode="interactive"
+          keyboardShouldPersistTaps="handled"
+        >
         <Text style={styles.eyebrow}>IRONFORGE</Text>
         <Text style={styles.title}>Profile</Text>
         <Text style={styles.subtitle}>
@@ -123,6 +133,7 @@ function handleSignOut() {
 
         <Text style={styles.label}>Display name</Text>
         <TextInput
+          accessibilityLabel="Display name"
           autoCapitalize="words"
           onChangeText={setDisplayName}
           placeholder="Your name"
@@ -139,6 +150,9 @@ function handleSignOut() {
 
             return (
               <Pressable
+                  accessibilityLabel={`Use ${unit === "lb" ? "pounds" : "kilograms"}`}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isSelected }}
                 key={unit}
                 onPress={() => setWeightUnit(unit)}
                 style={[
@@ -160,14 +174,31 @@ function handleSignOut() {
         </View>
 
         {profileError ? (
-          <Text style={styles.error}>{profileError}</Text>
+            <Text
+              accessibilityLiveRegion="polite"
+              accessibilityRole="alert"
+              style={styles.error}
+            >
+              {profileError}
+            </Text>
         ) : null}
 
         {statusMessage ? (
-          <Text style={styles.status}>{statusMessage}</Text>
+            <Text
+              accessibilityLiveRegion="polite"
+              style={styles.status}
+            >
+              {statusMessage}
+            </Text>
         ) : null}
 
         <Pressable
+          accessibilityLabel="Save profile"
+          accessibilityRole="button"
+          accessibilityState={{
+            busy: isSaving,
+            disabled: isSaving,
+          }}
           disabled={isSaving}
           onPress={handleSave}
           style={[styles.saveButton, isSaving && styles.disabled]}
@@ -180,6 +211,12 @@ function handleSignOut() {
         </Pressable>
 
  <Pressable
+          accessibilityLabel="Sign out"
+          accessibilityRole="button"
+          accessibilityState={{
+            busy: isSigningOut,
+            disabled: isSaving || isSigningOut,
+          }}
           disabled={isSaving || isSigningOut}
           onPress={handleSignOut}
           style={[
@@ -193,7 +230,8 @@ function handleSignOut() {
             <Text style={styles.signOutText}>Sign out</Text>
           )}
         </Pressable>
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -208,8 +246,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#0B0B0B",
     flex: 1,
   },
-  content: {
+  keyboardView: {
     flex: 1,
+  },
+  content: {
+    flexGrow: 1,
+    paddingBottom: 32,
     paddingHorizontal: 24,
     paddingTop: 36,
   },

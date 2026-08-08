@@ -3,12 +3,14 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  View,
 } from "react-native";
 
 import { supabase } from "../lib/supabase";
@@ -65,7 +67,15 @@ export default function NewWorkoutScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
-      <View style={styles.content}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={styles.keyboardView}
+      >
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardDismissMode="interactive"
+          keyboardShouldPersistTaps="handled"
+        >
         <Text style={styles.eyebrow}>IRONFORGE</Text>
         <Text style={styles.title}>Start workout</Text>
         <Text style={styles.subtitle}>
@@ -79,15 +89,28 @@ export default function NewWorkoutScreen() {
           onChangeText={setName}
           placeholder="Push Day, Leg Day, Upper Body..."
           placeholderTextColor="#727885"
+          accessibilityLabel="Workout name"
           style={styles.input}
           value={name}
         />
 
         {errorMessage ? (
-          <Text style={styles.error}>{errorMessage}</Text>
+          <Text
+            accessibilityLiveRegion="polite"
+            accessibilityRole="alert"
+            style={styles.error}
+          >
+            {errorMessage}
+          </Text>
         ) : null}
 
         <Pressable
+          accessibilityLabel="Start workout"
+          accessibilityRole="button"
+          accessibilityState={{
+            busy: isCreating,
+            disabled: isCreating,
+          }}
           disabled={isCreating}
           onPress={handleCreateWorkout}
           style={[
@@ -103,13 +126,17 @@ export default function NewWorkoutScreen() {
         </Pressable>
 
         <Pressable
+          accessibilityLabel="Cancel new workout"
+          accessibilityRole="button"
+          accessibilityState={{ disabled: isCreating }}
           disabled={isCreating}
           onPress={() => router.back()}
           style={styles.cancelButton}
         >
           <Text style={styles.cancelText}>Cancel</Text>
         </Pressable>
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -119,12 +146,16 @@ const styles = StyleSheet.create({
     backgroundColor: "#0B0B0B",
     flex: 1,
   },
-  content: {
+  keyboardView: {
     flex: 1,
+  },
+  content: {
+    flexGrow: 1,
+    paddingBottom: 32,
     paddingHorizontal: 24,
     paddingTop: 36,
   },
-  eyebrow: {
+   eyebrow: {
     color: "#F97316",
     fontSize: 14,
     fontWeight: "800",
