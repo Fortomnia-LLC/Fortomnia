@@ -429,6 +429,8 @@ const takenCount = scheduledProtocols.filter(
 
 <View style={styles.dateNavigation}>
   <Pressable
+    accessibilityLabel="View previous day"
+    accessibilityRole="button"
     onPress={() =>
       setSelectedDate((current) => shiftDate(current, -1))
     }
@@ -438,6 +440,9 @@ const takenCount = scheduledProtocols.filter(
   </Pressable>
 
   <Pressable
+      accessibilityLabel="View next day"
+      accessibilityRole="button"
+      accessibilityState={{ disabled: isToday }}
     disabled={isToday}
     onPress={() => setSelectedDate(today)}
     style={[
@@ -449,6 +454,9 @@ const takenCount = scheduledProtocols.filter(
   </Pressable>
 
   <Pressable
+                  accessibilityLabel="Return to today"
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: isToday }}
     disabled={isToday}
     onPress={() =>
       setSelectedDate((current) => shiftDate(current, 1))
