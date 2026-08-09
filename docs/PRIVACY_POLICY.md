@@ -93,4 +93,3 @@ We may update this Privacy Policy as Fortomnia changes. We will revise the "Last
 For privacy questions or requests, contact:
 
 `[[SUPPORT_EMAIL]]`
-

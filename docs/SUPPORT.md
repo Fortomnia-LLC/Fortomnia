@@ -36,4 +36,3 @@ Open **Profile**, select **Delete account**, review the warning, and confirm. Se
 Fortomnia is a recordkeeping and informational tool. It does not diagnose, treat, cure, or prevent any condition and is not a substitute for professional medical advice. Information stored or displayed by Fortomnia, including information about supplements, peptides, hormones, or other substances, is not an endorsement or recommendation.
 
 Consult a qualified healthcare professional before changing training, nutrition, supplement, medication, or health practices. If you believe you are experiencing a medical emergency, contact local emergency services immediately.
-

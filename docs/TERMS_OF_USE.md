@@ -51,4 +51,3 @@ We may update these Terms as Fortomnia evolves. We will update the date above an
 ## Contact
 
 Questions about these Terms may be sent to `[[SUPPORT_EMAIL]]`.
-
