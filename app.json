@@ -1,6 +1,7 @@
 {
   "expo": {
     "name": "Fortomnia",
+    "description": "Track training, nutrition, supplements, and performance in one private system.",
     "slug": "ironforge",
     "owner": "body-app",
     "version": "1.0.0",
