@@ -52,7 +52,7 @@ export default function SignInScreen() {
         <Text style={styles.eyebrow}>FORTOMNIA</Text>
         <Text style={styles.title}>Welcome back</Text>
         <Text style={styles.subtitle}>
-          The complete performance system.
+          Strength in Everything.
         </Text>
 
         <TextInput
