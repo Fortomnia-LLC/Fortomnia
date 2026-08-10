@@ -27,6 +27,8 @@ function RootNavigator() {
       <Stack.Protected guard={Boolean(session)}>
         <Stack.Screen name="(tabs)" />
       </Stack.Protected>
+
+      <Stack.Screen name="reset-password" />
     </Stack>
   );
 }
