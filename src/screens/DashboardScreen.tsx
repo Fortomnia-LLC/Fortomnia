@@ -10,13 +10,11 @@ import {
   View,
 } from "react-native";
 import { useWeeklyAnalytics } from "../hooks/useWeeklyAnalytics";
-import {
-  getLocalDateKey,
-  useDailyNutrition,
-} from "../hooks/useDailyNutrition";
+import { useDailyNutrition } from "../hooks/useDailyNutrition";
 import { useProfile } from "../hooks/useProfile";
 import { useSupplements } from "../hooks/useSupplements";
 import { useWorkoutSessions } from "../hooks/useWorkoutSessions";
+import { getLocalDateKey } from "../lib/dates";
 import { isProtocolDue } from "../lib/supplementSchedule";
 import { useAuth } from "../providers/AuthProvider";
 

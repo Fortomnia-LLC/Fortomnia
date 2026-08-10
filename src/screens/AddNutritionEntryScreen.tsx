@@ -11,10 +11,8 @@ import {
   View,
 } from "react-native";
 
-import {
-  getLocalDateKey,
-  type MealType,
-} from "../hooks/useDailyNutrition";
+import { type MealType } from "../hooks/useDailyNutrition";
+import { getLocalDateKey } from "../lib/dates";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
 
