@@ -151,7 +151,28 @@ export default function DashboardScreen() {
         ) : null}
 
         <Text style={styles.sectionTitle}>Today</Text>
+          <Link href="/recovery-check-in" asChild>
+            <Pressable
+              accessibilityHint="Opens today's recovery check-in"
+              accessibilityLabel="Daily recovery check-in"
+              accessibilityRole="button"
+              style={styles.recoveryCard}
+            >
+              <View style={styles.recoveryCardContent}>
+                <Text style={styles.recoveryCardTitle}>Recovery check-in</Text>
+                <Text style={styles.recoveryCardText}>
+                  Log sleep, energy, soreness, stress, and mood.
+                </Text>
+              </View>
 
+              <Text
+                accessibilityElementsHidden
+                style={styles.recoveryCardAction}
+              >
+                Check in ›
+              </Text>
+            </Pressable>
+          </Link>
         <Link href="/nutrition" asChild>
           <Pressable style={styles.card}>
             <View style={styles.cardHeader}>
@@ -603,6 +624,37 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
   },
   quickButtonText: {
+    color: "#F97316",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  recoveryCard: {
+    alignItems: "center",
+    backgroundColor: "#171717",
+    borderColor: "#333333",
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 14,
+    padding: 16,
+  },
+  recoveryCardContent: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  recoveryCardTitle: {
+    color: "#FFFFFF",
+    fontSize: 17,
+    fontWeight: "800",
+  },
+  recoveryCardText: {
+    color: "#9CA3AF",
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 5,
+  },
+  recoveryCardAction: {
     color: "#F97316",
     fontSize: 13,
     fontWeight: "700",
