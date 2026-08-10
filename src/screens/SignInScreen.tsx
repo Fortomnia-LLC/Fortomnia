@@ -1,4 +1,5 @@
 import { Link } from 'expo-router';
+import * as Linking from 'expo-linking';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -19,6 +20,8 @@ export default function SignInScreen() {
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSendingReset, setIsSendingReset] = useState(false);
+  const [resetMessage, setResetMessage] = useState<string | null>(null);
 
   async function handleSignIn() {
     setErrorMessage(null);
@@ -34,6 +37,34 @@ export default function SignInScreen() {
     }
 
     setIsSubmitting(false);
+  }
+
+  async function handleForgotPassword() {
+    const trimmedEmail = email.trim();
+
+    setErrorMessage(null);
+    setResetMessage(null);
+
+    if (!trimmedEmail) {
+      setErrorMessage('Enter your email address first.');
+      return;
+    }
+
+    setIsSendingReset(true);
+
+    const { error } = await supabase.auth.resetPasswordForEmail(
+      trimmedEmail,
+      { redirectTo: Linking.createURL('reset-password', { scheme: 'ironforge' }) },
+    );
+
+    setIsSendingReset(false);
+
+    if (error) {
+      setErrorMessage(error.message);
+      return;
+    }
+
+    setResetMessage('Check your email for a password reset link.');
   }
 
   const isDisabled = !email.trim() || !password || isSubmitting;
@@ -78,7 +109,24 @@ export default function SignInScreen() {
           style={styles.input}
           value={password}
         />
+<Pressable
+            accessibilityLabel="Send password reset email"
+            accessibilityRole="button"
+            accessibilityState={{ busy: isSendingReset }}
+            disabled={isSendingReset || isSubmitting}
+            onPress={handleForgotPassword}
+            style={styles.resetLink}
+          >
+            <Text style={styles.resetLinkText}>
+              {isSendingReset ? 'Sending reset email…' : 'Forgot password?'}
+            </Text>
+          </Pressable>
 
+          {resetMessage ? (
+            <Text accessibilityLiveRegion="polite" style={styles.status}>
+              {resetMessage}
+            </Text>
+          ) : null}
         {errorMessage ? (
           <Text
             accessibilityLiveRegion="polite"
@@ -176,6 +224,20 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     paddingHorizontal: 16,
     paddingVertical: 15,
+  },
+  resetLink: {
+    alignSelf: 'flex-end',
+    marginBottom: 14,
+    paddingVertical: 6,
+  },
+  resetLinkText: {
+    color: '#F59E0B',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  status: {
+    color: '#86EFAC',
+    marginBottom: 14,
   },
   error: {
     color: '#F87171',
