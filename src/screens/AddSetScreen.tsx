@@ -240,7 +240,7 @@ export default function AddSetScreen() {
           <Text style={styles.navigationText}>‹ Workout</Text>
         </Pressable>
 
-                  <Text style={styles.eyebrow}>IRONFORGE</Text>
+                  <Text style={styles.eyebrow}>FORTOMNIA</Text>
           <Text style={styles.title}>
             {isEditing ? "Edit set" : "Log set"}
           </Text>

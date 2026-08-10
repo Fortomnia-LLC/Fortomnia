@@ -157,7 +157,7 @@ export default function EditNutritionGoalsScreen() {
           <Text style={styles.navigationText}>‹ Nutrition</Text>
         </Pressable>
 
-        <Text style={styles.eyebrow}>IRONFORGE</Text>
+        <Text style={styles.eyebrow}>FORTOMNIA</Text>
         <Text style={styles.title}>Nutrition goals</Text>
         <Text style={styles.subtitle}>
           Set your daily calorie and macro targets.

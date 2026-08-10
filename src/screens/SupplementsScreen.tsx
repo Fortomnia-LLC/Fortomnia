@@ -413,7 +413,7 @@ const takenCount = scheduledProtocols.filter(
         )}
         ListHeaderComponent={
           <View style={styles.header}>
-            <Text style={styles.eyebrow}>IRONFORGE</Text>
+            <Text style={styles.eyebrow}>FORTOMNIA</Text>
             <Text style={styles.title}>Supplements</Text>
             <Text style={styles.subtitle}>
               Private protocols and daily adherence.

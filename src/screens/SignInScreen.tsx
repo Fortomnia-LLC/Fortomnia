@@ -49,10 +49,10 @@ export default function SignInScreen() {
             keyboardDismissMode="interactive"
             keyboardShouldPersistTaps="handled"
           >
-        <Text style={styles.eyebrow}>IRONFORGE</Text>
+        <Text style={styles.eyebrow}>FORTOMNIA</Text>
         <Text style={styles.title}>Welcome back</Text>
         <Text style={styles.subtitle}>
-          Sign in to continue building your strongest self.
+          Strength in Everything.
         </Text>
 
         <TextInput

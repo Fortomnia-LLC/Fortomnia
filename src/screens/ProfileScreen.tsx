@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -19,6 +20,7 @@ import { useAuth } from "../providers/AuthProvider";
 type WeightUnit = "lb" | "kg";
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const { session, signOut } = useAuth();
   const {
     errorMessage: profileError,
@@ -30,6 +32,7 @@ export default function ProfileScreen() {
   const [displayName, setDisplayName] = useState("");
   const [weightUnit, setWeightUnit] = useState<WeightUnit>("lb");
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
@@ -106,6 +109,57 @@ function handleSignOut() {
     ],
   );
 }
+function handleDeleteAccount() {
+  Alert.alert(
+    "Delete account?",
+    "This permanently deletes your account and all workouts, nutrition, supplements, templates, and custom exercises.",
+    [
+      {
+        style: "cancel",
+        text: "Cancel",
+      },
+      {
+        style: "destructive",
+        text: "Continue",
+        onPress: () => {
+          Alert.alert(
+            "Delete permanently?",
+            "This action cannot be undone.",
+            [
+              {
+                style: "cancel",
+                text: "Keep account",
+              },
+              {
+                style: "destructive",
+                text: "Delete permanently",
+                onPress: async () => {
+                  setIsDeletingAccount(true);
+                  setStatusMessage(null);
+
+                  const { error } = await supabase.functions.invoke(
+                    "delete-account",
+                  );
+
+                  if (error) {
+                    setIsDeletingAccount(false);
+                    Alert.alert(
+                      "Unable to delete account",
+                      error.message,
+                    );
+                    return;
+                  }
+
+                  await supabase.auth.signOut({ scope: "local" });
+                },
+              },
+            ],
+          );
+        },
+      },
+    ],
+  );
+}
   if (isLoading) {
     return (
       <SafeAreaView style={styles.loadingScreen}>
@@ -125,10 +179,10 @@ function handleSignOut() {
           keyboardDismissMode="interactive"
           keyboardShouldPersistTaps="handled"
         >
-        <Text style={styles.eyebrow}>IRONFORGE</Text>
+        <Text style={styles.eyebrow}>FORTOMNIA</Text>
         <Text style={styles.title}>Profile</Text>
         <Text style={styles.subtitle}>
-          Personalize how IronForge tracks your progress.
+          Personalize how Fortomnia tracks your progress.
         </Text>
 
         <Text style={styles.label}>Display name</Text>
@@ -197,11 +251,15 @@ function handleSignOut() {
           accessibilityRole="button"
           accessibilityState={{
             busy: isSaving,
-            disabled: isSaving,
+          disabled: isSaving || isSigningOut || isDeletingAccount,
           }}
-          disabled={isSaving}
+          disabled={isSaving || isSigningOut || isDeletingAccount}
           onPress={handleSave}
-          style={[styles.saveButton, isSaving && styles.disabled]}
+          style={[
+  styles.saveButton,
+  (isSaving || isSigningOut || isDeletingAccount) &&
+    styles.disabled,
+]}
         >
           {isSaving ? (
             <ActivityIndicator color="#0B0B0B" />
@@ -209,15 +267,34 @@ function handleSignOut() {
             <Text style={styles.saveText}>Save profile</Text>
           )}
         </Pressable>
+         <Pressable
+            accessibilityHint="Opens Fortomnia policies and support information"
+            accessibilityLabel="Privacy, terms, and support"
+            accessibilityRole="button"
+            onPress={() => router.push("/legal")}
+            style={styles.legalButton}
+          >
+            <View style={styles.legalButtonContent}>
+              <Text style={styles.legalButtonTitle}>
+                Privacy, terms & support
+              </Text>
+              <Text style={styles.legalButtonDescription}>
+                Policies, account deletion, and help
+              </Text>
+            </View>
 
+            <Text accessibilityElementsHidden style={styles.legalButtonArrow}>
+              ›
+            </Text>
+          </Pressable>
  <Pressable
           accessibilityLabel="Sign out"
           accessibilityRole="button"
           accessibilityState={{
             busy: isSigningOut,
-            disabled: isSaving || isSigningOut,
+            disabled: isSaving || isSigningOut || isDeletingAccount
           }}
-          disabled={isSaving || isSigningOut}
+          disabled={isSaving || isSigningOut || isDeletingAccount}
           onPress={handleSignOut}
           style={[
             styles.signOutButton,
@@ -230,6 +307,27 @@ function handleSignOut() {
             <Text style={styles.signOutText}>Sign out</Text>
           )}
         </Pressable>
+<Pressable
+  accessibilityLabel="Delete account permanently"
+  accessibilityRole="button"
+  accessibilityState={{
+    busy: isDeletingAccount,
+    disabled: isSaving || isSigningOut || isDeletingAccount,
+  }}
+  disabled={isSaving || isSigningOut || isDeletingAccount}
+  onPress={handleDeleteAccount}
+  style={[
+    styles.deleteAccountButton,
+    (isSaving || isSigningOut || isDeletingAccount) &&
+      styles.disabled,
+  ]}
+>
+  {isDeletingAccount ? (
+    <ActivityIndicator color="#F87171" />
+  ) : (
+    <Text style={styles.deleteAccountText}>Delete account</Text>
+  )}
+</Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -340,6 +438,36 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "800",
   },
+  legalButton: {
+    alignItems: "center",
+    backgroundColor: "#171717",
+    borderColor: "#333333",
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  legalButtonContent: {
+    flex: 1,
+  },
+  legalButtonTitle: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  legalButtonDescription: {
+    color: "#9CA3AF",
+    fontSize: 13,
+    marginTop: 4,
+  },
+  legalButtonArrow: {
+    color: "#F97316",
+    fontSize: 28,
+    marginLeft: 12,
+  },
   signOutButton: {
     alignItems: "center",
     borderColor: "#F97316",
@@ -353,4 +481,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
+deleteAccountButton: {
+  alignItems: "center",
+  borderColor: "#F87171",
+  borderRadius: 12,
+  borderWidth: 1,
+  marginTop: 28,
+  paddingVertical: 14,
+},
+deleteAccountText: {
+  color: "#F87171",
+  fontSize: 16,
+  fontWeight: "700",
+},
 });

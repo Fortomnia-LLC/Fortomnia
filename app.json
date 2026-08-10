@@ -1,7 +1,9 @@
 {
   "expo": {
-    "name": "IronForge",
+    "name": "Fortomnia",
+    "description": "Track training, nutrition, supplements, and performance in one private system.",
     "slug": "ironforge",
+    "owner": "body-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -15,7 +17,10 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.grc0830source.ironforge"
+      "bundleIdentifier": "com.grc0830source.ironforge",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.grc0830source.ironforge",
@@ -35,6 +40,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "48a69035-01c0-431f-8543-f47065f75bba"
+      }
     }
   }
 }

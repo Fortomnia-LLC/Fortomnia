@@ -52,7 +52,7 @@ export default function SignUpScreen() {
     if (!data.session) {
       Alert.alert(
         'Check your email',
-        'Open the confirmation email from IronForge, then return to sign in.',
+        'Open the confirmation email from Fortomnia, then return to sign in.',
         [{ text: 'OK', onPress: () => router.back() }],
       );
     }
@@ -75,7 +75,7 @@ export default function SignUpScreen() {
             keyboardDismissMode="interactive"
             keyboardShouldPersistTaps="handled"
           >
-        <Text style={styles.eyebrow}>IRONFORGE</Text>
+        <Text style={styles.eyebrow}>FORTOMNIA</Text>
         <Text style={styles.title}>Create account</Text>
         <Text style={styles.subtitle}>
           Start tracking your training and progress.

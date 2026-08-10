@@ -19,7 +19,7 @@ export function FeaturePlaceholder({
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.content}>
-        <Text style={styles.eyebrow}>IRONFORGE</Text>
+        <Text style={styles.eyebrow}>FORTOMNIA</Text>
         <Text style={styles.icon}>{icon}</Text>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.description}>{description}</Text>

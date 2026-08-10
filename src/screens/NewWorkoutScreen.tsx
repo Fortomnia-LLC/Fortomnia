@@ -76,7 +76,7 @@ export default function NewWorkoutScreen() {
           keyboardDismissMode="interactive"
           keyboardShouldPersistTaps="handled"
         >
-        <Text style={styles.eyebrow}>IRONFORGE</Text>
+        <Text style={styles.eyebrow}>FORTOMNIA</Text>
         <Text style={styles.title}>Start workout</Text>
         <Text style={styles.subtitle}>
           Name today&apos;s session. Exercises and sets come next.

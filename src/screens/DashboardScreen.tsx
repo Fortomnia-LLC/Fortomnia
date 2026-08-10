@@ -133,7 +133,7 @@ export default function DashboardScreen() {
           />
         }
       >
-        <Text style={styles.eyebrow}>IRONFORGE</Text>
+        <Text style={styles.eyebrow}>FORTOMNIA</Text>
         <Text style={styles.title}>Welcome, {displayName}</Text>
         <Text style={styles.date}>
           {new Date(`${today}T12:00:00`).toLocaleDateString(

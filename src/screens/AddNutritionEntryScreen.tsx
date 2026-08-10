@@ -228,7 +228,7 @@ export default function AddNutritionEntryScreen() {
           <Text style={styles.navigationText}>‹ Nutrition</Text>
         </Pressable>
 
-        <Text style={styles.eyebrow}>IRONFORGE</Text>
+        <Text style={styles.eyebrow}>FORTOMNIA</Text>
         <Text style={styles.title}>
           {isEditing ? "Edit food" : "Log food"}
         </Text>
