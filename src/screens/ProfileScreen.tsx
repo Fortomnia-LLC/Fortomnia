@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -19,6 +20,7 @@ import { useAuth } from "../providers/AuthProvider";
 type WeightUnit = "lb" | "kg";
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const { session, signOut } = useAuth();
   const {
     errorMessage: profileError,
@@ -265,7 +267,26 @@ function handleDeleteAccount() {
             <Text style={styles.saveText}>Save profile</Text>
           )}
         </Pressable>
+         <Pressable
+            accessibilityHint="Opens Fortomnia policies and support information"
+            accessibilityLabel="Privacy, terms, and support"
+            accessibilityRole="button"
+            onPress={() => router.push("/legal")}
+            style={styles.legalButton}
+          >
+            <View style={styles.legalButtonContent}>
+              <Text style={styles.legalButtonTitle}>
+                Privacy, terms & support
+              </Text>
+              <Text style={styles.legalButtonDescription}>
+                Policies, account deletion, and help
+              </Text>
+            </View>
 
+            <Text accessibilityElementsHidden style={styles.legalButtonArrow}>
+              ›
+            </Text>
+          </Pressable>
  <Pressable
           accessibilityLabel="Sign out"
           accessibilityRole="button"
@@ -416,6 +437,36 @@ const styles = StyleSheet.create({
     color: "#0B0B0B",
     fontSize: 16,
     fontWeight: "800",
+  },
+  legalButton: {
+    alignItems: "center",
+    backgroundColor: "#171717",
+    borderColor: "#333333",
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  legalButtonContent: {
+    flex: 1,
+  },
+  legalButtonTitle: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  legalButtonDescription: {
+    color: "#9CA3AF",
+    fontSize: 13,
+    marginTop: 4,
+  },
+  legalButtonArrow: {
+    color: "#F97316",
+    fontSize: 28,
+    marginLeft: 12,
   },
   signOutButton: {
     alignItems: "center",
