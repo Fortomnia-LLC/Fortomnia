@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 
-import { getLocalDateKey } from "../hooks/useDailyNutrition";
+import { getLocalDateKey } from "../lib/dates";
 import {
   type SupplementLog,
   type SupplementProtocol,

@@ -10,13 +10,12 @@ import {
   View,
 } from "react-native";
 import { useWeeklyAnalytics } from "../hooks/useWeeklyAnalytics";
-import {
-  getLocalDateKey,
-  useDailyNutrition,
-} from "../hooks/useDailyNutrition";
+import { useDailyNutrition } from "../hooks/useDailyNutrition";
 import { useProfile } from "../hooks/useProfile";
+import { useRecoveryCheckIns } from "../hooks/useRecoveryCheckIns";
 import { useSupplements } from "../hooks/useSupplements";
 import { useWorkoutSessions } from "../hooks/useWorkoutSessions";
+import { getLocalDateKey } from "../lib/dates";
 import { isProtocolDue } from "../lib/supplementSchedule";
 import { useAuth } from "../providers/AuthProvider";
 
@@ -60,6 +59,13 @@ export default function DashboardScreen() {
     isLoading: analyticsLoading,
     refreshAnalytics,
   } = useWeeklyAnalytics(today);
+  const {
+    currentDay: recoveryDay,
+    days: recoveryDays,
+    errorMessage: recoveryError,
+    isLoading: recoveryLoading,
+    refreshRecovery,
+  } = useRecoveryCheckIns(today);
   const displayName =
     profile?.display_name?.trim() ||
     session?.user.email?.split("@")[0] ||
@@ -93,6 +99,7 @@ export default function DashboardScreen() {
     profileLoading ||
     nutritionLoading ||
     supplementsLoading ||
+    recoveryLoading ||
     analyticsLoading ||
     workoutsLoading;
 
@@ -101,6 +108,7 @@ export default function DashboardScreen() {
     profileError,
     nutritionError,
     supplementError,
+    recoveryError,
     analyticsError,
     workoutError,
   ].filter((error): error is string => Boolean(error));
@@ -125,6 +133,7 @@ export default function DashboardScreen() {
               void Promise.all([
                 refreshProfile(),
                 refreshNutrition(),
+                refreshRecovery(),
                 refreshSupplements(),
                 refreshAnalytics(),
                 refreshWorkoutSessions(),
@@ -153,7 +162,70 @@ export default function DashboardScreen() {
         ) : null}
 
         <Text style={styles.sectionTitle}>Today</Text>
+          <Link href="/recovery" asChild>
+            <Pressable
+              accessibilityHint="Opens today's recovery check-in"
+              accessibilityLabel="Daily recovery check-in"
+              accessibilityRole="button"
+              style={styles.recoveryCard}
+            >
+              <View style={styles.recoveryCardContent}>
+                <Text style={styles.recoveryCardTitle}>Recovery check-in</Text>
 
+                {recoveryDay ? (
+                  <>
+                    <View style={styles.recoveryScoreRow}>
+                      <Text style={styles.recoveryScore}>
+                        {recoveryDay.readiness.score}
+                      </Text>
+                      <Text style={styles.recoveryScoreUnit}>/100</Text>
+                      <Text style={styles.recoveryBand}>
+                        {recoveryDay.readiness.label}
+                      </Text>
+                    </View>
+
+                    <Text style={styles.recoveryCardText}>
+                      {recoveryDay.readiness.recommendation}
+                    </Text>
+                  </>
+                ) : (
+                  <Text style={styles.recoveryCardText}>
+                    Log sleep, energy, soreness, stress, and mood.
+                  </Text>
+                )}
+
+                {recoveryDays.length > 0 ? (
+                  <View style={styles.recoveryTrend}>
+                    {[...recoveryDays].reverse().map((day) => (
+                      <View
+                        key={day.id}
+                        style={styles.recoveryTrendItem}
+                      >
+                        <Text style={styles.recoveryTrendDay}>
+                          {new Date(
+                            `${day.checkin_date}T12:00:00`,
+                          ).toLocaleDateString(undefined, {
+                            weekday: "short",
+                          })}
+                        </Text>
+                        <Text style={styles.recoveryTrendScore}>
+                          {day.readiness.score}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
+              </View>
+
+              <Text
+                accessibilityElementsHidden
+                style={styles.recoveryCardAction}
+              >
+                {recoveryDay ? "Update ›" : "Check in ›"}
+              </Text>
+
+            </Pressable>
+          </Link>
         <Link href="/nutrition" asChild>
           <Pressable style={styles.card}>
             <View style={styles.cardHeader}>
@@ -605,6 +677,82 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
   },
   quickButtonText: {
+    color: "#F97316",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  recoveryCard: {
+    alignItems: "center",
+    backgroundColor: "#171717",
+    borderColor: "#333333",
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 14,
+    padding: 16,
+  },
+  recoveryCardContent: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  recoveryCardTitle: {
+    color: "#FFFFFF",
+    fontSize: 17,
+    fontWeight: "800",
+  },
+  recoveryCardText: {
+    color: "#9CA3AF",
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 5,
+  },
+  recoveryScoreRow: {
+    alignItems: "baseline",
+    flexDirection: "row",
+    marginTop: 8,
+  },
+  recoveryScore: {
+    color: "#F97316",
+    fontSize: 30,
+    fontWeight: "800",
+  },
+  recoveryScoreUnit: {
+    color: "#9CA3AF",
+    fontSize: 13,
+    marginLeft: 2,
+  },
+  recoveryBand: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "700",
+    marginLeft: 10,
+  },
+  recoveryTrend: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 12,
+  },
+  recoveryTrendItem: {
+    alignItems: "center",
+    backgroundColor: "#21170D",
+    borderRadius: 8,
+    minWidth: 34,
+    paddingHorizontal: 7,
+    paddingVertical: 6,
+  },
+  recoveryTrendDay: {
+    color: "#9CA3AF",
+    fontSize: 10,
+    fontWeight: "700",
+  },
+  recoveryTrendScore: {
+    color: "#F97316",
+    fontSize: 13,
+    fontWeight: "800",
+    marginTop: 2,
+  },
+  recoveryCardAction: {
     color: "#F97316",
     fontSize: 13,
     fontWeight: "700",

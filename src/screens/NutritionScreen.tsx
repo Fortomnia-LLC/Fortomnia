@@ -12,10 +12,10 @@ import {
 } from "react-native";
 
 import {
-  getLocalDateKey,
   type NutritionEntry,
   useDailyNutrition,
 } from "../hooks/useDailyNutrition";
+import { getLocalDateKey } from "../lib/dates";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
 type NutritionEntryCardProps = {

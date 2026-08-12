@@ -108,6 +108,8 @@ export default function TabLayout() {
       <Tabs.Screen name="new-exercise" options={{ href: null }} />
       <Tabs.Screen name="new-supplement" options={{ href: null }} />
       <Tabs.Screen name="exercise-library" options={{ href: null }} />
+      <Tabs.Screen name="recovery" options={{ href: null }} />
+      <Tabs.Screen name="recovery-check-in" options={{ href: null }} />
       <Tabs.Screen name="legal" options={{ href: null }} />
     </Tabs>
   );
