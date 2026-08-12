@@ -162,7 +162,7 @@ export default function DashboardScreen() {
         ) : null}
 
         <Text style={styles.sectionTitle}>Today</Text>
-          <Link href="/recovery-check-in" asChild>
+          <Link href="/recovery" asChild>
             <Pressable
               accessibilityHint="Opens today's recovery check-in"
               accessibilityLabel="Daily recovery check-in"
