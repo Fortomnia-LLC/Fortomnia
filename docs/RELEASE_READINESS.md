@@ -46,17 +46,17 @@ The remaining npm audit findings are inherited through Expo and Metro build tool
 
 ## App functionality
 
-- [ ] Complete a workout and verify workout history.
-- [ ] Create, edit, archive, and reuse a workout template.
-- [ ] Create and archive a custom exercise.
-- [ ] Add, edit, and delete nutrition entries.
-- [ ] Update nutrition goals.
-- [ ] Create, edit, log, skip, and archive a supplement protocol.
-- [ ] Create and update a recovery check-in.
-- [ ] Verify readiness scores and seven-day recovery history.
-- [ ] Confirm body-weight values and units display correctly.
-- [ ] Verify pull-to-refresh behavior on primary screens.
-- [ ] Verify empty, loading, error, and offline states.
+- [x] Complete a workout and verify workout history.
+- [x] Create, edit, archive, and reuse a workout template.
+- [x] Create and archive a custom exercise.
+- [x] Add, edit, and delete nutrition entries.
+- [x] Update nutrition goals.
+- [x] Create, edit, log, skip, and archive a supplement protocol.
+- [x] Create and update a recovery check-in.
+- [x] Verify readiness scores and seven-day recovery history.
+- [x] Confirm body-weight values and units display correctly.
+- [x] Verify pull-to-refresh behavior on primary screens.
+- [x] Verify empty, loading, error, and offline states.
 
 ## iPhone beta testing
 
@@ -65,9 +65,9 @@ The remaining npm audit findings are inherited through Expo and Metro build tool
 - [ ] Verify the Fortomnia icon and splash screen.
 - [ ] Test a fresh account from registration through deletion.
 - [ ] Test an existing account after reinstalling the app.
-- [ ] Test keyboard behavior and scrolling on every form.
+- [x] Test keyboard behavior and scrolling on every form.
 - [ ] Test light and dark device settings.
-- [ ] Test with larger accessibility text.
+- [x] Test with larger accessibility text.
 - [ ] Check VoiceOver labels on important controls.
 - [ ] Verify layouts on at least one smaller iPhone.
 - [ ] Record all release-blocking defects.
