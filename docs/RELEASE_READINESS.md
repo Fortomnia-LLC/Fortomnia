@@ -10,7 +10,7 @@ Last updated: August 12, 2026
 - [x] Progression logic is covered by tests.
 - [x] Readiness scoring is covered by tests.
 - [x] Supplement scheduling is covered by tests.
-- [ ] Add automated checks to GitHub Actions.
+- [x] Add automated checks to GitHub Actions.
 
 ## Data security
 
