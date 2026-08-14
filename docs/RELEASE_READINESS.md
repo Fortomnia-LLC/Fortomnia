@@ -80,7 +80,7 @@ The remaining npm audit findings are inherited through Expo and Metro build tool
 - [x] Terms of Use draft exists.
 - [x] Support and account-deletion documents exist.
 - [x] Encryption exemption is declared in the Expo configuration.
-- [ ] Replace every `[[SUPPORT_EMAIL]]` placeholder.
+- [x] Replace the support email placeholder in every policy.
 - [ ] Replace legal-owner and App Review placeholders.
 - [ ] Obtain appropriate legal review of public policies.
 - [ ] Publish privacy, terms, support, and deletion pages.
@@ -97,9 +97,10 @@ The remaining npm audit findings are inherited through Expo and Metro build tool
 - [x] `fortomnia.com` is secured.
 - [ ] Secure additional priority Fortomnia domains.
 - [ ] Complete trademark review and filing.
-- [ ] Create the Fortomnia website.
+- [x] Create the Fortomnia website.
+- [x] Connect fortomnia.com and validate HTTPS.
 - [ ] Publish public legal and support pages.
-- [ ] Configure a monitored support email address.
+- [x] Configure a monitored support email address.
 - [ ] Configure domain email authentication and delivery.
 - [ ] Add website and policy URLs to App Store Connect.
 

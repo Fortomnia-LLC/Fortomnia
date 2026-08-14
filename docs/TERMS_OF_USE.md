@@ -4,7 +4,7 @@
 
 These Terms of Use ("Terms") govern your use of Fortomnia. By creating an account or using Fortomnia, you agree to these Terms. If you do not agree, do not use the app.
 
-> **Draft notice:** These Terms are an operational draft and should receive appropriate legal review before public release. Replace `[[SUPPORT_EMAIL]]` before publishing.
+> **Draft notice:** These Terms are an operational draft and should receive appropriate legal review before public release. Replace `support@fortomnia.com` before publishing.
 
 ## The Service
 
@@ -18,7 +18,7 @@ Consult qualified healthcare professionals before making decisions that may affe
 
 ## Your Account
 
-You are responsible for providing accurate account information, protecting your credentials, and activity conducted through your account. Notify us at `[[SUPPORT_EMAIL]]` if you believe your account has been compromised.
+You are responsible for providing accurate account information, protecting your credentials, and activity conducted through your account. Notify us at `support@fortomnia.com` if you believe your account has been compromised.
 
 You may not use Fortomnia to violate law, interfere with the service, gain unauthorized access, distribute malicious code, or infringe another person's rights.
 
@@ -50,4 +50,4 @@ We may update these Terms as Fortomnia evolves. We will update the date above an
 
 ## Contact
 
-Questions about these Terms may be sent to `[[SUPPORT_EMAIL]]`.
+Questions about these Terms may be sent to `support@fortomnia.com`.
