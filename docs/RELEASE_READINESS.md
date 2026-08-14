@@ -41,7 +41,7 @@ The remaining npm audit findings are inherited through Expo and Metro build tool
 - [x] Sign-in and sign-out work.
 - [x] Account deletion works.
 - [x] User-owned database records use deletion cascades.
-- [ ] Merge and complete the password-recovery release flow.
+- [x] Merge and complete the password-recovery release flow.
 - [ ] Test password recovery in the final native build.
 
 ## App functionality
