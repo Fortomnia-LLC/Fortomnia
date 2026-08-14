@@ -140,7 +140,7 @@ Screenshot rules:
 
 ### Demo account
 
-- Username: `[[REVIEW_ACCOUNT_EMAIL]]`
+- Username: `appreview@fortomnia.com`
 - Password: `[[REVIEW_ACCOUNT_PASSWORD]]`
 
 Create a dedicated review account containing fictional sample workouts, nutrition entries, supplement protocols, and history. Keep it active for the entire review. Do not reuse a personal account.
@@ -208,7 +208,7 @@ Complete Apple's current age-rating questionnaire based on the final submitted b
 - [x] `support@fortomnia.com` is active and listed across the hosted policy pages.
 - [ ] Complete the remaining App Review contact and demo-account placeholders.
 - [ ] Marketing, support, privacy, deletion, and terms URLs are live.
-- [ ] A dedicated review account is active and populated with fictional data.
+- [x] A dedicated review account is active and populated with fictional data.
 - [ ] App privacy answers are verified against the final binary and SDKs.
 - [ ] Screenshots are captured from the submitted build at accepted dimensions.
 - [ ] Account creation, sign-in, refresh, and deletion are retested in production.

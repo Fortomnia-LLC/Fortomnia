@@ -87,7 +87,7 @@ The remaining npm audit findings are inherited through Expo and Metro build tool
 - [ ] Create final App Store screenshots.
 - [ ] Complete Apple App Privacy answers.
 - [ ] Add the App Store support and privacy URLs.
-- [ ] Prepare and verify the App Review account.
+- [x] Prepare and verify the App Review account.
 - [ ] Upload the release candidate to TestFlight.
 - [ ] Complete external TestFlight testing.
 - [ ] Submit the approved build for App Review.
