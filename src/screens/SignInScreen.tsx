@@ -54,7 +54,7 @@ export default function SignInScreen() {
 
     const { error } = await supabase.auth.resetPasswordForEmail(
       trimmedEmail,
-      { redirectTo: Linking.createURL('reset-password', { scheme: 'ironforge' }) },
+      { redirectTo: Linking.createURL('reset-password', { scheme: 'fortomnia' }) },
     );
 
     setIsSendingReset(false);
