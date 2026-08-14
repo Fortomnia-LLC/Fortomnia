@@ -1,5 +1,5 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -100,6 +100,21 @@ export default function AddNutritionEntryScreen() {
     initialProtein,
     initialServing,
   ]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (isEditing) return;
+
+      setFoodName("");
+      setServing("");
+      setCalories("");
+      setProtein("");
+      setCarbs("");
+      setFat("");
+      setFiber("");
+      setErrorMessage(null);
+    }, [isEditing]),
+  );
 
   async function handleSave() {
     const trimmedName = foodName.trim();
@@ -207,6 +222,14 @@ export default function AddNutritionEntryScreen() {
       setErrorMessage(error.message);
       return;
     }
+
+    setFoodName("");
+    setServing("");
+    setCalories("");
+    setProtein("");
+    setCarbs("");
+    setFat("");
+    setFiber("");
 
     router.replace("/nutrition");
   }
