@@ -101,7 +101,7 @@ The remaining npm audit findings are inherited through Expo and Metro build tool
 - [x] Connect fortomnia.com and validate HTTPS.
 - [ ] Publish public legal and support pages.
 - [x] Configure a monitored support email address.
-- [ ] Configure domain email authentication and delivery.
+- [x] Configure domain email authentication and delivery.
 - [ ] Add website and policy URLs to App Store Connect.
 
 ## Release approval
