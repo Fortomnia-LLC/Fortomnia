@@ -84,7 +84,7 @@ The remaining npm audit findings are inherited through Expo and Metro build tool
 - [ ] Replace legal-owner and App Review placeholders.
 - [ ] Obtain appropriate legal review of public policies.
 - [ ] Publish privacy, terms, support, and deletion pages.
-- [ ] Create final App Store screenshots.
+- [x] Create final App Store screenshots.
 - [ ] Complete Apple App Privacy answers.
 - [ ] Add the App Store support and privacy URLs.
 - [x] Prepare and verify the App Review account.
