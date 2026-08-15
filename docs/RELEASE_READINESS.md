@@ -64,11 +64,11 @@ The remaining npm audit findings are inherited through Expo and Metro build tool
 - [x] Install and launch the build on a physical iPhone.
 - [x] Verify the Fortomnia icon and splash screen.
 - [x] Test a fresh account from registration through deletion.
-- [ ] Test an existing account after reinstalling the app.
+- [x] Test an existing account after reinstalling the app.
 - [x] Test keyboard behavior and scrolling on every form.
-- [ ] Test light and dark device settings.
+- [x] Test light and dark device settings.
 - [x] Test with larger accessibility text.
-- [ ] Check VoiceOver labels on important controls.
+- [x] Check VoiceOver labels on important controls.
 - [ ] Verify layouts on at least one smaller iPhone.
 - [x] Record all release-blocking defects: none found.
 
