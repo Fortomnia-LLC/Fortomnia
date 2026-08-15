@@ -21,7 +21,7 @@ Last updated: August 12, 2026
 - [x] No service-role keys or private keys are tracked.
 - [x] Only `.env.example` is tracked by Git.
 - [x] Secure account deletion is available in the app.
-- [ ] Re-test account deletion using the final release build.
+- [x] Re-test account deletion using the final release build.
 
 ## Dependencies
 
@@ -42,7 +42,7 @@ The remaining npm audit findings are inherited through Expo and Metro build tool
 - [x] Account deletion works.
 - [x] User-owned database records use deletion cascades.
 - [x] Merge and complete the password-recovery release flow.
-- [ ] Test password recovery in the final native build.
+- [x] Test password recovery in the final native build.
 
 ## App functionality
 
@@ -60,17 +60,17 @@ The remaining npm audit findings are inherited through Expo and Metro build tool
 
 ## iPhone beta testing
 
-- [ ] Create a new iOS internal build from the release candidate.
-- [ ] Install and launch the build on a physical iPhone.
-- [ ] Verify the Fortomnia icon and splash screen.
-- [ ] Test a fresh account from registration through deletion.
+- [x] Create a new iOS internal build from the release candidate.
+- [x] Install and launch the build on a physical iPhone.
+- [x] Verify the Fortomnia icon and splash screen.
+- [x] Test a fresh account from registration through deletion.
 - [ ] Test an existing account after reinstalling the app.
 - [x] Test keyboard behavior and scrolling on every form.
 - [ ] Test light and dark device settings.
 - [x] Test with larger accessibility text.
 - [ ] Check VoiceOver labels on important controls.
 - [ ] Verify layouts on at least one smaller iPhone.
-- [ ] Record all release-blocking defects.
+- [x] Record all release-blocking defects: none found.
 
 ## App Store preparation
 
@@ -88,7 +88,7 @@ The remaining npm audit findings are inherited through Expo and Metro build tool
 - [ ] Complete Apple App Privacy answers.
 - [ ] Add the App Store support and privacy URLs.
 - [x] Prepare and verify the App Review account.
-- [ ] Upload the release candidate to TestFlight.
+- [x] Upload the release candidate to TestFlight.
 - [ ] Complete external TestFlight testing.
 - [ ] Submit the approved build for App Review.
 
