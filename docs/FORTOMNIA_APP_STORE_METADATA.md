@@ -2,7 +2,7 @@
 
 **Prepared: August 9, 2026**
 
-This draft reflects Fortomnia's current release scope. It intentionally excludes future Apple Health, AI coaching, lab tracking, recovery scoring, barcode scanning, payments, advertising, and wearable features.
+This draft reflects Fortomnia's current release scope. It intentionally excludes future Apple Health, AI coaching, lab tracking, barcode scanning, payments, advertising, and wearable features.
 
 ## Product Page Metadata
 
@@ -24,7 +24,7 @@ Leave unset initially, or consider `Lifestyle` only if the final App Store posit
 
 ### Promotional text
 
-`Bring workouts, nutrition, supplements, and performance history together in one private system built to support consistent progress.`
+`Bring training, nutrition, supplements, recovery, and performance history together in one private system built to support consistent progress.`
 
 ### Keywords
 
@@ -37,7 +37,7 @@ Do not add `Fortomnia` to the keyword field because the app name is already inde
 ```text
 Strength in Everything.
 
-Fortomnia brings your training, nutrition, supplements, and performance history into one focused system. Build routines, record the work, and keep the information that shapes your progress connected to your account.
+Fortomnia brings your training, nutrition, supplements, recovery, and performance history into one focused system. Build routines, record the work, and keep the information that shapes your progress connected to your account.
 
 TRAIN WITH STRUCTURE
 
@@ -58,6 +58,10 @@ Record daily nutrition entries and monitor calories, protein, carbohydrates, and
 ORGANIZE SUPPLEMENTS
 
 Maintain private supplement protocols, schedules, doses, and adherence records in one place.
+
+UNDERSTAND RECOVERY
+
+Record sleep, energy, soreness, stress, mood, and optional body weight. Fortomnia turns those daily inputs into a readiness score and seven-day recovery history.
 
 REVIEW YOUR PROGRESS
 
@@ -88,16 +92,16 @@ These URLs are reserved targets, not publication claims. Verify that every page 
 
 ### Copyright
 
-`2026 [[LEGAL_OWNER_NAME]]`
+`2026 Greg Cook`
 
-Replace the placeholder with the person or legal entity that owns the application rights.
+This reflects the individual currently enrolled as the application owner.
 
 ### Initial-release notes
 
 ```text
 Welcome to Fortomnia.
 
-Version 1.0 brings workout and set logging, reusable workout templates, exercise history, a searchable exercise library, nutrition tracking, supplement protocols, weekly analytics, profile preferences, cloud synchronization, and secure account deletion.
+Version 1.0 brings workout and set logging, reusable workout templates, exercise history, a searchable exercise library, nutrition tracking, supplement protocols, recovery check-ins, readiness scoring, weekly analytics, profile preferences, cloud synchronization, and secure account deletion.
 ```
 
 App Store Connect may not display a What's New field for the first public release. Retain this copy for TestFlight notes and later use.
@@ -109,12 +113,13 @@ Apple permits one to ten screenshots. Capture actual app screens using an accept
 | Order | Screen | Suggested headline | What to show |
 | --- | --- | --- | --- |
 | 1 | Dashboard | Strength in Everything | Fortomnia branding and the connected daily overview |
-| 2 | Training | Train with Structure | Workout templates and recent sessions |
-| 3 | Set logging | Record Every Set | Exercise selection, previous performance, reps, weight, and RIR |
-| 4 | Exercise library | Build Your Library | Search, filters, exercise details, and custom exercise support |
-| 5 | Nutrition | Fuel the Work | Daily calories and macronutrient progress |
-| 6 | Supplements | Keep Protocols Organized | Schedule, dose, and adherence states without medical claims |
-| 7 | History or analytics | See the Work Add Up | Exercise history or weekly analytics using realistic demo data |
+| 2 | Recovery | Know Your Readiness | Daily readiness score and seven-day recovery history |
+| 3 | Training | Train with Structure | Workout templates and recent sessions |
+| 4 | Set logging | Record Every Set | Exercise selection, previous performance, reps, weight, and RIR |
+| 5 | Exercise library | Build Your Library | Search, filters, exercise details, and custom exercise support |
+| 6 | Nutrition | Fuel the Work | Daily calories and macronutrient progress |
+| 7 | Supplements | Keep Protocols Organized | Schedule, dose, and adherence states without medical claims |
+| 8 | History or analytics | See the Work Add Up | Exercise history or weekly analytics using realistic demo data |
 
 Screenshot rules:
 
@@ -128,14 +133,14 @@ Screenshot rules:
 
 ### Contact information
 
-- First name: `[[REVIEW_CONTACT_FIRST_NAME]]`
-- Last name: `[[REVIEW_CONTACT_LAST_NAME]]`
+- First name: `Greg`
+- Last name: `Cook`
 - Phone: `[[REVIEW_CONTACT_PHONE]]`
-- Email: `[[REVIEW_CONTACT_EMAIL]]`
+- Email: `support@fortomnia.com`
 
 ### Demo account
 
-- Username: `[[REVIEW_ACCOUNT_EMAIL]]`
+- Username: `appreview@fortomnia.com`
 - Password: `[[REVIEW_ACCOUNT_PASSWORD]]`
 
 Create a dedicated review account containing fictional sample workouts, nutrition entries, supplement protocols, and history. Keep it active for the entire review. Do not reuse a personal account.
@@ -172,7 +177,7 @@ This is a working worksheet, not a substitute for inspecting the final binary an
 | Contact Info — Name | Optional display name | Yes | No | App Functionality |
 | Contact Info — Email Address | Account registration and authentication | Yes | No | App Functionality |
 | Health & Fitness — Fitness | Workouts, exercises, sets, reps, weight, RIR, training history | Yes | No | App Functionality |
-| Health & Fitness — Health | Nutrition goals and entries; supplement protocols and adherence | Yes | No | App Functionality |
+| Health & Fitness — Health | Nutrition goals and entries; supplement protocols and adherence; recovery check-ins, readiness inputs, and body-weight records | Yes | No | App Functionality |
 | User Content — Other User Content | Workout, nutrition, supplement, template, and custom-exercise notes | Yes | No | App Functionality |
 | Identifiers — User ID | Supabase account identifier associated with stored records | Yes | No | App Functionality |
 
@@ -200,10 +205,10 @@ Complete Apple's current age-rating questionnaire based on the final submitted b
 
 - [ ] Fortomnia name is cleared for the intended filing and release scope.
 - [ ] Bundle identifier and application identifiers reflect the final naming decision.
-- [ ] `[[SUPPORT_EMAIL]]` is replaced across public policies.
-- [ ] `[[LEGAL_OWNER_NAME]]` and all App Review placeholders are replaced.
+- [x] `support@fortomnia.com` is active and listed across the hosted policy pages.
+- [ ] Complete the remaining App Review contact and demo-account placeholders.
 - [ ] Marketing, support, privacy, deletion, and terms URLs are live.
-- [ ] A dedicated review account is active and populated with fictional data.
+- [x] A dedicated review account is active and populated with fictional data.
 - [ ] App privacy answers are verified against the final binary and SDKs.
 - [ ] Screenshots are captured from the submitted build at accepted dimensions.
 - [ ] Account creation, sign-in, refresh, and deletion are retested in production.

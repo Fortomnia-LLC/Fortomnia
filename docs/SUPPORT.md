@@ -2,11 +2,10 @@
 
 **Strength in Everything.**
 
-> **Publication placeholder:** Replace `[[SUPPORT_EMAIL]]` with a monitored public email address before publishing this page or submitting Fortomnia for review.
 
 ## Contact Support
 
-Email: `[[SUPPORT_EMAIL]]`
+Email: `support@fortomnia.com`
 
 When requesting help, include:
 
