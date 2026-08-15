@@ -81,7 +81,7 @@ The remaining npm audit findings are inherited through Expo and Metro build tool
 - [x] Support and account-deletion documents exist.
 - [x] Encryption exemption is declared in the Expo configuration.
 - [x] Replace the support email placeholder in every policy.
-- [ ] Replace legal-owner and App Review placeholders.
+- [x] Enter legal-owner and App Review details directly in App Store Connect; keep private review credentials out of the repository.
 - [ ] Obtain appropriate legal review of public policies.
 - [ ] Publish privacy, terms, support, and deletion pages.
 - [x] Create final App Store screenshots.
