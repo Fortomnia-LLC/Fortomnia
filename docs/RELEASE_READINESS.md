@@ -85,7 +85,7 @@ The remaining npm audit findings are inherited through Expo and Metro build tool
 - [ ] Obtain appropriate legal review of public policies.
 - [ ] Publish privacy, terms, support, and deletion pages.
 - [x] Create final App Store screenshots.
-- [ ] Complete Apple App Privacy answers.
+- [x] Complete Apple App Privacy answers.
 - [ ] Add the App Store support and privacy URLs.
 - [x] Prepare and verify the App Review account.
 - [x] Upload the release candidate to TestFlight.
