@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   DEFAULT_PROGRESSION_RULES,
+  getExerciseRecommendation,
   getRepsFirstSuggestion,
 } from "../src/lib/progression.ts";
 
@@ -103,4 +104,38 @@ test("holds performance when RIR is low or missing", () => {
     assert.equal(suggestion.reps, 10);
     assert.equal(suggestion.weight, 100);
   }
+});
+
+
+test("uses the limiting working set from the most recent workout", () => {
+  const recommendation = getExerciseRecommendation(
+    [
+      { performedAt: "2026-08-18T12:03:00Z", reps: 10, repsInReserve: 2, sessionId: "latest", weight: 100, weightUnit: "lb" },
+      { performedAt: "2026-08-18T12:02:00Z", reps: 9, repsInReserve: 1, sessionId: "latest", weight: 100, weightUnit: "lb" },
+      { performedAt: "2026-08-11T12:00:00Z", reps: 12, repsInReserve: 3, sessionId: "older", weight: 100, weightUnit: "lb" },
+    ],
+    { repMax: 12, repMin: 8 },
+  );
+
+  assert.ok(recommendation);
+  assert.equal(recommendation.reps, 9);
+  assert.equal(recommendation.weight, 100);
+  assert.equal(recommendation.basedOnSetCount, 2);
+  assert.match(recommendation.explanation, /2 working sets/);
+});
+
+test("ignores lighter backoff sets when choosing the next target", () => {
+  const recommendation = getExerciseRecommendation([
+    { performedAt: "2026-08-18T12:03:00Z", reps: 12, repsInReserve: 3, sessionId: "latest", weight: 80, weightUnit: "kg" },
+    { performedAt: "2026-08-18T12:01:00Z", reps: 8, repsInReserve: 2, sessionId: "latest", weight: 100, weightUnit: "kg" },
+  ]);
+
+  assert.ok(recommendation);
+  assert.equal(recommendation.reps, 9);
+  assert.equal(recommendation.weight, 100);
+  assert.equal(recommendation.basedOnSetCount, 1);
+});
+
+test("returns no recommendation without exercise history", () => {
+  assert.equal(getExerciseRecommendation([]), null);
 });
