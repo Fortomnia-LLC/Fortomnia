@@ -19,6 +19,20 @@ export type ProgressionSuggestion = {
   weightUnit: "lb" | "kg";
 };
 
+export type RecentExerciseSet = {
+  performedAt: string;
+  reps: number;
+  repsInReserve: number | null;
+  sessionId: string;
+  weight: number;
+  weightUnit: ProgressionInput["weightUnit"];
+};
+
+export type ExerciseRecommendation = ProgressionSuggestion & {
+  basedOnSetCount: number;
+  performedAt: string;
+};
+
 export const DEFAULT_PROGRESSION_RULES: AthleteProgressionRules = {
   minimumRepsInReserve: 2,
   weightIncrease: {
@@ -93,5 +107,63 @@ export function getRepsFirstSuggestion(
     reps: input.reps,
     weight: input.weight,
     weightUnit: input.weightUnit,
+  };
+}
+
+
+export function getExerciseRecommendation(
+  recentSets: RecentExerciseSet[],
+  repRange: Pick<ProgressionInput, "repMax" | "repMin"> = {},
+  rules: AthleteProgressionRules = DEFAULT_PROGRESSION_RULES,
+): ExerciseRecommendation | null {
+  if (recentSets.length === 0) {
+    return null;
+  }
+
+  const sortedSets = [...recentSets].sort(
+    (left, right) =>
+      new Date(right.performedAt).getTime() -
+      new Date(left.performedAt).getTime(),
+  );
+  const mostRecentSet = sortedSets[0];
+  const lastWorkoutSets = sortedSets.filter(
+    (set) =>
+      set.sessionId === mostRecentSet.sessionId &&
+      set.weightUnit === mostRecentSet.weightUnit,
+  );
+  const workingWeight = Math.max(
+    ...lastWorkoutSets.map((set) => set.weight),
+  );
+  const workingSets = lastWorkoutSets.filter(
+    (set) => set.weight === workingWeight,
+  );
+  const limitingSet = workingSets.reduce((current, set) => {
+    if (set.reps !== current.reps) {
+      return set.reps < current.reps ? set : current;
+    }
+
+    const currentRir = current.repsInReserve ?? -1;
+    const setRir = set.repsInReserve ?? -1;
+    return setRir < currentRir ? set : current;
+  });
+  const suggestion = getRepsFirstSuggestion(
+    {
+      ...repRange,
+      reps: limitingSet.reps,
+      repsInReserve: limitingSet.repsInReserve,
+      weight: limitingSet.weight,
+      weightUnit: limitingSet.weightUnit,
+    },
+    rules,
+  );
+  const setLabel = workingSets.length === 1 ? "set" : "sets";
+
+  return {
+    ...suggestion,
+    basedOnSetCount: workingSets.length,
+    explanation:
+      `Based on ${workingSets.length} working ${setLabel} from your last workout. ` +
+      suggestion.explanation,
+    performedAt: mostRecentSet.performedAt,
   };
 }
