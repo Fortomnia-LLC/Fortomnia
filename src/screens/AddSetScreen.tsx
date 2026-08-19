@@ -14,7 +14,7 @@ import { ExercisePicker } from "../components/ExercisePicker";
 import { useExercises } from "../hooks/useExercises";
 import { useProfile } from "../hooks/useProfile";
 import { usePreviousExerciseSet } from "../hooks/usePreviousExerciseSet";
-import { getRepsFirstSuggestion } from "../lib/progression";
+import { getExerciseRecommendation } from "../lib/progression";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
 
@@ -60,16 +60,35 @@ export default function AddSetScreen() {
     isLoadingPrevious,
     previousError,
     previousSet,
+    previousSets,
   } = usePreviousExerciseSet(exerciseId, workoutId);
 
-  const progressionSuggestion = previousSet
-    ? getRepsFirstSuggestion({
-        reps: previousSet.reps,
-        repsInReserve: previousSet.reps_in_reserve,
-        weight: previousSet.weight,
-        weightUnit: previousSet.weight_unit,
-      })
-    : null;
+  const parsedRepMin = initialRepMin === undefined
+    ? undefined
+    : Number(initialRepMin);
+  const parsedRepMax = initialRepMax === undefined
+    ? undefined
+    : Number(initialRepMax);
+  const progressionSuggestion = getExerciseRecommendation(
+    previousSets.map((set) => ({
+      performedAt: set.performed_at,
+      reps: set.reps,
+      repsInReserve: set.reps_in_reserve,
+      sessionId: set.session_id,
+      weight: set.weight,
+      weightUnit: set.weight_unit,
+    })),
+    {
+      repMax:
+        parsedRepMax !== undefined && Number.isFinite(parsedRepMax)
+          ? parsedRepMax
+          : undefined,
+      repMin:
+        parsedRepMin !== undefined && Number.isFinite(parsedRepMin)
+          ? parsedRepMin
+          : undefined,
+    },
+  );
 
   function applyProgressionSuggestion() {
     if (!progressionSuggestion) {
