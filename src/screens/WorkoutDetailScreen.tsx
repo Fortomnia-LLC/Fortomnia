@@ -19,6 +19,7 @@ import {
   useWorkoutSession,
 } from "../hooks/useWorkoutSession";
 
+import { groupWorkoutSets } from "../lib/workoutSets";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
 import { useState } from "react";
@@ -279,18 +280,32 @@ if (isLoading) {
     <SafeAreaView style={styles.screen}>
       <FlatList
         contentContainerStyle={styles.listContent}
-        data={sets}
-        keyExtractor={(set) => set.id}
+        data={groupWorkoutSets(
+          sets,
+          plannedExercises.map((exercise) => exercise.exercise_id),
+        )}
+        keyExtractor={(group) => group.exerciseId}
         onRefresh={() => void refreshWorkout()}
         refreshing={isLoading}
-                  renderItem={({ item }) => (
-            <SetCard
-              canModify={!workout.completed_at}
-              onDelete={handleDeleteSet}
-              onEdit={handleEditSet}
-              set={item}
-            />
-          )}
+        renderItem={({ item: group }) => (
+          <View style={styles.exerciseGroup}>
+            <Text style={styles.groupExerciseName}>
+              {group.exerciseName}
+            </Text>
+            <Text style={styles.groupSetCount}>
+              {group.sets.length} {group.sets.length === 1 ? "set" : "sets"}
+            </Text>
+            {group.sets.map((set) => (
+              <SetCard
+                canModify={!workout.completed_at}
+                key={set.id}
+                onDelete={handleDeleteSet}
+                onEdit={handleEditSet}
+                set={set}
+              />
+            ))}
+          </View>
+        )}
         ListHeaderComponent={
           <View>
             <Pressable
@@ -513,6 +528,25 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "700",
     marginBottom: 14,
+  },
+  exerciseGroup: {
+    backgroundColor: "#121212",
+    borderColor: "#292929",
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: 14,
+    padding: 12,
+  },
+  groupExerciseName: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "800",
+  },
+  groupSetCount: {
+    color: "#9CA3AF",
+    fontSize: 12,
+    marginBottom: 12,
+    marginTop: 3,
   },
   setCard: {
     backgroundColor: "#171717",
