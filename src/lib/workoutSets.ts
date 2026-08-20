@@ -1,4 +1,7 @@
-import type { LoggedSet } from "../hooks/useWorkoutSession";
+import type {
+  LoggedSet,
+  PlannedExercise,
+} from "../hooks/useWorkoutSession";
 
 export type WorkoutSetGroup = {
   exerciseId: string;
@@ -60,4 +63,37 @@ export function groupWorkoutSets(
       return left.firstSeenIndex - right.firstSeenIndex;
     })
     .map(({ group }) => group);
+}
+
+export type NextWorkoutSet = {
+  completedSets: number;
+  exercise: PlannedExercise;
+  lastSet: LoggedSet | null;
+  setNumber: number;
+};
+
+export function getNextWorkoutSet(
+  sets: LoggedSet[],
+  plannedExercises: PlannedExercise[],
+): NextWorkoutSet | null {
+  for (const exercise of [...plannedExercises].sort(
+    (left, right) => left.position - right.position,
+  )) {
+    const exerciseSets = sets
+      .filter((set) => set.exercise_id === exercise.exercise_id)
+      .sort((left, right) => left.set_number - right.set_number);
+
+    if (exerciseSets.length >= exercise.target_sets) {
+      continue;
+    }
+
+    return {
+      completedSets: exerciseSets.length,
+      exercise,
+      lastSet: exerciseSets.at(-1) ?? null,
+      setNumber: exerciseSets.length + 1,
+    };
+  }
+
+  return null;
 }

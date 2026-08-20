@@ -19,7 +19,10 @@ import {
   useWorkoutSession,
 } from "../hooks/useWorkoutSession";
 
-import { groupWorkoutSets } from "../lib/workoutSets";
+import {
+  getNextWorkoutSet,
+  groupWorkoutSets,
+} from "../lib/workoutSets";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
 import { useState } from "react";
@@ -135,6 +138,31 @@ export default function WorkoutDetailScreen() {
     sets,
     workout,
   } = useWorkoutSession(workoutId);
+  const nextWorkoutSet = getNextWorkoutSet(sets, plannedExercises);
+
+  function handleLogNextSet() {
+    if (!nextWorkoutSet) {
+      return;
+    }
+
+    const { exercise, lastSet } = nextWorkoutSet;
+
+    router.push({
+      pathname: "/workout/[id]/add-set",
+      params: {
+        exerciseId: exercise.exercise_id,
+        id: workoutId,
+        repMax: String(exercise.rep_max),
+        repMin: String(exercise.rep_min),
+        reps: String(lastSet?.reps ?? exercise.rep_min),
+        rir: String(
+          lastSet?.reps_in_reserve ?? exercise.target_rir,
+        ),
+        ...(lastSet ? { weight: String(lastSet.weight) } : {}),
+      },
+    });
+  }
+
   function handleLogPlannedExercise(exercise: PlannedExercise) {
     router.push({
       pathname: "/workout/[id]/add-set",
@@ -332,6 +360,32 @@ if (isLoading) {
               <Text style={styles.summaryNumber}>{sets.length}</Text>
               <Text style={styles.summaryLabel}>logged sets</Text>
             </View>
+
+            {!workout.completed_at && nextWorkoutSet ? (
+              <View style={styles.nextSetCard}>
+                <Text style={styles.nextSetEyebrow}>UP NEXT</Text>
+                <Text style={styles.nextSetTitle}>
+                  {nextWorkoutSet.exercise.exercise_name}
+                </Text>
+                <Text style={styles.nextSetProgress}>
+                  Set {nextWorkoutSet.setNumber} of{" "}
+                  {nextWorkoutSet.exercise.target_sets}
+                </Text>
+                <Text style={styles.nextSetTarget}>
+                  {nextWorkoutSet.lastSet
+                    ? `${nextWorkoutSet.lastSet.weight} ${nextWorkoutSet.lastSet.weight_unit} × ${nextWorkoutSet.lastSet.reps} reps prefilled`
+                    : `${nextWorkoutSet.exercise.rep_min}–${nextWorkoutSet.exercise.rep_max} reps • ${nextWorkoutSet.exercise.target_rir} RIR`}
+                </Text>
+                <Pressable
+                  onPress={handleLogNextSet}
+                  style={styles.nextSetButton}
+                >
+                  <Text style={styles.nextSetButtonText}>
+                    Start next set
+                  </Text>
+                </Pressable>
+              </View>
+            ) : null}
               {plannedExercises.length > 0 ? (
                 <View style={styles.planList}>
                   <Text style={styles.sectionTitle}>Workout plan</Text>
@@ -465,7 +519,50 @@ const styles = StyleSheet.create({
     color: "#D1D5DB",
     fontSize: 15,
   },
-    planList: {
+    nextSetCard: {
+    backgroundColor: "#21170D",
+    borderColor: "#F97316",
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: 24,
+    padding: 18,
+  },
+  nextSetEyebrow: {
+    color: "#F97316",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1.5,
+  },
+  nextSetTitle: {
+    color: "#FFFFFF",
+    fontSize: 22,
+    fontWeight: "800",
+    marginTop: 6,
+  },
+  nextSetProgress: {
+    color: "#F97316",
+    fontSize: 14,
+    fontWeight: "700",
+    marginTop: 5,
+  },
+  nextSetTarget: {
+    color: "#D1D5DB",
+    fontSize: 13,
+    marginTop: 6,
+  },
+  nextSetButton: {
+    alignItems: "center",
+    backgroundColor: "#F97316",
+    borderRadius: 10,
+    marginTop: 16,
+    paddingVertical: 12,
+  },
+  nextSetButtonText: {
+    color: "#0B0B0B",
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  planList: {
     marginBottom: 18,
   },
     planCard: {
