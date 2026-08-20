@@ -306,7 +306,11 @@ export default function AddSetScreen() {
           </View>
                   {!isEditing && progressionSuggestion ? (
             <View style={styles.suggestionCard}>
-              <Text style={styles.suggestionEyebrow}>NEXT TARGET</Text>
+              <Text style={styles.suggestionEyebrow}>
+                {progressionSuggestion.strategy === "deload"
+                  ? "RECOVERY TARGET"
+                  : "NEXT TARGET"}
+              </Text>
               <Text style={styles.suggestionPerformance}>
                 {progressionSuggestion.weight}{" "}
                 {progressionSuggestion.weightUnit} ×{" "}

@@ -139,3 +139,47 @@ test("ignores lighter backoff sets when choosing the next target", () => {
 test("returns no recommendation without exercise history", () => {
   assert.equal(getExerciseRecommendation([]), null);
 });
+
+test("recommends a small deload after three high-effort stalled workouts", () => {
+  const recommendation = getExerciseRecommendation(
+    [
+      { performedAt: "2026-08-18T12:00:00Z", reps: 8, repsInReserve: 0, sessionId: "latest", weight: 100, weightUnit: "lb" },
+      { performedAt: "2026-08-11T12:00:00Z", reps: 8, repsInReserve: 1, sessionId: "middle", weight: 100, weightUnit: "lb" },
+      { performedAt: "2026-08-04T12:00:00Z", reps: 9, repsInReserve: 1, sessionId: "oldest", weight: 100, weightUnit: "lb" },
+    ],
+    { repMax: 12, repMin: 8 },
+  );
+
+  assert.ok(recommendation);
+  assert.equal(recommendation.strategy, "deload");
+  assert.equal(recommendation.weight, 95);
+  assert.equal(recommendation.reps, 8);
+  assert.equal(recommendation.basedOnWorkoutCount, 3);
+  assert.match(recommendation.explanation, /3 workouts/);
+  assert.match(recommendation.explanation, /high effort/);
+});
+
+test("does not infer fatigue when RIR is missing", () => {
+  const recommendation = getExerciseRecommendation([
+    { performedAt: "2026-08-18T12:00:00Z", reps: 8, repsInReserve: null, sessionId: "latest", weight: 100, weightUnit: "lb" },
+    { performedAt: "2026-08-11T12:00:00Z", reps: 8, repsInReserve: 1, sessionId: "middle", weight: 100, weightUnit: "lb" },
+    { performedAt: "2026-08-04T12:00:00Z", reps: 9, repsInReserve: 1, sessionId: "oldest", weight: 100, weightUnit: "lb" },
+  ]);
+
+  assert.ok(recommendation);
+  assert.equal(recommendation.strategy, "hold");
+  assert.equal(recommendation.weight, 100);
+  assert.equal(recommendation.basedOnWorkoutCount, 1);
+});
+
+test("does not deload when reps are improving", () => {
+  const recommendation = getExerciseRecommendation([
+    { performedAt: "2026-08-18T12:00:00Z", reps: 10, repsInReserve: 1, sessionId: "latest", weight: 100, weightUnit: "lb" },
+    { performedAt: "2026-08-11T12:00:00Z", reps: 9, repsInReserve: 1, sessionId: "middle", weight: 100, weightUnit: "lb" },
+    { performedAt: "2026-08-04T12:00:00Z", reps: 8, repsInReserve: 1, sessionId: "oldest", weight: 100, weightUnit: "lb" },
+  ]);
+
+  assert.ok(recommendation);
+  assert.equal(recommendation.strategy, "hold");
+  assert.equal(recommendation.weight, 100);
+});

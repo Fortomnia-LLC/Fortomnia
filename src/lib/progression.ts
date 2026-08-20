@@ -30,7 +30,9 @@ export type RecentExerciseSet = {
 
 export type ExerciseRecommendation = ProgressionSuggestion & {
   basedOnSetCount: number;
+  basedOnWorkoutCount: number;
   performedAt: string;
+  strategy: "progress" | "hold" | "deload";
 };
 
 export const DEFAULT_PROGRESSION_RULES: AthleteProgressionRules = {
@@ -111,32 +113,24 @@ export function getRepsFirstSuggestion(
 }
 
 
-export function getExerciseRecommendation(
-  recentSets: RecentExerciseSet[],
-  repRange: Pick<ProgressionInput, "repMax" | "repMin"> = {},
-  rules: AthleteProgressionRules = DEFAULT_PROGRESSION_RULES,
-): ExerciseRecommendation | null {
-  if (recentSets.length === 0) {
-    return null;
-  }
+type WorkoutPerformance = {
+  limitingSet: RecentExerciseSet;
+  performedAt: string;
+  workingSetCount: number;
+};
 
-  const sortedSets = [...recentSets].sort(
-    (left, right) =>
-      new Date(right.performedAt).getTime() -
-      new Date(left.performedAt).getTime(),
+function getWorkoutPerformance(
+  sets: RecentExerciseSet[],
+): WorkoutPerformance {
+  const performedAt = sets.reduce(
+    (latest, set) =>
+      new Date(set.performedAt).getTime() > new Date(latest).getTime()
+        ? set.performedAt
+        : latest,
+    sets[0].performedAt,
   );
-  const mostRecentSet = sortedSets[0];
-  const lastWorkoutSets = sortedSets.filter(
-    (set) =>
-      set.sessionId === mostRecentSet.sessionId &&
-      set.weightUnit === mostRecentSet.weightUnit,
-  );
-  const workingWeight = Math.max(
-    ...lastWorkoutSets.map((set) => set.weight),
-  );
-  const workingSets = lastWorkoutSets.filter(
-    (set) => set.weight === workingWeight,
-  );
+  const workingWeight = Math.max(...sets.map((set) => set.weight));
+  const workingSets = sets.filter((set) => set.weight === workingWeight);
   const limitingSet = workingSets.reduce((current, set) => {
     if (set.reps !== current.reps) {
       return set.reps < current.reps ? set : current;
@@ -146,6 +140,106 @@ export function getExerciseRecommendation(
     const setRir = set.repsInReserve ?? -1;
     return setRir < currentRir ? set : current;
   });
+
+  return {
+    limitingSet,
+    performedAt,
+    workingSetCount: workingSets.length,
+  };
+}
+
+function getRecentWorkoutPerformances(
+  recentSets: RecentExerciseSet[],
+): WorkoutPerformance[] {
+  const sortedSets = [...recentSets].sort(
+    (left, right) =>
+      new Date(right.performedAt).getTime() -
+      new Date(left.performedAt).getTime(),
+  );
+  const sessions = new Map<string, RecentExerciseSet[]>();
+
+  for (const set of sortedSets) {
+    const sessionKey = `${set.sessionId}:${set.weightUnit}`;
+    const sessionSets = sessions.get(sessionKey) ?? [];
+    sessionSets.push(set);
+    sessions.set(sessionKey, sessionSets);
+  }
+
+  return [...sessions.values()]
+    .map(getWorkoutPerformance)
+    .sort(
+      (left, right) =>
+        new Date(right.performedAt).getTime() -
+        new Date(left.performedAt).getTime(),
+    );
+}
+
+function hasFatiguePattern(
+  workouts: WorkoutPerformance[],
+  rules: AthleteProgressionRules,
+): boolean {
+  const recentWorkouts = workouts.slice(0, 3);
+
+  if (recentWorkouts.length < 3) {
+    return false;
+  }
+
+  const [latest, previous, oldest] = recentWorkouts;
+  const sameWorkingWeight = recentWorkouts.every(
+    ({ limitingSet }) =>
+      limitingSet.weight === latest.limitingSet.weight &&
+      limitingSet.weightUnit === latest.limitingSet.weightUnit,
+  );
+  const consistentlyHighEffort = recentWorkouts.every(
+    ({ limitingSet }) =>
+      limitingSet.repsInReserve !== null &&
+      limitingSet.repsInReserve < rules.minimumRepsInReserve,
+  );
+  const repsAreNotImproving =
+    latest.limitingSet.reps <= previous.limitingSet.reps &&
+    previous.limitingSet.reps <= oldest.limitingSet.reps;
+
+  return sameWorkingWeight && consistentlyHighEffort && repsAreNotImproving;
+}
+
+export function getExerciseRecommendation(
+  recentSets: RecentExerciseSet[],
+  repRange: Pick<ProgressionInput, "repMax" | "repMin"> = {},
+  rules: AthleteProgressionRules = DEFAULT_PROGRESSION_RULES,
+): ExerciseRecommendation | null {
+  if (recentSets.length === 0) {
+    return null;
+  }
+
+  validateRules(rules);
+
+  const workouts = getRecentWorkoutPerformances(recentSets);
+  const latestWorkout = workouts[0];
+  const limitingSet = latestWorkout.limitingSet;
+  const setLabel = latestWorkout.workingSetCount === 1 ? "set" : "sets";
+
+  if (hasFatiguePattern(workouts, rules)) {
+    const weightDecrease = rules.weightIncrease[limitingSet.weightUnit];
+    const deloadWeight = Math.max(
+      0,
+      Number((limitingSet.weight - weightDecrease).toFixed(2)),
+    );
+    const targetReps = repRange.repMin ?? limitingSet.reps;
+
+    return {
+      basedOnSetCount: latestWorkout.workingSetCount,
+      basedOnWorkoutCount: 3,
+      explanation:
+        `The last 3 workouts at ${limitingSet.weight} ${limitingSet.weightUnit} were all high effort without a rep improvement. ` +
+        `Reduce the weight by ${weightDecrease} ${limitingSet.weightUnit} for this workout and rebuild from there.`,
+      performedAt: latestWorkout.performedAt,
+      reps: targetReps,
+      strategy: "deload",
+      weight: deloadWeight,
+      weightUnit: limitingSet.weightUnit,
+    };
+  }
+
   const suggestion = getRepsFirstSuggestion(
     {
       ...repRange,
@@ -156,14 +250,20 @@ export function getExerciseRecommendation(
     },
     rules,
   );
-  const setLabel = workingSets.length === 1 ? "set" : "sets";
+  const strategy =
+    suggestion.weight > limitingSet.weight ||
+    suggestion.reps > limitingSet.reps
+      ? "progress"
+      : "hold";
 
   return {
     ...suggestion,
-    basedOnSetCount: workingSets.length,
+    basedOnSetCount: latestWorkout.workingSetCount,
+    basedOnWorkoutCount: 1,
     explanation:
-      `Based on ${workingSets.length} working ${setLabel} from your last workout. ` +
+      `Based on ${latestWorkout.workingSetCount} working ${setLabel} from your last workout. ` +
       suggestion.explanation,
-    performedAt: mostRecentSet.performedAt,
+    performedAt: latestWorkout.performedAt,
+    strategy,
   };
 }
