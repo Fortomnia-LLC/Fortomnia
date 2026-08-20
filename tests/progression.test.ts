@@ -183,3 +183,64 @@ test("does not deload when reps are improving", () => {
   assert.equal(recommendation.strategy, "hold");
   assert.equal(recommendation.weight, 100);
 });
+
+test("one low recovery day does not override supported progression", () => {
+  const recommendation = getExerciseRecommendation(
+    [
+      { performedAt: "2026-08-18T12:00:00Z", reps: 10, repsInReserve: 3, sessionId: "latest", weight: 100, weightUnit: "lb" },
+    ],
+    { repMax: 12, repMin: 8 },
+    DEFAULT_PROGRESSION_RULES,
+    [
+      { band: "recover", checkinDate: "2026-08-20", score: 35 },
+      { band: "ready", checkinDate: "2026-08-19", score: 72 },
+    ],
+  );
+
+  assert.ok(recommendation);
+  assert.equal(recommendation.strategy, "progress");
+  assert.equal(recommendation.reps, 11);
+  assert.equal(recommendation.recoveryContext, "single_low");
+  assert.match(recommendation.explanation, /one low day does not override/);
+});
+
+test("repeated low recovery suppresses progression to a hold", () => {
+  const recommendation = getExerciseRecommendation(
+    [
+      { performedAt: "2026-08-18T12:00:00Z", reps: 12, repsInReserve: 3, sessionId: "latest", weight: 100, weightUnit: "lb" },
+    ],
+    { repMax: 12, repMin: 8 },
+    DEFAULT_PROGRESSION_RULES,
+    [
+      { band: "recover", checkinDate: "2026-08-20", score: 30 },
+      { band: "maintain", checkinDate: "2026-08-19", score: 52 },
+      { band: "recover", checkinDate: "2026-08-18", score: 38 },
+    ],
+  );
+
+  assert.ok(recommendation);
+  assert.equal(recommendation.strategy, "hold");
+  assert.equal(recommendation.weight, 100);
+  assert.equal(recommendation.reps, 12);
+  assert.equal(recommendation.recoveryContext, "repeated_low");
+  assert.match(recommendation.explanation, /recovery alone does not trigger a deload/);
+});
+
+test("high readiness does not create progression without training support", () => {
+  const recommendation = getExerciseRecommendation(
+    [
+      { performedAt: "2026-08-18T12:00:00Z", reps: 9, repsInReserve: 1, sessionId: "latest", weight: 100, weightUnit: "lb" },
+    ],
+    { repMax: 12, repMin: 8 },
+    DEFAULT_PROGRESSION_RULES,
+    [
+      { band: "high_readiness", checkinDate: "2026-08-20", score: 92 },
+    ],
+  );
+
+  assert.ok(recommendation);
+  assert.equal(recommendation.strategy, "hold");
+  assert.equal(recommendation.weight, 100);
+  assert.equal(recommendation.reps, 9);
+  assert.equal(recommendation.recoveryContext, "none");
+});

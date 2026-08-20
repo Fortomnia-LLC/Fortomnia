@@ -14,7 +14,11 @@ import { ExercisePicker } from "../components/ExercisePicker";
 import { useExercises } from "../hooks/useExercises";
 import { useProfile } from "../hooks/useProfile";
 import { usePreviousExerciseSet } from "../hooks/usePreviousExerciseSet";
-import { getExerciseRecommendation } from "../lib/progression";
+import { useRecoveryCheckIns } from "../hooks/useRecoveryCheckIns";
+import {
+  DEFAULT_PROGRESSION_RULES,
+  getExerciseRecommendation,
+} from "../lib/progression";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
 
@@ -47,6 +51,7 @@ export default function AddSetScreen() {
   const { session } = useAuth();
   const { exercises, isLoading } = useExercises();
   const { profile } = useProfile();
+  const { days: recoveryDays } = useRecoveryCheckIns();
 
   const [exerciseId, setExerciseId] = useState<string | null>(
     initialExerciseId ?? null,
@@ -88,6 +93,12 @@ export default function AddSetScreen() {
           ? parsedRepMin
           : undefined,
     },
+    DEFAULT_PROGRESSION_RULES,
+    recoveryDays.map((day) => ({
+      band: day.readiness.band,
+      checkinDate: day.checkin_date,
+      score: day.readiness.score,
+    })),
   );
 
   function applyProgressionSuggestion() {
@@ -309,7 +320,9 @@ export default function AddSetScreen() {
               <Text style={styles.suggestionEyebrow}>
                 {progressionSuggestion.strategy === "deload"
                   ? "RECOVERY TARGET"
-                  : "NEXT TARGET"}
+                  : progressionSuggestion.recoveryContext === "repeated_low"
+                    ? "RECOVERY-AWARE TARGET"
+                    : "NEXT TARGET"}
               </Text>
               <Text style={styles.suggestionPerformance}>
                 {progressionSuggestion.weight}{" "}

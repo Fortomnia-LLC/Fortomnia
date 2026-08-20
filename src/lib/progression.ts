@@ -28,10 +28,17 @@ export type RecentExerciseSet = {
   weightUnit: ProgressionInput["weightUnit"];
 };
 
+export type ReadinessSnapshot = {
+  band: "recover" | "maintain" | "ready" | "high_readiness";
+  checkinDate: string;
+  score: number;
+};
+
 export type ExerciseRecommendation = ProgressionSuggestion & {
   basedOnSetCount: number;
   basedOnWorkoutCount: number;
   performedAt: string;
+  recoveryContext: "none" | "single_low" | "repeated_low";
   strategy: "progress" | "hold" | "deload";
 };
 
@@ -202,10 +209,50 @@ function hasFatiguePattern(
   return sameWorkingWeight && consistentlyHighEffort && repsAreNotImproving;
 }
 
+function getRecoveryContext(
+  readinessHistory: ReadinessSnapshot[],
+): ExerciseRecommendation["recoveryContext"] {
+  const recentReadiness = [...readinessHistory]
+    .sort((left, right) => right.checkinDate.localeCompare(left.checkinDate))
+    .slice(0, 3);
+  const latestReadiness = recentReadiness[0];
+
+  if (!latestReadiness || latestReadiness.band !== "recover") {
+    return "none";
+  }
+
+  const recoverCount = recentReadiness.filter(
+    (readiness) => readiness.band === "recover",
+  ).length;
+
+  return recoverCount >= 2 ? "repeated_low" : "single_low";
+}
+
+function getRecoveryExplanation(
+  recoveryContext: ExerciseRecommendation["recoveryContext"],
+): string {
+  if (recoveryContext === "repeated_low") {
+    return (
+      " Two of your recent recovery check-ins, including today, are in Recover. " +
+      "Hold the last performance and reassess after your warm-up; recovery alone does not trigger a deload."
+    );
+  }
+
+  if (recoveryContext === "single_low") {
+    return (
+      " Today's Recover check-in adds caution, but one low day does not override your training trend. " +
+      "Reassess after your warm-up."
+    );
+  }
+
+  return "";
+}
+
 export function getExerciseRecommendation(
   recentSets: RecentExerciseSet[],
   repRange: Pick<ProgressionInput, "repMax" | "repMin"> = {},
   rules: AthleteProgressionRules = DEFAULT_PROGRESSION_RULES,
+  readinessHistory: ReadinessSnapshot[] = [],
 ): ExerciseRecommendation | null {
   if (recentSets.length === 0) {
     return null;
@@ -217,6 +264,7 @@ export function getExerciseRecommendation(
   const latestWorkout = workouts[0];
   const limitingSet = latestWorkout.limitingSet;
   const setLabel = latestWorkout.workingSetCount === 1 ? "set" : "sets";
+  const recoveryContext = getRecoveryContext(readinessHistory);
 
   if (hasFatiguePattern(workouts, rules)) {
     const weightDecrease = rules.weightIncrease[limitingSet.weightUnit];
@@ -231,8 +279,12 @@ export function getExerciseRecommendation(
       basedOnWorkoutCount: 3,
       explanation:
         `The last 3 workouts at ${limitingSet.weight} ${limitingSet.weightUnit} were all high effort without a rep improvement. ` +
-        `Reduce the weight by ${weightDecrease} ${limitingSet.weightUnit} for this workout and rebuild from there.`,
+        `Reduce the weight by ${weightDecrease} ${limitingSet.weightUnit} for this workout and rebuild from there.` +
+        (recoveryContext === "repeated_low"
+          ? " Repeated low recovery check-ins reinforce this recovery target."
+          : ""),
       performedAt: latestWorkout.performedAt,
+      recoveryContext,
       reps: targetReps,
       strategy: "deload",
       weight: deloadWeight,
@@ -250,11 +302,15 @@ export function getExerciseRecommendation(
     },
     rules,
   );
-  const strategy =
+  const trainingStrategy =
     suggestion.weight > limitingSet.weight ||
     suggestion.reps > limitingSet.reps
       ? "progress"
       : "hold";
+  const shouldHoldForRecovery =
+    recoveryContext === "repeated_low" && trainingStrategy === "progress";
+  const strategy = shouldHoldForRecovery ? "hold" : trainingStrategy;
+  const recoveryExplanation = getRecoveryExplanation(recoveryContext);
 
   return {
     ...suggestion,
@@ -262,8 +318,12 @@ export function getExerciseRecommendation(
     basedOnWorkoutCount: 1,
     explanation:
       `Based on ${latestWorkout.workingSetCount} working ${setLabel} from your last workout. ` +
-      suggestion.explanation,
+      suggestion.explanation +
+      recoveryExplanation,
     performedAt: latestWorkout.performedAt,
+    recoveryContext,
+    reps: shouldHoldForRecovery ? limitingSet.reps : suggestion.reps,
     strategy,
+    weight: shouldHoldForRecovery ? limitingSet.weight : suggestion.weight,
   };
 }
