@@ -32,9 +32,11 @@ function logged(
   weight = 100,
 ): LoggedSet {
   return {
+    duration_seconds: null,
     exercise_id: exerciseId,
     exercise_name: exerciseId,
     id,
+    performance_type: "reps",
     reps: 9,
     reps_in_reserve: 2,
     set_number: setNumber,

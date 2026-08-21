@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import type { LoggedSet } from "../src/hooks/useWorkoutSession.ts";
-import { groupWorkoutSets } from "../src/lib/workoutSets.ts";
+import {
+  formatSetPerformance,
+  groupWorkoutSets,
+} from "../src/lib/workoutSets.ts";
 
 function set(
   id: string,
@@ -11,9 +14,11 @@ function set(
   setNumber: number,
 ): LoggedSet {
   return {
+    duration_seconds: null,
     exercise_id: exerciseId,
     exercise_name: exerciseName,
     id,
+    performance_type: "reps",
     reps: 8,
     reps_in_reserve: 2,
     set_number: setNumber,
@@ -75,4 +80,28 @@ test("does not mutate the source set order", () => {
     sets.map((item) => item.id),
     ["bench-2", "bench-1"],
   );
+});
+
+test("formats time-based performance in minutes and seconds", () => {
+  const timedSet: LoggedSet = {
+    ...set("plank-1", "plank", "Plank", 1),
+    duration_seconds: 95,
+    performance_type: "time",
+    reps: 1,
+    weight: 0,
+  };
+
+  assert.equal(formatSetPerformance(timedSet), "1m 35s");
+});
+
+test("includes load when formatting a weighted timed set", () => {
+  const timedSet: LoggedSet = {
+    ...set("carry-1", "carry", "Farmer Carry", 1),
+    duration_seconds: 45,
+    performance_type: "time",
+    reps: 1,
+    weight: 70,
+  };
+
+  assert.equal(formatSetPerformance(timedSet), "70 lb × 45s");
 });

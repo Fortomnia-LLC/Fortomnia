@@ -26,7 +26,9 @@ export default function AddSetScreen() {
   const router = useRouter();
     const {
     exerciseId: initialExerciseId,
+    durationSeconds: initialDurationSeconds,
     id,
+    performanceType: initialPerformanceType,
     repMax: initialRepMax,
     repMin: initialRepMin,
     reps: initialReps,
@@ -35,8 +37,10 @@ export default function AddSetScreen() {
     setType: initialSetType,
     weight: initialWeight,
   } = useLocalSearchParams<{
+    durationSeconds?: string;
     exerciseId?: string;
     id: string;
+    performanceType?: "reps" | "time";
     repMax?: string;
     repMin?: string;
     reps?: string;
@@ -57,6 +61,12 @@ export default function AddSetScreen() {
 
   const [exerciseId, setExerciseId] = useState<string | null>(
     initialExerciseId ?? null,
+  );
+  const [performanceType, setPerformanceType] = useState<"reps" | "time">(
+    initialPerformanceType === "time" ? "time" : "reps",
+  );
+  const [durationSeconds, setDurationSeconds] = useState(
+    initialDurationSeconds ?? "",
   );
   const [setType, setSetType] = useState<"warmup" | "working">(
     initialSetType === "warmup" ? "warmup" : "working",
@@ -128,6 +138,7 @@ export default function AddSetScreen() {
 
     const parsedWeight = Number(weight);
     const parsedReps = Number(reps);
+    const parsedDurationSeconds = Number(durationSeconds);
     const parsedRir = rir.trim() === "" ? null : Number(rir);
 
     if (!Number.isFinite(parsedWeight) || parsedWeight < 0) {
@@ -136,12 +147,25 @@ export default function AddSetScreen() {
     }
 
     if (
-      !Number.isInteger(parsedReps) ||
-      parsedReps <= 0
+      performanceType === "reps" &&
+      (!Number.isInteger(parsedReps) || parsedReps <= 0)
     ) {
       setErrorMessage("Reps must be a positive whole number.");
       return;
     }
+
+    if (
+      performanceType === "time" &&
+      (!Number.isInteger(parsedDurationSeconds) ||
+        parsedDurationSeconds <= 0)
+    ) {
+      setErrorMessage("Duration must be a positive whole number of seconds.");
+      return;
+    }
+
+    const savedReps = performanceType === "reps" ? parsedReps : 1;
+    const savedDuration =
+      performanceType === "time" ? parsedDurationSeconds : null;
 
     if (
       parsedRir !== null &&
@@ -176,8 +200,10 @@ export default function AddSetScreen() {
       const { data, error } = await supabase
         .from("workout_sets")
         .update({
+          duration_seconds: savedDuration,
           exercise_id: exerciseId,
-          reps: parsedReps,
+          performance_type: performanceType,
+          reps: savedReps,
           reps_in_reserve: parsedRir,
           set_type: setType,
           weight: parsedWeight,
@@ -225,8 +251,10 @@ export default function AddSetScreen() {
     const { error } = await supabase
       .from("workout_sets")
       .insert({
+        duration_seconds: savedDuration,
         exercise_id: exerciseId,
-        reps: parsedReps,
+        performance_type: performanceType,
+        reps: savedReps,
         reps_in_reserve: parsedRir,
         session_id: workoutId,
         set_number: nextSetNumber,
@@ -294,6 +322,28 @@ export default function AddSetScreen() {
           onSelect={setExerciseId}
           selectedExerciseId={exerciseId}
         />
+        <Text style={styles.label}>Performance</Text>
+        <View style={styles.setTypeOptions}>
+          {(["reps", "time"] as const).map((option) => (
+            <Pressable
+              key={option}
+              onPress={() => setPerformanceType(option)}
+              style={[
+                styles.setTypeButton,
+                performanceType === option && styles.setTypeButtonSelected,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.setTypeText,
+                  performanceType === option && styles.setTypeTextSelected,
+                ]}
+              >
+                {option === "reps" ? "Repetitions" : "Time"}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
         <Text style={styles.label}>Set type</Text>
         <View style={styles.setTypeOptions}>
           {(["warmup", "working"] as const).map((option) => (
@@ -344,7 +394,7 @@ export default function AddSetScreen() {
               </Text>
             )}
           </View>
-                  {!isEditing && progressionSuggestion ? (
+                  {!isEditing && performanceType === "reps" && progressionSuggestion ? (
             <View style={styles.suggestionCard}>
               <Text style={styles.suggestionEyebrow}>
                 {progressionSuggestion.strategy === "deload"
@@ -382,15 +432,31 @@ export default function AddSetScreen() {
           value={weight}
         />
 
-        <Text style={styles.label}>Reps</Text>
-        <TextInput
-          keyboardType="number-pad"
-          onChangeText={setReps}
-          placeholder="8"
-          placeholderTextColor="#727885"
-          style={styles.input}
-          value={reps}
-        />
+        {performanceType === "reps" ? (
+          <>
+            <Text style={styles.label}>Reps</Text>
+            <TextInput
+              keyboardType="number-pad"
+              onChangeText={setReps}
+              placeholder="8"
+              placeholderTextColor="#727885"
+              style={styles.input}
+              value={reps}
+            />
+          </>
+        ) : (
+          <>
+            <Text style={styles.label}>Duration (seconds)</Text>
+            <TextInput
+              keyboardType="number-pad"
+              onChangeText={setDurationSeconds}
+              placeholder="30"
+              placeholderTextColor="#727885"
+              style={styles.input}
+              value={durationSeconds}
+            />
+          </>
+        )}
 
         <Text style={styles.label}>Reps in reserve</Text>
         <TextInput

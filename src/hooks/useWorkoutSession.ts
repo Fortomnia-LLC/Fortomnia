@@ -4,9 +4,11 @@ import { useCallback, useState } from "react";
 import { supabase } from "../lib/supabase";
 
 export type LoggedSet = {
+  duration_seconds: number | null;
   exercise_id: string;
   exercise_name: string;
   id: string;
+  performance_type: "reps" | "time";
   reps: number;
   reps_in_reserve: number | null;
   set_number: number;
@@ -33,12 +35,14 @@ export type WorkoutDetail = {
 };
 
 type WorkoutSetRow = {
+  duration_seconds: number | null;
   exercise_id: string;
   exercises:
   | { name: string }
   | { name: string }[]
   | null;
   id: string;
+  performance_type: "reps" | "time";
   reps: number;
   reps_in_reserve: number | null;
   set_number: number;
@@ -92,6 +96,8 @@ export function useWorkoutSession(workoutId: string | undefined) {
           `
             id,
             exercise_id,
+            duration_seconds,
+            performance_type,
             set_number,
             set_type,
             reps,
@@ -154,9 +160,11 @@ export function useWorkoutSession(workoutId: string | undefined) {
       : set.exercises;
 
     return {
+      duration_seconds: set.duration_seconds,
       exercise_id: set.exercise_id,
       exercise_name: exercise?.name ?? "Unknown exercise",
       id: set.id,
+      performance_type: set.performance_type,
       reps: set.reps,
       reps_in_reserve: set.reps_in_reserve,
       set_number: set.set_number,

@@ -20,6 +20,7 @@ import {
 } from "../hooks/useWorkoutSession";
 
 import {
+  formatSetPerformance,
   getNextWorkoutSet,
   groupWorkoutSets,
 } from "../lib/workoutSets";
@@ -58,7 +59,7 @@ function SetCard({
       </View>
 
       <Text style={styles.performance}>
-        {set.weight} {set.weight_unit} × {set.reps} reps
+{formatSetPerformance(set)}
       </Text>
 
       {set.reps_in_reserve !== null ? (
@@ -162,6 +163,7 @@ export default function WorkoutDetailScreen() {
       params: {
         exerciseId: exercise.exercise_id,
         id: workoutId,
+        performanceType: "reps",
         repMax: String(exercise.rep_max),
         repMin: String(exercise.rep_min),
         reps: String(lastSet?.reps ?? exercise.rep_min),
@@ -181,8 +183,13 @@ export default function WorkoutDetailScreen() {
     router.push({
       pathname: "/workout/[id]/add-set",
       params: {
+        durationSeconds:
+          set.duration_seconds === null
+            ? ""
+            : String(set.duration_seconds),
         exerciseId: set.exercise_id,
         id: workoutId,
+        performanceType: set.performance_type,
         reps: String(set.reps),
         rir:
           set.reps_in_reserve === null
@@ -218,8 +225,13 @@ export default function WorkoutDetailScreen() {
     router.push({
       pathname: "/workout/[id]/add-set",
       params: {
+        durationSeconds:
+          set.duration_seconds === null
+            ? ""
+            : String(set.duration_seconds),
         exerciseId: set.exercise_id,
         id: workoutId,
+        performanceType: set.performance_type,
         reps: String(set.reps),
         rir:
           set.reps_in_reserve === null
@@ -289,7 +301,7 @@ export default function WorkoutDetailScreen() {
 
     Alert.alert(
       "Delete set?",
-      `${set.exercise_name}: ${set.weight} ${set.weight_unit} × ${set.reps}`,
+      `${set.exercise_name}: ${formatSetPerformance(set)}`,
       [
         {
           style: "cancel",
@@ -425,7 +437,7 @@ if (isLoading) {
                 </Text>
                 <Text style={styles.nextSetTarget}>
                   {nextWorkoutSet.lastSet
-                    ? `${nextWorkoutSet.lastSet.weight} ${nextWorkoutSet.lastSet.weight_unit} × ${nextWorkoutSet.lastSet.reps} reps prefilled`
+                    ? `${formatSetPerformance(nextWorkoutSet.lastSet)} prefilled`
                     : `${nextWorkoutSet.exercise.rep_min}–${nextWorkoutSet.exercise.rep_max} reps • ${nextWorkoutSet.exercise.target_rir} RIR`}
                 </Text>
                 <Pressable

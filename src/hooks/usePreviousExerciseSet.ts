@@ -43,6 +43,7 @@ export function usePreviousExerciseSet(
         )
         .eq("exercise_id", exerciseId)
         .eq("set_type", "working")
+        .eq("performance_type", "reps")
         .neq("session_id", currentWorkoutId)
         .order("performed_at", { ascending: false })
         .limit(12);

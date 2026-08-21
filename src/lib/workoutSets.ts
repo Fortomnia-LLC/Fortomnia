@@ -97,3 +97,20 @@ export function getNextWorkoutSet(
 
   return null;
 }
+
+export function formatSetPerformance(set: LoggedSet): string {
+  if (set.performance_type === "time" && set.duration_seconds !== null) {
+    const minutes = Math.floor(set.duration_seconds / 60);
+    const seconds = set.duration_seconds % 60;
+    const duration =
+      minutes > 0
+        ? `${minutes}m ${seconds.toString().padStart(2, "0")}s`
+        : `${seconds}s`;
+
+    return set.weight > 0
+      ? `${set.weight} ${set.weight_unit} × ${duration}`
+      : duration;
+  }
+
+  return `${set.weight} ${set.weight_unit} × ${set.reps} reps`;
+}
