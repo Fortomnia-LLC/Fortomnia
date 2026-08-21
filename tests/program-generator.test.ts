@@ -19,7 +19,7 @@ const exercises = patterns.flatMap((movementPattern, patternIndex) =>
   Array.from({ length: 3 }, (_, index) => ({
     aliases: [],
     created_at: "2026-08-21T00:00:00.000Z",
-    equipment: "barbell",
+    equipment: index === 0 ? "barbell" : "dumbbell",
     id: `${movementPattern}-${index}`,
     instructions: null,
     is_archived: false,
@@ -70,6 +70,24 @@ test("rejects unsupported schedules and insufficient libraries", () => {
   );
   assert.throws(
     () => generateWorkoutProgram(exercises.slice(0, 3), 3, ["strength"], "mixed"),
-    /four active exercises/,
+    /four exercises matching your equipment/,
   );
+});
+
+test("filters generated programs to selected equipment", () => {
+  const program = generateWorkoutProgram(
+    exercises,
+    3,
+    ["general_fitness"],
+    "mixed",
+    ["dumbbell"],
+  );
+
+  const selectedIds = program.flatMap((template) =>
+    template.exercises.map((exercise) => exercise.exerciseId),
+  );
+  assert.ok(selectedIds.every((id) => {
+    const exercise = exercises.find((item) => item.id === id);
+    return exercise?.equipment === "barbell" ? false : true;
+  }));
 });

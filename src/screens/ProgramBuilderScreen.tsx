@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "expo-router";
 import {
   ActivityIndicator,
@@ -14,6 +14,11 @@ import {
 import { useExercises } from "../hooks/useExercises";
 import { useProfile } from "../hooks/useProfile";
 import {
+  EQUIPMENT_LABELS,
+  EQUIPMENT_OPTIONS,
+  type EquipmentOption,
+} from "../lib/equipment";
+import {
   generateWorkoutProgram,
   type GeneratedTemplate,
 } from "../lib/programGenerator";
@@ -28,8 +33,36 @@ export default function ProgramBuilderScreen() {
   const { errorMessage: exerciseError, exercises, isLoading } = useExercises();
   const { errorMessage: profileError, profile } = useProfile();
   const [daysPerWeek, setDaysPerWeek] = useState(3);
+  const [availableEquipment, setAvailableEquipment] = useState<
+    EquipmentOption[]
+  >(["full_gym"]);
+  const [hasLoadedEquipment, setHasLoadedEquipment] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (profile && !hasLoadedEquipment) {
+      setAvailableEquipment(
+        profile.available_equipment.length > 0
+          ? profile.available_equipment
+          : ["full_gym"],
+      );
+      setHasLoadedEquipment(true);
+    }
+  }, [hasLoadedEquipment, profile]);
+
+  function toggleEquipment(option: EquipmentOption) {
+    setAvailableEquipment((current) => {
+      if (option === "full_gym") return ["full_gym"];
+
+      const withoutFullGym = current.filter((item) => item !== "full_gym");
+      if (withoutFullGym.includes(option)) {
+        const next = withoutFullGym.filter((item) => item !== option);
+        return next.length > 0 ? next : ["bodyweight"];
+      }
+      return [...withoutFullGym, option];
+    });
+  }
 
   const program = useMemo<GeneratedTemplate[]>(() => {
     if (!profile || exercises.length === 0) return [];
@@ -40,11 +73,12 @@ export default function ProgramBuilderScreen() {
         daysPerWeek,
         profile.training_goals,
         profile.training_style,
+        availableEquipment,
       );
     } catch {
       return [];
     }
-  }, [daysPerWeek, exercises, profile]);
+  }, [availableEquipment, daysPerWeek, exercises, profile]);
 
   async function handleCreateProgram() {
     if (!session?.user.id || !profile) {
@@ -59,6 +93,20 @@ export default function ProgramBuilderScreen() {
     setIsCreating(true);
     setErrorMessage(null);
     const createdTemplateIds: string[] = [];
+
+    const { error: equipmentSaveError } = await supabase
+      .from("profiles")
+      .update({
+        available_equipment: availableEquipment,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", session.user.id);
+
+    if (equipmentSaveError) {
+      setIsCreating(false);
+      setErrorMessage(equipmentSaveError.message);
+      return;
+    }
 
     try {
       for (const template of program) {
@@ -163,6 +211,37 @@ export default function ProgramBuilderScreen() {
               >
                 <Text style={[styles.dayText, selected && styles.dayTextSelected]}>
                   {days}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        <Text style={styles.sectionTitle}>Available equipment</Text>
+        <Text style={styles.sectionHint}>
+          Programs will only use exercises that match these choices.
+        </Text>
+        <View style={styles.equipmentWrap}>
+          {EQUIPMENT_OPTIONS.map((option) => {
+            const selected = availableEquipment.includes(option);
+            return (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                key={option}
+                onPress={() => toggleEquipment(option)}
+                style={[
+                  styles.equipmentButton,
+                  selected && styles.equipmentButtonSelected,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.equipmentText,
+                    selected && styles.equipmentTextSelected,
+                  ]}
+                >
+                  {EQUIPMENT_LABELS[option]}
                 </Text>
               </Pressable>
             );
@@ -281,6 +360,39 @@ const styles = StyleSheet.create({
   dayButtonSelected: { backgroundColor: "#F97316", borderColor: "#F97316" },
   dayText: { color: "#D1D5DB", fontSize: 17, fontWeight: "800" },
   dayTextSelected: { color: "#0B0B0B" },
+  sectionHint: {
+    color: "#8F96A3",
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 12,
+    marginTop: -7,
+  },
+  equipmentWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 24,
+  },
+  equipmentButton: {
+    backgroundColor: "#171717",
+    borderColor: "#333333",
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  equipmentButtonSelected: {
+    backgroundColor: "#F97316",
+    borderColor: "#F97316",
+  },
+  equipmentText: {
+    color: "#D1D5DB",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  equipmentTextSelected: {
+    color: "#0B0B0B",
+  },
   profileCard: {
     backgroundColor: "#15100C",
     borderColor: "#4A2D12",

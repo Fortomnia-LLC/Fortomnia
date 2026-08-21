@@ -9,6 +9,7 @@ import type {
 } from '../lib/coachProfile';
 
 export type Profile = {
+  available_equipment: import("../lib/equipment").EquipmentOption[];
   activity_level: "sedentary" | "light" | "moderate" | "very_active";
   age_years: number | null;
   calorie_direction: "lose" | "maintain" | "gain";
@@ -42,7 +43,7 @@ export function useProfile() {
     const { data, error } = await supabase
       .from('profiles')
       .select(
-        'id, display_name, preferred_weight_unit, training_goals, training_style, favorite_athletes, age_years, height_cm, weight_kg, equation_sex, activity_level, calorie_direction',
+        'id, display_name, preferred_weight_unit, training_goals, training_style, favorite_athletes, age_years, height_cm, weight_kg, equation_sex, activity_level, calorie_direction, available_equipment',
       )
       .eq('id', session.user.id)
       .single();

@@ -3,6 +3,10 @@ import type {
   ExerciseMovementPattern,
 } from "../hooks/useExercises";
 import {
+  equipmentIsAvailable,
+  type EquipmentOption,
+} from "./equipment.ts";
+import {
   getTemplateTargetDefaults,
   type TrainingGoal,
   type TrainingStyle,
@@ -102,6 +106,7 @@ export function generateWorkoutProgram(
   daysPerWeek: number,
   goals: TrainingGoal[],
   style: TrainingStyle,
+  availableEquipment: EquipmentOption[] = ["full_gym"],
 ): GeneratedTemplate[] {
   const days = PROGRAM_SPLITS[daysPerWeek];
 
@@ -110,11 +115,17 @@ export function generateWorkoutProgram(
   }
 
   const available = exercises
-    .filter((exercise) => !exercise.is_archived)
+    .filter(
+      (exercise) =>
+        !exercise.is_archived &&
+        equipmentIsAvailable(exercise.equipment, availableEquipment),
+    )
     .sort((a, b) => a.name.localeCompare(b.name));
 
   if (available.length < 4) {
-    throw new RangeError("At least four active exercises are required.");
+    throw new RangeError(
+      "At least four exercises matching your equipment are required.",
+    );
   }
 
   const target = getTemplateTargetDefaults(goals, style);
