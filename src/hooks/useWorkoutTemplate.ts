@@ -1,11 +1,12 @@
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 
+import type { MetricUnit, PerformanceType } from "../lib/performanceMetrics";
 import { supabase } from "../lib/supabase";
 
 export type TemplateExercise = {
   superset_group: string | null;
-  performance_type: "reps" | "time";
+  performance_type: PerformanceType;
   exercise_id: string;
   exercise_name: string;
   id: string;
@@ -13,6 +14,8 @@ export type TemplateExercise = {
   rep_max: number;
   rep_min: number;
   target_duration_seconds: number | null;
+  target_metric_unit: MetricUnit | null;
+  target_metric_value: number | null;
   target_rir: number;
   target_sets: number;
 };
@@ -25,7 +28,7 @@ export type WorkoutTemplateDetail = {
 
 type TemplateExerciseRow = {
   superset_group: string | null;
-  performance_type: "reps" | "time";
+  performance_type: PerformanceType;
   exercise_id: string;
   exercises:
     | { name: string }
@@ -36,6 +39,8 @@ type TemplateExerciseRow = {
   rep_max: number;
   rep_min: number;
   target_duration_seconds: number | null;
+  target_metric_unit: MetricUnit | null;
+  target_metric_value: number | null;
   target_rir: number;
   target_sets: number;
 };
@@ -76,6 +81,8 @@ export function useWorkoutTemplate(templateId: string | undefined) {
             superset_group,
             performance_type,
             target_duration_seconds,
+            target_metric_unit,
+            target_metric_value,
             target_sets,
             rep_min,
             rep_max,
@@ -120,6 +127,9 @@ export function useWorkoutTemplate(templateId: string | undefined) {
         rep_min: item.rep_min,
         superset_group: item.superset_group,
         target_duration_seconds: item.target_duration_seconds,
+        target_metric_unit: item.target_metric_unit,
+        target_metric_value:
+          item.target_metric_value === null ? null : Number(item.target_metric_value),
         target_rir: item.target_rir,
         target_sets: item.target_sets,
       };

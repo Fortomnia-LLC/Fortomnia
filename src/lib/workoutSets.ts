@@ -1,3 +1,8 @@
+import {
+  formatMetricValue,
+  type MetricUnit,
+  type PerformanceType,
+} from "./performanceMetrics.ts";
 import type {
   LoggedSet,
   PlannedExercise,
@@ -160,6 +165,21 @@ export function getNextWorkoutSet(
 }
 
 export function formatSetPerformance(set: LoggedSet): string {
+  if (
+    ["distance", "calories", "rounds"].includes(set.performance_type) &&
+    set.metric_value !== null &&
+    set.metric_unit !== null
+  ) {
+    const metric = formatMetricValue(
+      set.performance_type,
+      set.metric_value,
+      set.metric_unit,
+    );
+    return set.weight > 0
+      ? `${set.weight} ${set.weight_unit} × ${metric}`
+      : metric;
+  }
+
   if (set.performance_type === "time" && set.duration_seconds !== null) {
     const minutes = Math.floor(set.duration_seconds / 60);
     const seconds = set.duration_seconds % 60;
@@ -177,15 +197,29 @@ export function formatSetPerformance(set: LoggedSet): string {
 }
 
 type ExerciseTarget = {
-  performance_type: "reps" | "time";
+  performance_type: PerformanceType;
   rep_max: number;
   rep_min: number;
   target_duration_seconds: number | null;
+  target_metric_unit: MetricUnit | null;
+  target_metric_value: number | null;
   target_rir: number;
   target_sets: number;
 };
 
 export function formatExerciseTarget(target: ExerciseTarget): string {
+  if (
+    ["distance", "calories", "rounds"].includes(target.performance_type) &&
+    target.target_metric_value !== null &&
+    target.target_metric_unit !== null
+  ) {
+    return `${target.target_sets} sets × ${formatMetricValue(
+      target.performance_type,
+      target.target_metric_value,
+      target.target_metric_unit,
+    )}`;
+  }
+
   if (
     target.performance_type === "time" &&
     target.target_duration_seconds !== null

@@ -14,6 +14,14 @@ import { ExercisePicker } from "../components/ExercisePicker";
 import { useExercises } from "../hooks/useExercises";
 import { useProfile } from "../hooks/useProfile";
 import { getTemplateTargetDefaults } from "../lib/coachProfile";
+import {
+  defaultMetricUnit,
+  DISTANCE_UNITS,
+  PERFORMANCE_LABELS,
+  PERFORMANCE_TYPES,
+  type MetricUnit,
+  type PerformanceType,
+} from "../lib/performanceMetrics";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
 
@@ -26,16 +34,20 @@ export default function AddTemplateExerciseScreen() {
     repMax: repMaxParam,
     repMin: repMinParam,
     targetDurationSeconds: targetDurationSecondsParam,
+    targetMetricUnit: targetMetricUnitParam,
+    targetMetricValue: targetMetricValueParam,
     targetRir: targetRirParam,
     targetSets: targetSetsParam,
     templateExerciseId: templateExerciseIdParam,
   } = useLocalSearchParams<{
     exerciseId?: string;
     id: string;
-    performanceType?: "reps" | "time";
+    performanceType?: PerformanceType;
     repMax?: string;
     repMin?: string;
     targetDurationSeconds?: string;
+    targetMetricUnit?: MetricUnit;
+    targetMetricValue?: string;
     targetRir?: string;
     targetSets?: string;
     templateExerciseId?: string;
@@ -51,6 +63,12 @@ export default function AddTemplateExerciseScreen() {
   const initialPerformanceType = Array.isArray(performanceTypeParam)
     ? performanceTypeParam[0]
     : performanceTypeParam;
+  const initialTargetMetricValue = Array.isArray(targetMetricValueParam)
+    ? targetMetricValueParam[0]
+    : targetMetricValueParam;
+  const initialTargetMetricUnit = Array.isArray(targetMetricUnitParam)
+    ? targetMetricUnitParam[0]
+    : targetMetricUnitParam;
   const initialTargetDuration = Array.isArray(targetDurationSecondsParam)
     ? targetDurationSecondsParam[0]
     : targetDurationSecondsParam;
@@ -76,7 +94,15 @@ export default function AddTemplateExerciseScreen() {
     initialExerciseId ?? null,
   );
   const [performanceType, setPerformanceType] = useState<"reps" | "time">(
-    initialPerformanceType === "time" ? "time" : "reps",
+    PERFORMANCE_TYPES.includes(initialPerformanceType as PerformanceType)
+      ? (initialPerformanceType as PerformanceType)
+      : "reps",
+  );
+  const [targetMetricValue, setTargetMetricValue] = useState(
+    initialTargetMetricValue ?? "",
+  );
+  const [targetMetricUnit, setTargetMetricUnit] = useState<MetricUnit>(
+    initialTargetMetricUnit ?? "meters",
   );
   const [targetDurationSeconds, setTargetDurationSeconds] = useState(
     initialTargetDuration ?? "30",
@@ -169,6 +195,23 @@ export default function AddTemplateExerciseScreen() {
       return;
     }
 
+    if (
+      ["distance", "calories", "rounds"].includes(performanceType) &&
+      (!Number.isFinite(parsedMetricValue) || parsedMetricValue <= 0)
+    ) {
+      setErrorMessage("Metric target must be greater than zero.");
+      return;
+    }
+
+    const savedMetricValue =
+      ["distance", "calories", "rounds"].includes(performanceType)
+        ? parsedMetricValue
+        : null;
+    const savedMetricUnit =
+      performanceType === "distance"
+        ? targetMetricUnit
+        : defaultMetricUnit(performanceType);
+
     const savedMin = performanceType === "reps" ? parsedMin : 1;
     const savedMax = performanceType === "reps" ? parsedMax : 1;
     const savedDuration =
@@ -194,6 +237,8 @@ export default function AddTemplateExerciseScreen() {
           rep_max: savedMax,
           rep_min: savedMin,
           target_duration_seconds: savedDuration,
+          target_metric_unit: savedMetricUnit,
+          target_metric_value: savedMetricValue,
           target_rir: parsedRir,
           target_sets: parsedSets,
         })
@@ -244,6 +289,8 @@ export default function AddTemplateExerciseScreen() {
       .from("workout_template_exercises")
       .insert({
         exercise_id: exerciseId,
+        target_metric_unit: savedMetricUnit,
+        target_metric_value: savedMetricValue,
         performance_type: performanceType,
         position: nextPosition,
         rep_max: savedMax,
@@ -332,7 +379,7 @@ export default function AddTemplateExerciseScreen() {
 
         <Text style={styles.label}>Performance target</Text>
         <View style={styles.metricOptions}>
-          {(["reps", "time"] as const).map((option) => (
+          {PERFORMANCE_TYPES.map((option) => (
             <Pressable
               key={option}
               onPress={() => setPerformanceType(option)}
@@ -347,7 +394,7 @@ export default function AddTemplateExerciseScreen() {
                   performanceType === option && styles.metricTextSelected,
                 ]}
               >
-                {option === "reps" ? "Repetitions" : "Time"}
+                {PERFORMANCE_LABELS[option]}
               </Text>
             </Pressable>
           ))}
@@ -383,7 +430,7 @@ export default function AddTemplateExerciseScreen() {
               />
             </View>
           </>
-        ) : (
+        ) : performanceType === "time" ? (
           <>
             <Text style={styles.label}>Target duration (seconds)</Text>
             <TextInput
@@ -394,7 +441,50 @@ export default function AddTemplateExerciseScreen() {
               value={targetDurationSeconds}
             />
           </>
-        )}
+        ) : null}
+
+        {["distance", "calories", "rounds"].includes(performanceType) ? (
+          <>
+            <Text style={styles.label}>
+              {performanceType === "distance"
+                ? "Target distance"
+                : performanceType === "calories"
+                  ? "Target calories"
+                  : "Target rounds"}
+            </Text>
+            <TextInput
+              keyboardType="decimal-pad"
+              onChangeText={setTargetMetricValue}
+              placeholder={performanceType === "distance" ? "500" : "5"}
+              placeholderTextColor="#727885"
+              style={styles.input}
+              value={targetMetricValue}
+            />
+            {performanceType === "distance" ? (
+              <View style={styles.metricOptions}>
+                {DISTANCE_UNITS.map((unit) => (
+                  <Pressable
+                    key={unit}
+                    onPress={() => setTargetMetricUnit(unit)}
+                    style={[
+                      styles.metricButton,
+                      targetMetricUnit === unit && styles.metricButtonSelected,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.metricText,
+                        targetMetricUnit === unit && styles.metricTextSelected,
+                      ]}
+                    >
+                      {unit}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+          </>
+        ) : null}
 
         <Text style={styles.label}>Target RIR</Text>
         <TextInput

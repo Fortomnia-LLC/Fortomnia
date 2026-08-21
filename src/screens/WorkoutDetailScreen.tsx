@@ -184,6 +184,11 @@ export default function WorkoutDetailScreen() {
         ),
         exerciseId: exercise.exercise_id,
         id: workoutId,
+        metricUnit:
+          lastSet?.metric_unit ?? exercise.target_metric_unit ?? undefined,
+        metricValue: String(
+          lastSet?.metric_value ?? exercise.target_metric_value ?? "",
+        ),
         performanceType:
           lastSet?.performance_type ?? exercise.performance_type,
         repMax: String(exercise.rep_max),
@@ -210,6 +215,8 @@ export default function WorkoutDetailScreen() {
         exerciseId: set.exercise_id,
         id: workoutId,
         parentSetId: set.id,
+        metricUnit: set.metric_unit ?? undefined,
+        metricValue: set.metric_value === null ? "" : String(set.metric_value),
         performanceType: set.performance_type,
         reps: String(set.reps),
         rir: "",
@@ -234,6 +241,8 @@ export default function WorkoutDetailScreen() {
             : String(set.duration_seconds),
         exerciseId: set.exercise_id,
         id: workoutId,
+        metricUnit: set.metric_unit ?? undefined,
+        metricValue: set.metric_value === null ? "" : String(set.metric_value),
         performanceType: set.performance_type,
         reps: String(set.reps),
         rir:
@@ -266,6 +275,11 @@ export default function WorkoutDetailScreen() {
             : String(exercise.target_duration_seconds),
         exerciseId: exercise.exercise_id,
         id: workoutId,
+        metricUnit: exercise.target_metric_unit ?? undefined,
+        metricValue:
+          exercise.target_metric_value === null
+            ? ""
+            : String(exercise.target_metric_value),
         performanceType: exercise.performance_type,
         repMax: String(exercise.rep_max),
         repMin: String(exercise.rep_min),
@@ -285,6 +299,8 @@ export default function WorkoutDetailScreen() {
             : String(set.duration_seconds),
         exerciseId: set.exercise_id,
         id: workoutId,
+        metricUnit: set.metric_unit ?? undefined,
+        metricValue: set.metric_value === null ? "" : String(set.metric_value),
         performanceType: set.performance_type,
         reps: String(set.reps),
         rir:

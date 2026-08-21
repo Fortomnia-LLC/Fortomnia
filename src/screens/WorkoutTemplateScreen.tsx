@@ -196,6 +196,11 @@ export default function WorkoutTemplateScreen() {
           exercise.target_duration_seconds === null
             ? ""
             : String(exercise.target_duration_seconds),
+        targetMetricUnit: exercise.target_metric_unit ?? undefined,
+        targetMetricValue:
+          exercise.target_metric_value === null
+            ? ""
+            : String(exercise.target_metric_value),
         targetRir: String(exercise.target_rir),
         targetSets: String(exercise.target_sets),
         templateExerciseId: exercise.id,
@@ -289,6 +294,8 @@ export default function WorkoutTemplateScreen() {
               session_id: workout.id,
               superset_group: exercise.superset_group,
               target_duration_seconds: exercise.target_duration_seconds,
+              target_metric_unit: exercise.target_metric_unit,
+              target_metric_value: exercise.target_metric_value,
               target_rir: exercise.target_rir,
               target_sets: exercise.target_sets,
               user_id: userId,

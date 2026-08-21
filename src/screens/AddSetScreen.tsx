@@ -16,6 +16,14 @@ import { useProfile } from "../hooks/useProfile";
 import { usePreviousExerciseSet } from "../hooks/usePreviousExerciseSet";
 import { useRecoveryCheckIns } from "../hooks/useRecoveryCheckIns";
 import {
+  defaultMetricUnit,
+  DISTANCE_UNITS,
+  PERFORMANCE_LABELS,
+  PERFORMANCE_TYPES,
+  type MetricUnit,
+  type PerformanceType,
+} from "../lib/performanceMetrics";
+import {
   DEFAULT_PROGRESSION_RULES,
   getExerciseRecommendation,
 } from "../lib/progression";
@@ -28,6 +36,8 @@ export default function AddSetScreen() {
     exerciseId: initialExerciseId,
     durationSeconds: initialDurationSeconds,
     id,
+    metricUnit: initialMetricUnit,
+    metricValue: initialMetricValue,
     parentSetId: initialParentSetId,
     performanceType: initialPerformanceType,
     repMax: initialRepMax,
@@ -42,8 +52,10 @@ export default function AddSetScreen() {
     durationSeconds?: string;
     exerciseId?: string;
     id: string;
+    metricUnit?: MetricUnit;
+    metricValue?: string;
     parentSetId?: string;
-    performanceType?: "reps" | "time";
+    performanceType?: PerformanceType;
     repMax?: string;
     repMin?: string;
     reps?: string;
@@ -72,8 +84,14 @@ export default function AddSetScreen() {
   const [setVariant, setSetVariant] = useState<"standard" | "drop">(
     initialSetVariant === "drop" ? "drop" : "standard",
   );
-  const [performanceType, setPerformanceType] = useState<"reps" | "time">(
-    initialPerformanceType === "time" ? "time" : "reps",
+  const [performanceType, setPerformanceType] = useState<PerformanceType>(
+    PERFORMANCE_TYPES.includes(initialPerformanceType as PerformanceType)
+      ? (initialPerformanceType as PerformanceType)
+      : "reps",
+  );
+  const [metricValue, setMetricValue] = useState(initialMetricValue ?? "");
+  const [metricUnit, setMetricUnit] = useState<MetricUnit>(
+    initialMetricUnit ?? "meters",
   );
   const [durationSeconds, setDurationSeconds] = useState(
     initialDurationSeconds ?? "",
@@ -156,6 +174,7 @@ export default function AddSetScreen() {
     const parsedWeight = Number(weight);
     const parsedReps = Number(reps);
     const parsedDurationSeconds = Number(durationSeconds);
+    const parsedMetricValue = Number(metricValue);
     const parsedRir = rir.trim() === "" ? null : Number(rir);
 
     if (!Number.isFinite(parsedWeight) || parsedWeight < 0) {
@@ -179,6 +198,23 @@ export default function AddSetScreen() {
       setErrorMessage("Duration must be a positive whole number of seconds.");
       return;
     }
+
+    if (
+      ["distance", "calories", "rounds"].includes(performanceType) &&
+      (!Number.isFinite(parsedMetricValue) || parsedMetricValue <= 0)
+    ) {
+      setErrorMessage("Metric value must be greater than zero.");
+      return;
+    }
+
+    const savedMetricValue =
+      ["distance", "calories", "rounds"].includes(performanceType)
+        ? parsedMetricValue
+        : null;
+    const savedMetricUnit =
+      performanceType === "distance"
+        ? metricUnit
+        : defaultMetricUnit(performanceType);
 
     const savedReps = performanceType === "reps" ? parsedReps : 1;
     const savedDuration =
@@ -218,6 +254,8 @@ export default function AddSetScreen() {
         .from("workout_sets")
         .update({
           duration_seconds: savedDuration,
+          metric_unit: savedMetricUnit,
+          metric_value: savedMetricValue,
           exercise_id: exerciseId,
           parent_set_id: setVariant === "drop" ? parentSetId : null,
           performance_type: performanceType,
@@ -271,6 +309,8 @@ export default function AddSetScreen() {
       .from("workout_sets")
       .insert({
         duration_seconds: savedDuration,
+        metric_unit: savedMetricUnit,
+        metric_value: savedMetricValue,
         exercise_id: exerciseId,
         parent_set_id: setVariant === "drop" ? parentSetId : null,
         performance_type: performanceType,
@@ -354,7 +394,7 @@ export default function AddSetScreen() {
 
         <Text style={styles.label}>Performance</Text>
         <View style={styles.setTypeOptions}>
-          {(["reps", "time"] as const).map((option) => (
+          {PERFORMANCE_TYPES.map((option) => (
             <Pressable
               key={option}
               onPress={() => setPerformanceType(option)}
@@ -369,7 +409,7 @@ export default function AddSetScreen() {
                   performanceType === option && styles.setTypeTextSelected,
                 ]}
               >
-                {option === "reps" ? "Repetitions" : "Time"}
+                {PERFORMANCE_LABELS[option]}
               </Text>
             </Pressable>
           ))}
@@ -474,7 +514,7 @@ export default function AddSetScreen() {
               value={reps}
             />
           </>
-        ) : (
+        ) : performanceType === "time" ? (
           <>
             <Text style={styles.label}>Duration (seconds)</Text>
             <TextInput
@@ -486,7 +526,50 @@ export default function AddSetScreen() {
               value={durationSeconds}
             />
           </>
-        )}
+        ) : null}
+
+        {["distance", "calories", "rounds"].includes(performanceType) ? (
+          <>
+            <Text style={styles.label}>
+              {performanceType === "distance"
+                ? "Distance"
+                : performanceType === "calories"
+                  ? "Calories"
+                  : "Rounds"}
+            </Text>
+            <TextInput
+              keyboardType="decimal-pad"
+              onChangeText={setMetricValue}
+              placeholder={performanceType === "distance" ? "500" : "5"}
+              placeholderTextColor="#727885"
+              style={styles.input}
+              value={metricValue}
+            />
+            {performanceType === "distance" ? (
+              <View style={styles.setTypeOptions}>
+                {DISTANCE_UNITS.map((unit) => (
+                  <Pressable
+                    key={unit}
+                    onPress={() => setMetricUnit(unit)}
+                    style={[
+                      styles.setTypeButton,
+                      metricUnit === unit && styles.setTypeButtonSelected,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.setTypeText,
+                        metricUnit === unit && styles.setTypeTextSelected,
+                      ]}
+                    >
+                      {unit}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+          </>
+        ) : null}
 
         <Text style={styles.label}>Reps in reserve</Text>
         <TextInput

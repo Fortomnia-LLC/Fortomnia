@@ -1,15 +1,18 @@
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 
+import type { MetricUnit, PerformanceType } from "../lib/performanceMetrics";
 import { supabase } from "../lib/supabase";
 
 export type LoggedSet = {
   duration_seconds: number | null;
+  metric_unit: MetricUnit | null;
+  metric_value: number | null;
   exercise_id: string;
   exercise_name: string;
   id: string;
   parent_set_id: string | null;
-  performance_type: "reps" | "time";
+  performance_type: PerformanceType;
   set_variant: "standard" | "drop";
   reps: number;
   reps_in_reserve: number | null;
@@ -20,7 +23,7 @@ export type LoggedSet = {
 };
 export type PlannedExercise = {
   superset_group: string | null;
-  performance_type: "reps" | "time";
+  performance_type: PerformanceType;
   exercise_id: string;
   exercise_name: string;
   id: string;
@@ -28,6 +31,8 @@ export type PlannedExercise = {
   rep_max: number;
   rep_min: number;
   target_duration_seconds: number | null;
+  target_metric_unit: MetricUnit | null;
+  target_metric_value: number | null;
   target_rir: number;
   target_sets: number;
 };
@@ -41,6 +46,8 @@ export type WorkoutDetail = {
 
 type WorkoutSetRow = {
   duration_seconds: number | null;
+  metric_unit: MetricUnit | null;
+  metric_value: number | null;
   exercise_id: string;
   exercises:
   | { name: string }
@@ -48,7 +55,7 @@ type WorkoutSetRow = {
   | null;
   id: string;
   parent_set_id: string | null;
-  performance_type: "reps" | "time";
+  performance_type: PerformanceType;
   reps: number;
   reps_in_reserve: number | null;
   set_number: number;
@@ -59,7 +66,7 @@ type WorkoutSetRow = {
 };
 type PlannedExerciseRow = {
   superset_group: string | null;
-  performance_type: "reps" | "time";
+  performance_type: PerformanceType;
   exercise_id: string;
   exercises:
     | { name: string }
@@ -70,6 +77,8 @@ type PlannedExerciseRow = {
   rep_max: number;
   rep_min: number;
   target_duration_seconds: number | null;
+  target_metric_unit: MetricUnit | null;
+  target_metric_value: number | null;
   target_rir: number;
   target_sets: number;
 };
@@ -107,6 +116,8 @@ export function useWorkoutSession(workoutId: string | undefined) {
             id,
             exercise_id,
             duration_seconds,
+            metric_unit,
+            metric_value,
             parent_set_id,
             performance_type,
             set_number,
@@ -131,6 +142,8 @@ export function useWorkoutSession(workoutId: string | undefined) {
             superset_group,
             performance_type,
             target_duration_seconds,
+            target_metric_unit,
+            target_metric_value,
             target_sets,
             rep_min,
             rep_max,
@@ -176,6 +189,8 @@ export function useWorkoutSession(workoutId: string | undefined) {
 
     return {
       duration_seconds: set.duration_seconds,
+      metric_unit: set.metric_unit,
+      metric_value: set.metric_value === null ? null : Number(set.metric_value),
       exercise_id: set.exercise_id,
       exercise_name: exercise?.name ?? "Unknown exercise",
       id: set.id,
@@ -209,6 +224,9 @@ export function useWorkoutSession(workoutId: string | undefined) {
         rep_min: item.rep_min,
         superset_group: item.superset_group,
         target_duration_seconds: item.target_duration_seconds,
+        target_metric_unit: item.target_metric_unit,
+        target_metric_value:
+          item.target_metric_value === null ? null : Number(item.target_metric_value),
         target_rir: item.target_rir,
         target_sets: item.target_sets,
       };
