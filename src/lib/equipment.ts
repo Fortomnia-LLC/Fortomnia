@@ -24,7 +24,9 @@ export const EQUIPMENT_LABELS: Record<EquipmentOption, string> = {
   machine: "Machines",
 };
 
-export function classifyEquipment(value: string | null): EquipmentOption {
+export type EquipmentCategory = EquipmentOption | "other";
+
+export function classifyEquipment(value: string | null): EquipmentCategory {
   const equipment = value?.toLocaleLowerCase().trim() ?? "";
 
   if (!equipment || equipment.includes("body")) return "bodyweight";
@@ -41,7 +43,7 @@ export function classifyEquipment(value: string | null): EquipmentOption {
     equipment.includes("cardio")
   ) return "cardio";
 
-  return "bodyweight";
+  return "other";
 }
 
 export function equipmentIsAvailable(
