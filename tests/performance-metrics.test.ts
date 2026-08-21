@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   defaultMetricUnit,
   formatMetricValue,
+  getExerciseMetricDefaults,
 } from "../src/lib/performanceMetrics.ts";
 
 test("chooses safe default units for new metrics", () => {
