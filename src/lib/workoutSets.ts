@@ -201,8 +201,8 @@ type ExerciseTarget = {
   rep_max: number;
   rep_min: number;
   target_duration_seconds: number | null;
-  target_metric_unit: MetricUnit | null;
-  target_metric_value: number | null;
+  target_metric_unit?: MetricUnit | null;
+  target_metric_value?: number | null;
   target_rir: number;
   target_sets: number;
 };
