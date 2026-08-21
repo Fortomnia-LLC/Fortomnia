@@ -32,6 +32,7 @@ import { useState } from "react";
 type SetCardProps = {
   canModify: boolean;
   onDelete: (set: LoggedSet) => void;
+  onDropSet: (set: LoggedSet) => void;
   onEdit: (set: LoggedSet) => void;
   set: LoggedSet;
 };
@@ -39,6 +40,7 @@ type SetCardProps = {
 function SetCard({
   canModify,
   onDelete,
+  onDropSet,
   onEdit,
   set,
 }: SetCardProps) {
@@ -53,7 +55,11 @@ function SetCard({
               set.set_type === "warmup" && styles.warmupBadge,
             ]}
           >
-            {set.set_type === "warmup" ? "WARM-UP" : "WORKING"}
+            {set.set_variant === "drop"
+              ? "DROP SET"
+              : set.set_type === "warmup"
+                ? "WARM-UP"
+                : "WORKING"}
           </Text>
           <Text style={styles.setNumber}>SET {set.set_number}</Text>
         </View>
@@ -71,6 +77,16 @@ function SetCard({
 
       {canModify ? (
         <View style={styles.setActions}>
+          {set.set_type === "working" &&
+          set.set_variant === "standard" ? (
+            <Pressable
+              onPress={() => onDropSet(set)}
+              style={styles.dropSetButton}
+            >
+              <Text style={styles.dropSetButtonText}>Add drop set</Text>
+            </Pressable>
+          ) : null}
+
           <Pressable
             onPress={() => onEdit(set)}
             style={styles.editSetButton}
@@ -181,6 +197,29 @@ export default function WorkoutDetailScreen() {
     });
   }
 
+  function handleAddDropSet(set: LoggedSet) {
+    const reducedWeight = Number((set.weight * 0.8).toFixed(2));
+
+    router.push({
+      pathname: "/workout/[id]/add-set",
+      params: {
+        durationSeconds:
+          set.duration_seconds === null
+            ? ""
+            : String(set.duration_seconds),
+        exerciseId: set.exercise_id,
+        id: workoutId,
+        parentSetId: set.id,
+        performanceType: set.performance_type,
+        reps: String(set.reps),
+        rir: "",
+        setType: "working",
+        setVariant: "drop",
+        weight: String(reducedWeight),
+      },
+    });
+  }
+
   function handleLogAnotherSet(set: LoggedSet) {
     const plannedExercise = plannedExercises.find(
       (exercise) => exercise.exercise_id === set.exercise_id,
@@ -202,6 +241,10 @@ export default function WorkoutDetailScreen() {
             ? ""
             : String(set.reps_in_reserve),
         setType: set.set_type,
+        setVariant: set.set_variant,
+        ...(set.parent_set_id
+          ? { parentSetId: set.parent_set_id }
+          : {}),
         weight: String(set.weight),
         ...(plannedExercise
           ? {
@@ -250,11 +293,16 @@ export default function WorkoutDetailScreen() {
             : String(set.reps_in_reserve),
         setId: set.id,
         setType: set.set_type,
+        setVariant: set.set_variant,
+        ...(set.parent_set_id
+          ? { parentSetId: set.parent_set_id }
+          : {}),
         weight: String(set.weight),
       },
     });
   }
     function handleCompleteWorkout() {
+
     if (!session?.user.id || !workoutId) {
       Alert.alert("Unable to complete workout", "Your session is missing.");
       return;
@@ -389,6 +437,7 @@ if (isLoading) {
                 canModify={!workout.completed_at}
                 key={set.id}
                 onDelete={handleDeleteSet}
+                onDropSet={handleAddDropSet}
                 onEdit={handleEditSet}
                 set={set}
               />
@@ -792,6 +841,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 10,
     marginTop: 14,
+  },
+  dropSetButton: {
+    borderColor: "#A78BFA",
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  dropSetButtonText: {
+    color: "#A78BFA",
+    fontSize: 13,
+    fontWeight: "700",
   },
   editSetButton: {
     borderColor: "#F97316",

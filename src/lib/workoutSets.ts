@@ -9,6 +9,36 @@ export type WorkoutSetGroup = {
   sets: LoggedSet[];
 };
 
+export function orderExerciseSets(sets: LoggedSet[]): LoggedSet[] {
+  const standardSets = sets
+    .filter((set) => set.set_variant === "standard")
+    .sort((left, right) => left.set_number - right.set_number);
+  const dropSets = sets.filter((set) => set.set_variant === "drop");
+  const ordered: LoggedSet[] = [];
+
+  for (const standardSet of standardSets) {
+    ordered.push(standardSet);
+    ordered.push(
+      ...dropSets
+        .filter((set) => set.parent_set_id === standardSet.id)
+        .sort((left, right) => left.set_number - right.set_number),
+    );
+  }
+
+  ordered.push(
+    ...dropSets
+      .filter(
+        (set) =>
+          !standardSets.some(
+            (standardSet) => standardSet.id === set.parent_set_id,
+          ),
+      )
+      .sort((left, right) => left.set_number - right.set_number),
+  );
+
+  return ordered;
+}
+
 export function groupWorkoutSets(
   sets: LoggedSet[],
   plannedExerciseIds: string[] = [],
@@ -39,9 +69,7 @@ export function groupWorkoutSets(
       firstSeenIndex,
       group: {
         ...group,
-        sets: [...group.sets].sort(
-          (left, right) => left.set_number - right.set_number,
-        ),
+        sets: orderExerciseSets(group.sets),
       },
     }))
     .sort((left, right) => {
@@ -80,7 +108,11 @@ export function getNextWorkoutSet(
     (left, right) => left.position - right.position,
   );
   const completedCount = (exercise: PlannedExercise) =>
-    sets.filter((set) => set.exercise_id === exercise.exercise_id).length;
+    sets.filter(
+      (set) =>
+        set.exercise_id === exercise.exercise_id &&
+        set.set_variant === "standard",
+    ).length;
 
   for (const exercise of orderedExercises) {
     const block = exercise.superset_group
@@ -109,7 +141,11 @@ export function getNextWorkoutSet(
     }
 
     const exerciseSets = sets
-      .filter((set) => set.exercise_id === nextExercise.exercise_id)
+      .filter(
+        (set) =>
+          set.exercise_id === nextExercise.exercise_id &&
+          set.set_variant === "standard",
+      )
       .sort((left, right) => left.set_number - right.set_number);
 
     return {

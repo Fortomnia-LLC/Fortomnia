@@ -268,3 +268,15 @@ test("returns no recommendation when history contains only warm-ups", () => {
 
   assert.equal(recommendation, null);
 });
+
+test("ignores drop sets when calculating the next target", () => {
+  const recommendation = getExerciseRecommendation([
+    { performedAt: "2026-08-21T12:02:00Z", reps: 12, repsInReserve: 3, sessionId: "latest", setVariant: "drop", weight: 180, weightUnit: "lb" },
+    { performedAt: "2026-08-21T12:01:00Z", reps: 8, repsInReserve: 1, sessionId: "latest", setVariant: "standard", weight: 225, weightUnit: "lb" },
+  ]);
+
+  assert.ok(recommendation);
+  assert.equal(recommendation.weight, 225);
+  assert.equal(recommendation.reps, 8);
+  assert.equal(recommendation.basedOnSetCount, 1);
+});

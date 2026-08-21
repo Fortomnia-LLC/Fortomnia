@@ -5,6 +5,7 @@ import type { LoggedSet } from "../src/hooks/useWorkoutSession.ts";
 import {
   formatSetPerformance,
   groupWorkoutSets,
+  orderExerciseSets,
 } from "../src/lib/workoutSets.ts";
 
 function set(
@@ -18,11 +19,13 @@ function set(
     exercise_id: exerciseId,
     exercise_name: exerciseName,
     id,
+    parent_set_id: null,
     performance_type: "reps",
     reps: 8,
     reps_in_reserve: 2,
     set_number: setNumber,
     set_type: "working",
+    set_variant: "standard",
     weight: 100,
     weight_unit: "lb",
   };
@@ -104,4 +107,20 @@ test("includes load when formatting a weighted timed set", () => {
   };
 
   assert.equal(formatSetPerformance(timedSet), "70 lb × 45s");
+});
+
+test("places drop sets directly after their parent set", () => {
+  const first = set("bench-1", "bench", "Bench Press", 1);
+  const second = set("bench-2", "bench", "Bench Press", 2);
+  const drop: LoggedSet = {
+    ...set("bench-drop", "bench", "Bench Press", 3),
+    parent_set_id: first.id,
+    set_variant: "drop",
+    weight: 80,
+  };
+
+  assert.deepEqual(
+    orderExerciseSets([first, second, drop]).map((item) => item.id),
+    ["bench-1", "bench-drop", "bench-2"],
+  );
 });

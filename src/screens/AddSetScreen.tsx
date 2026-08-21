@@ -28,6 +28,7 @@ export default function AddSetScreen() {
     exerciseId: initialExerciseId,
     durationSeconds: initialDurationSeconds,
     id,
+    parentSetId: initialParentSetId,
     performanceType: initialPerformanceType,
     repMax: initialRepMax,
     repMin: initialRepMin,
@@ -35,11 +36,13 @@ export default function AddSetScreen() {
     rir: initialRir,
     setId,
     setType: initialSetType,
+    setVariant: initialSetVariant,
     weight: initialWeight,
   } = useLocalSearchParams<{
     durationSeconds?: string;
     exerciseId?: string;
     id: string;
+    parentSetId?: string;
     performanceType?: "reps" | "time";
     repMax?: string;
     repMin?: string;
@@ -47,6 +50,7 @@ export default function AddSetScreen() {
     rir?: string;
     setId?: string;
     setType?: "warmup" | "working";
+    setVariant?: "standard" | "drop";
     weight?: string;
   }>();
 
@@ -61,6 +65,12 @@ export default function AddSetScreen() {
 
   const [exerciseId, setExerciseId] = useState<string | null>(
     initialExerciseId ?? null,
+  );
+  const parentSetId = Array.isArray(initialParentSetId)
+    ? initialParentSetId[0]
+    : initialParentSetId;
+  const [setVariant, setSetVariant] = useState<"standard" | "drop">(
+    initialSetVariant === "drop" ? "drop" : "standard",
   );
   const [performanceType, setPerformanceType] = useState<"reps" | "time">(
     initialPerformanceType === "time" ? "time" : "reps",
@@ -136,6 +146,13 @@ export default function AddSetScreen() {
       return;
     }
 
+    if (setVariant === "drop" && !parentSetId) {
+      setErrorMessage(
+        "Start a drop set from an existing working set so it stays linked.",
+      );
+      return;
+    }
+
     const parsedWeight = Number(weight);
     const parsedReps = Number(reps);
     const parsedDurationSeconds = Number(durationSeconds);
@@ -202,10 +219,12 @@ export default function AddSetScreen() {
         .update({
           duration_seconds: savedDuration,
           exercise_id: exerciseId,
+          parent_set_id: setVariant === "drop" ? parentSetId : null,
           performance_type: performanceType,
           reps: savedReps,
           reps_in_reserve: parsedRir,
           set_type: setType,
+          set_variant: setVariant,
           weight: parsedWeight,
           weight_unit: profile?.preferred_weight_unit ?? "lb",
         })
@@ -253,12 +272,14 @@ export default function AddSetScreen() {
       .insert({
         duration_seconds: savedDuration,
         exercise_id: exerciseId,
+        parent_set_id: setVariant === "drop" ? parentSetId : null,
         performance_type: performanceType,
         reps: savedReps,
         reps_in_reserve: parsedRir,
         session_id: workoutId,
         set_number: nextSetNumber,
         set_type: setType,
+        set_variant: setVariant,
         user_id: session.user.id,
         weight: parsedWeight,
         weight_unit: profile?.preferred_weight_unit ?? "lb",
@@ -322,6 +343,15 @@ export default function AddSetScreen() {
           onSelect={setExerciseId}
           selectedExerciseId={exerciseId}
         />
+        {setVariant === "drop" ? (
+          <View style={styles.dropSetBanner}>
+            <Text style={styles.dropSetEyebrow}>DROP SET</Text>
+            <Text style={styles.dropSetText}>
+              This set is linked to the working set you selected.
+            </Text>
+          </View>
+        ) : null}
+
         <Text style={styles.label}>Performance</Text>
         <View style={styles.setTypeOptions}>
           {(["reps", "time"] as const).map((option) => (
@@ -539,6 +569,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     marginBottom: 8,
+  },
+  dropSetBanner: {
+    backgroundColor: "#24143B",
+    borderColor: "#A78BFA",
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 20,
+    padding: 14,
+  },
+  dropSetEyebrow: {
+    color: "#A78BFA",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1.5,
+  },
+  dropSetText: {
+    color: "#D1D5DB",
+    fontSize: 13,
+    marginTop: 5,
   },
   setTypeOptions: {
     flexDirection: "row",

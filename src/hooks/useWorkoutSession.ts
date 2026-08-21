@@ -8,7 +8,9 @@ export type LoggedSet = {
   exercise_id: string;
   exercise_name: string;
   id: string;
+  parent_set_id: string | null;
   performance_type: "reps" | "time";
+  set_variant: "standard" | "drop";
   reps: number;
   reps_in_reserve: number | null;
   set_number: number;
@@ -103,8 +105,10 @@ export function useWorkoutSession(workoutId: string | undefined) {
             id,
             exercise_id,
             duration_seconds,
+            parent_set_id,
             performance_type,
             set_number,
+            set_variant,
             set_type,
             reps,
             weight,
@@ -173,11 +177,13 @@ export function useWorkoutSession(workoutId: string | undefined) {
       exercise_id: set.exercise_id,
       exercise_name: exercise?.name ?? "Unknown exercise",
       id: set.id,
+      parent_set_id: set.parent_set_id,
       performance_type: set.performance_type,
       reps: set.reps,
       reps_in_reserve: set.reps_in_reserve,
       set_number: set.set_number,
       set_type: set.set_type,
+      set_variant: set.set_variant,
       weight: Number(set.weight),
       weight_unit: set.weight_unit,
     };

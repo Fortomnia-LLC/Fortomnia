@@ -18,6 +18,7 @@ function planned(
 ): PlannedExercise {
   return {
     superset_group: null,
+    parent_set_id: null,
     performance_type: "reps",
     exercise_id: id,
     exercise_name: name,
@@ -47,6 +48,7 @@ function logged(
     reps_in_reserve: 2,
     set_number: setNumber,
     set_type: "working",
+    set_variant: "standard",
     weight,
     weight_unit: "lb",
   };
@@ -155,4 +157,22 @@ test("moves past a completed superset block", () => {
   );
 
   assert.equal(result?.exercise.exercise_id, "curl");
+});
+
+test("drop sets do not complete planned set targets", () => {
+  const working = logged("bench-1", "bench", 1);
+  const drop = {
+    ...logged("bench-drop", "bench", 2, 80),
+    parent_set_id: working.id,
+    set_variant: "drop" as const,
+  };
+
+  const result = getNextWorkoutSet(
+    [working, drop],
+    [planned("bench", "Bench", 1, 2)],
+  );
+
+  assert.equal(result?.exercise.exercise_id, "bench");
+  assert.equal(result?.setNumber, 2);
+  assert.equal(result?.lastSet?.id, "bench-1");
 });

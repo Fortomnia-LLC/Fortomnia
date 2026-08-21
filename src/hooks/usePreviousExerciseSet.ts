@@ -39,10 +39,11 @@ export function usePreviousExerciseSet(
       const { data, error } = await supabase
         .from("workout_sets")
         .select(
-          "session_id, weight, weight_unit, reps, reps_in_reserve, performed_at, set_type",
+          "session_id, weight, weight_unit, reps, reps_in_reserve, performed_at, set_type, set_variant",
         )
         .eq("exercise_id", exerciseId)
         .eq("set_type", "working")
+        .eq("set_variant", "standard")
         .eq("performance_type", "reps")
         .neq("session_id", currentWorkoutId)
         .order("performed_at", { ascending: false })

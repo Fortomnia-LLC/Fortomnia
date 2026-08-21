@@ -25,6 +25,7 @@ export type RecentExerciseSet = {
   repsInReserve: number | null;
   sessionId: string;
   setType?: "warmup" | "working";
+  setVariant?: "standard" | "drop";
   weight: number;
   weightUnit: ProgressionInput["weightUnit"];
 };
@@ -256,7 +257,8 @@ export function getExerciseRecommendation(
   readinessHistory: ReadinessSnapshot[] = [],
 ): ExerciseRecommendation | null {
   const workingSets = recentSets.filter(
-    (set) => set.setType !== "warmup",
+    (set) =>
+      set.setType !== "warmup" && set.setVariant !== "drop",
   );
 
   if (workingSets.length === 0) {
