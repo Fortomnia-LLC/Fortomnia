@@ -14,6 +14,7 @@ import {
   type TemplateExercise,
   useWorkoutTemplate,
 } from "../hooks/useWorkoutTemplate";
+import { formatExerciseTarget } from "../lib/workoutSets";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
 type TemplateExerciseCardProps = {
@@ -48,8 +49,7 @@ function TemplateExerciseCard({
       </View>
 
       <Text style={styles.target}>
-        {exercise.target_sets} sets × {exercise.rep_min}–
-        {exercise.rep_max} reps
+{formatExerciseTarget(exercise)}
       </Text>
       <Text style={styles.rir}>{exercise.target_rir} target RIR</Text>
 
@@ -132,8 +132,13 @@ export default function WorkoutTemplateScreen() {
       params: {
         exerciseId: exercise.exercise_id,
         id: templateId,
+        performanceType: exercise.performance_type,
         repMax: String(exercise.rep_max),
         repMin: String(exercise.rep_min),
+        targetDurationSeconds:
+          exercise.target_duration_seconds === null
+            ? ""
+            : String(exercise.target_duration_seconds),
         targetRir: String(exercise.target_rir),
         targetSets: String(exercise.target_sets),
         templateExerciseId: exercise.id,
@@ -220,10 +225,12 @@ export default function WorkoutTemplateScreen() {
 
             const snapshots = templateExercises.map((exercise) => ({
               exercise_id: exercise.exercise_id,
+              performance_type: exercise.performance_type,
               position: exercise.position,
               rep_max: exercise.rep_max,
               rep_min: exercise.rep_min,
               session_id: workout.id,
+              target_duration_seconds: exercise.target_duration_seconds,
               target_rir: exercise.target_rir,
               target_sets: exercise.target_sets,
               user_id: userId,

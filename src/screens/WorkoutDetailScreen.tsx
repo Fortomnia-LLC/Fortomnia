@@ -20,6 +20,7 @@ import {
 } from "../hooks/useWorkoutSession";
 
 import {
+  formatExerciseTarget,
   formatSetPerformance,
   getNextWorkoutSet,
   groupWorkoutSets,
@@ -113,8 +114,7 @@ function PlannedExerciseCard({
       </View>
 
       <Text style={styles.planTarget}>
-        {exercise.target_sets} sets × {exercise.rep_min}–
-        {exercise.rep_max} reps • {exercise.target_rir} RIR
+{formatExerciseTarget(exercise)}
       </Text>
 
       <Text style={styles.planProgress}>
@@ -164,9 +164,21 @@ export default function WorkoutDetailScreen() {
         exerciseId: exercise.exercise_id,
         id: workoutId,
         performanceType: "reps",
+        durationSeconds:
+          exercise.target_duration_seconds === null
+            ? ""
+            : String(exercise.target_duration_seconds),
+        performanceType: exercise.performance_type,
         repMax: String(exercise.rep_max),
         repMin: String(exercise.rep_min),
         reps: String(lastSet?.reps ?? exercise.rep_min),
+        durationSeconds: String(
+          lastSet?.duration_seconds ??
+            exercise.target_duration_seconds ??
+            "",
+        ),
+        performanceType:
+          lastSet?.performance_type ?? exercise.performance_type,
         rir: String(
           lastSet?.reps_in_reserve ?? exercise.target_rir,
         ),
@@ -438,7 +450,7 @@ if (isLoading) {
                 <Text style={styles.nextSetTarget}>
                   {nextWorkoutSet.lastSet
                     ? `${formatSetPerformance(nextWorkoutSet.lastSet)} prefilled`
-                    : `${nextWorkoutSet.exercise.rep_min}–${nextWorkoutSet.exercise.rep_max} reps • ${nextWorkoutSet.exercise.target_rir} RIR`}
+                    : formatExerciseTarget(nextWorkoutSet.exercise)}
                 </Text>
                 <Pressable
                   onPress={handleLogNextSet}

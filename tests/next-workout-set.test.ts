@@ -5,7 +5,10 @@ import type {
   LoggedSet,
   PlannedExercise,
 } from "../src/hooks/useWorkoutSession.ts";
-import { getNextWorkoutSet } from "../src/lib/workoutSets.ts";
+import {
+  formatExerciseTarget,
+  getNextWorkoutSet,
+} from "../src/lib/workoutSets.ts";
 
 function planned(
   id: string,
@@ -14,12 +17,14 @@ function planned(
   targetSets = 3,
 ): PlannedExercise {
   return {
+    performance_type: "reps",
     exercise_id: id,
     exercise_name: name,
     id: `plan-${id}`,
     position,
     rep_max: 12,
     rep_min: 8,
+    target_duration_seconds: null,
     target_rir: 2,
     target_sets: targetSets,
   };
@@ -88,4 +93,16 @@ test("returns no action when every planned target is complete", () => {
   );
 
   assert.equal(result, null);
+});
+
+test("formats a timed template target", () => {
+  const target = {
+    ...planned("plank", "Plank", 1),
+    performance_type: "time" as const,
+    rep_max: 1,
+    rep_min: 1,
+    target_duration_seconds: 90,
+  };
+
+  assert.equal(formatExerciseTarget(target), "3 sets × 1m 30s");
 });

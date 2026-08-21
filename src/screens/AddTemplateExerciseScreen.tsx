@@ -20,16 +20,20 @@ export default function AddTemplateExerciseScreen() {
   const {
     exerciseId: exerciseIdParam,
     id,
+    performanceType: performanceTypeParam,
     repMax: repMaxParam,
     repMin: repMinParam,
+    targetDurationSeconds: targetDurationSecondsParam,
     targetRir: targetRirParam,
     targetSets: targetSetsParam,
     templateExerciseId: templateExerciseIdParam,
   } = useLocalSearchParams<{
     exerciseId?: string;
     id: string;
+    performanceType?: "reps" | "time";
     repMax?: string;
     repMin?: string;
+    targetDurationSeconds?: string;
     targetRir?: string;
     targetSets?: string;
     templateExerciseId?: string;
@@ -42,6 +46,12 @@ export default function AddTemplateExerciseScreen() {
   const editingExerciseId = Array.isArray(templateExerciseIdParam)
     ? templateExerciseIdParam[0]
     : templateExerciseIdParam;
+  const initialPerformanceType = Array.isArray(performanceTypeParam)
+    ? performanceTypeParam[0]
+    : performanceTypeParam;
+  const initialTargetDuration = Array.isArray(targetDurationSecondsParam)
+    ? targetDurationSecondsParam[0]
+    : targetDurationSecondsParam;
   const initialRepMax = Array.isArray(repMaxParam)
     ? repMaxParam[0]
     : repMaxParam;
@@ -61,6 +71,12 @@ export default function AddTemplateExerciseScreen() {
 
     const [exerciseId, setExerciseId] = useState<string | null>(
     initialExerciseId ?? null,
+  );
+  const [performanceType, setPerformanceType] = useState<"reps" | "time">(
+    initialPerformanceType === "time" ? "time" : "reps",
+  );
+  const [targetDurationSeconds, setTargetDurationSeconds] = useState(
+    initialTargetDuration ?? "30",
   );
   const [targetSets, setTargetSets] = useState(
     initialTargetSets ?? "3",
@@ -86,6 +102,7 @@ export default function AddTemplateExerciseScreen() {
     }
 
     const parsedSets = Number(targetSets);
+    const parsedDuration = Number(targetDurationSeconds);
     const parsedMin = Number(repMin);
     const parsedMax = Number(repMax);
     const parsedRir = Number(targetRir);
@@ -100,15 +117,31 @@ export default function AddTemplateExerciseScreen() {
     }
 
     if (
-      !Number.isInteger(parsedMin) ||
-      !Number.isInteger(parsedMax) ||
-      parsedMin < 1 ||
-      parsedMax > 100 ||
-      parsedMin > parsedMax
+      performanceType === "reps" &&
+      (!Number.isInteger(parsedMin) ||
+        !Number.isInteger(parsedMax) ||
+        parsedMin < 1 ||
+        parsedMax > 100 ||
+        parsedMin > parsedMax)
     ) {
       setErrorMessage("Enter a valid rep range from 1 to 100.");
       return;
     }
+
+    if (
+      performanceType === "time" &&
+      (!Number.isInteger(parsedDuration) ||
+        parsedDuration < 1 ||
+        parsedDuration > 86400)
+    ) {
+      setErrorMessage("Duration must be from 1 to 86,400 seconds.");
+      return;
+    }
+
+    const savedMin = performanceType === "reps" ? parsedMin : 1;
+    const savedMax = performanceType === "reps" ? parsedMax : 1;
+    const savedDuration =
+      performanceType === "time" ? parsedDuration : null;
 
     if (
       !Number.isInteger(parsedRir) ||
@@ -126,8 +159,10 @@ export default function AddTemplateExerciseScreen() {
         .from("workout_template_exercises")
         .update({
           exercise_id: exerciseId,
-          rep_max: parsedMax,
-          rep_min: parsedMin,
+          performance_type: performanceType,
+          rep_max: savedMax,
+          rep_min: savedMin,
+          target_duration_seconds: savedDuration,
           target_rir: parsedRir,
           target_sets: parsedSets,
         })
@@ -178,9 +213,11 @@ export default function AddTemplateExerciseScreen() {
       .from("workout_template_exercises")
       .insert({
         exercise_id: exerciseId,
+        performance_type: performanceType,
         position: nextPosition,
-        rep_max: parsedMax,
-        rep_min: parsedMin,
+        rep_max: savedMax,
+        rep_min: savedMin,
+        target_duration_seconds: savedDuration,
         target_rir: parsedRir,
         target_sets: parsedSets,
         template_id: templateId,
@@ -250,6 +287,29 @@ export default function AddTemplateExerciseScreen() {
             selectedExerciseId={exerciseId}
           />
 
+        <Text style={styles.label}>Performance target</Text>
+        <View style={styles.metricOptions}>
+          {(["reps", "time"] as const).map((option) => (
+            <Pressable
+              key={option}
+              onPress={() => setPerformanceType(option)}
+              style={[
+                styles.metricButton,
+                performanceType === option && styles.metricButtonSelected,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.metricText,
+                  performanceType === option && styles.metricTextSelected,
+                ]}
+              >
+                {option === "reps" ? "Repetitions" : "Time"}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
         <Text style={styles.label}>Target sets</Text>
         <TextInput
           keyboardType="number-pad"
@@ -259,24 +319,39 @@ export default function AddTemplateExerciseScreen() {
           value={targetSets}
         />
 
-        <Text style={styles.label}>Rep range</Text>
-        <View style={styles.rangeRow}>
-          <TextInput
-            keyboardType="number-pad"
-            onChangeText={setRepMin}
-            selectTextOnFocus
-            style={[styles.input, styles.rangeInput]}
-            value={repMin}
-          />
-          <Text style={styles.rangeSeparator}>to</Text>
-          <TextInput
-            keyboardType="number-pad"
-            onChangeText={setRepMax}
-            selectTextOnFocus
-            style={[styles.input, styles.rangeInput]}
-            value={repMax}
-          />
-        </View>
+        {performanceType === "reps" ? (
+          <>
+            <Text style={styles.label}>Rep range</Text>
+            <View style={styles.rangeRow}>
+              <TextInput
+                keyboardType="number-pad"
+                onChangeText={setRepMin}
+                selectTextOnFocus
+                style={[styles.input, styles.rangeInput]}
+                value={repMin}
+              />
+              <Text style={styles.rangeSeparator}>to</Text>
+              <TextInput
+                keyboardType="number-pad"
+                onChangeText={setRepMax}
+                selectTextOnFocus
+                style={[styles.input, styles.rangeInput]}
+                value={repMax}
+              />
+            </View>
+          </>
+        ) : (
+          <>
+            <Text style={styles.label}>Target duration (seconds)</Text>
+            <TextInput
+              keyboardType="number-pad"
+              onChangeText={setTargetDurationSeconds}
+              selectTextOnFocus
+              style={styles.input}
+              value={targetDurationSeconds}
+            />
+          </>
+        )}
 
         <Text style={styles.label}>Target RIR</Text>
         <TextInput
@@ -358,6 +433,31 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     marginBottom: 8,
+  },
+  metricOptions: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 20,
+  },
+  metricButton: {
+    alignItems: "center",
+    borderColor: "#333333",
+    borderRadius: 10,
+    borderWidth: 1,
+    flex: 1,
+    paddingVertical: 12,
+  },
+  metricButtonSelected: {
+    backgroundColor: "#F97316",
+    borderColor: "#F97316",
+  },
+  metricText: {
+    color: "#D1D5DB",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  metricTextSelected: {
+    color: "#0B0B0B",
   },
   input: {
     backgroundColor: "#171717",

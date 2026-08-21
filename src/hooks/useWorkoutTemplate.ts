@@ -4,12 +4,15 @@ import { useCallback, useState } from "react";
 import { supabase } from "../lib/supabase";
 
 export type TemplateExercise = {
+  performance_type: "reps" | "time";
   exercise_id: string;
   exercise_name: string;
   id: string;
   position: number;
   rep_max: number;
   rep_min: number;
+  target_duration_seconds: number | null;
+  target_duration_seconds: number | null;
   target_rir: number;
   target_sets: number;
 };
@@ -21,6 +24,7 @@ export type WorkoutTemplateDetail = {
 };
 
 type TemplateExerciseRow = {
+  performance_type: "reps" | "time";
   exercise_id: string;
   exercises:
     | { name: string }
@@ -67,6 +71,8 @@ export function useWorkoutTemplate(templateId: string | undefined) {
             id,
             exercise_id,
             position,
+            performance_type,
+            target_duration_seconds,
             target_sets,
             rep_min,
             rep_max,
@@ -105,9 +111,11 @@ export function useWorkoutTemplate(templateId: string | undefined) {
         exercise_id: item.exercise_id,
         exercise_name: exercise?.name ?? "Unknown exercise",
         id: item.id,
+        performance_type: item.performance_type,
         position: item.position,
         rep_max: item.rep_max,
         rep_min: item.rep_min,
+        target_duration_seconds: item.target_duration_seconds,
         target_rir: item.target_rir,
         target_sets: item.target_sets,
       };

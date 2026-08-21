@@ -114,3 +114,33 @@ export function formatSetPerformance(set: LoggedSet): string {
 
   return `${set.weight} ${set.weight_unit} × ${set.reps} reps`;
 }
+
+type ExerciseTarget = {
+  performance_type: "reps" | "time";
+  rep_max: number;
+  rep_min: number;
+  target_duration_seconds: number | null;
+  target_rir: number;
+  target_sets: number;
+};
+
+export function formatExerciseTarget(target: ExerciseTarget): string {
+  if (
+    target.performance_type === "time" &&
+    target.target_duration_seconds !== null
+  ) {
+    const minutes = Math.floor(target.target_duration_seconds / 60);
+    const seconds = target.target_duration_seconds % 60;
+    const duration =
+      minutes > 0
+        ? `${minutes}m ${seconds.toString().padStart(2, "0")}s`
+        : `${seconds}s`;
+
+    return `${target.target_sets} sets × ${duration}`;
+  }
+
+  return (
+    `${target.target_sets} sets × ${target.rep_min}–` +
+    `${target.rep_max} reps • ${target.target_rir} RIR`
+  );
+}
