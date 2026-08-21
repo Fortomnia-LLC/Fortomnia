@@ -163,6 +163,32 @@ export default function WorkoutDetailScreen() {
     });
   }
 
+  function handleLogAnotherSet(set: LoggedSet) {
+    const plannedExercise = plannedExercises.find(
+      (exercise) => exercise.exercise_id === set.exercise_id,
+    );
+
+    router.push({
+      pathname: "/workout/[id]/add-set",
+      params: {
+        exerciseId: set.exercise_id,
+        id: workoutId,
+        reps: String(set.reps),
+        rir:
+          set.reps_in_reserve === null
+            ? ""
+            : String(set.reps_in_reserve),
+        weight: String(set.weight),
+        ...(plannedExercise
+          ? {
+              repMax: String(plannedExercise.rep_max),
+              repMin: String(plannedExercise.rep_min),
+            }
+          : {}),
+      },
+    });
+  }
+
   function handleLogPlannedExercise(exercise: PlannedExercise) {
     router.push({
       pathname: "/workout/[id]/add-set",
@@ -332,6 +358,20 @@ if (isLoading) {
                 set={set}
               />
             ))}
+            {!workout.completed_at ? (
+              <Pressable
+                onPress={() =>
+                  handleLogAnotherSet(
+                    group.sets[group.sets.length - 1],
+                  )
+                }
+                style={styles.groupNextSetButton}
+              >
+                <Text style={styles.groupNextSetText}>
+                  Log next set
+                </Text>
+              </Pressable>
+            ) : null}
           </View>
         )}
         ListHeaderComponent={
@@ -381,7 +421,7 @@ if (isLoading) {
                   style={styles.nextSetButton}
                 >
                   <Text style={styles.nextSetButtonText}>
-                    Start next set
+                    Log next set
                   </Text>
                 </Pressable>
               </View>
@@ -644,6 +684,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginBottom: 12,
     marginTop: 3,
+  },
+  groupNextSetButton: {
+    alignItems: "center",
+    borderColor: "#F97316",
+    borderRadius: 10,
+    borderWidth: 1,
+    marginTop: 2,
+    paddingVertical: 11,
+  },
+  groupNextSetText: {
+    color: "#F97316",
+    fontSize: 14,
+    fontWeight: "800",
   },
   setCard: {
     backgroundColor: "#171717",
