@@ -30,6 +30,7 @@ import {
   groupWorkoutSets,
 } from "../lib/workoutSets";
 import { getSetTargetFeedback } from "../lib/performanceFeedback";
+import { buildWorkoutRecap } from "../lib/workoutRecap";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
 import { useState } from "react";
@@ -229,6 +230,7 @@ export default function WorkoutDetailScreen() {
     plannedExercises,
     workoutId,
   );
+  const workoutRecap = buildWorkoutRecap(sets, recommendations);
 
   function handleLogNextSet() {
     if (!nextWorkoutSet) {
@@ -438,7 +440,7 @@ export default function WorkoutDetailScreen() {
               return;
             }
 
-            router.replace("/training");
+            await refreshWorkout();
           },
         },
       ],
@@ -583,6 +585,49 @@ if (isLoading) {
               <Text style={styles.summaryLabel}>logged sets</Text>
             </View>
 
+            {workout.completed_at ? (
+              <View style={styles.recapCard}>
+                <Text style={styles.recapEyebrow}>WORKOUT COMPLETE</Text>
+                <Text style={styles.recapTitle}>Strong work. Here’s the recap.</Text>
+                <View style={styles.recapStats}>
+                  <View style={styles.recapStat}>
+                    <Text style={styles.recapNumber}>
+                      {workoutRecap.workingSets}
+                    </Text>
+                    <Text style={styles.recapStatLabel}>working sets</Text>
+                  </View>
+                  <View style={styles.recapStat}>
+                    <Text style={styles.recapNumber}>
+                      {workoutRecap.exercisesTrained}
+                    </Text>
+                    <Text style={styles.recapStatLabel}>exercises</Text>
+                  </View>
+                </View>
+                {workoutRecap.evaluatedSets > 0 ? (
+                  <View style={styles.recapResults}>
+                    <Text style={styles.recapResult}>
+                      {workoutRecap.exceeded} exceeded
+                    </Text>
+                    <Text style={styles.recapResult}>
+                      {workoutRecap.met} met
+                    </Text>
+                    <Text style={styles.recapResult}>
+                      {workoutRecap.missed} below
+                    </Text>
+                  </View>
+                ) : null}
+                <Text style={styles.recapDirection}>
+                  {workoutRecap.nextDirection}
+                </Text>
+                <Pressable
+                  onPress={() => router.replace("/training")}
+                  style={styles.recapDoneButton}
+                >
+                  <Text style={styles.recapDoneText}>Done</Text>
+                </Pressable>
+              </View>
+            ) : null}
+
             {!workout.completed_at && nextWorkoutSet ? (
               <View style={styles.nextSetCard}>
                 <Text style={styles.nextSetEyebrow}>UP NEXT</Text>
@@ -723,6 +768,80 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 22,
     marginTop: 8,
+  },
+  recapCard: {
+    backgroundColor: "#15120F",
+    borderColor: "#F97316",
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: 24,
+    padding: 18,
+  },
+  recapEyebrow: {
+    color: "#F97316",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1.5,
+  },
+  recapTitle: {
+    color: "#FFFFFF",
+    fontSize: 21,
+    fontWeight: "800",
+    marginTop: 7,
+  },
+  recapStats: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 16,
+  },
+  recapStat: {
+    backgroundColor: "#171717",
+    borderRadius: 10,
+    flex: 1,
+    padding: 12,
+  },
+  recapNumber: {
+    color: "#F97316",
+    fontSize: 24,
+    fontWeight: "800",
+  },
+  recapStatLabel: {
+    color: "#9CA3AF",
+    fontSize: 12,
+    marginTop: 2,
+  },
+  recapResults: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 12,
+  },
+  recapResult: {
+    backgroundColor: "#21170D",
+    borderRadius: 999,
+    color: "#D1D5DB",
+    fontSize: 12,
+    fontWeight: "700",
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+  },
+  recapDirection: {
+    color: "#D1D5DB",
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 15,
+  },
+  recapDoneButton: {
+    alignItems: "center",
+    backgroundColor: "#F97316",
+    borderRadius: 10,
+    marginTop: 16,
+    paddingVertical: 12,
+  },
+  recapDoneText: {
+    color: "#0B0B0B",
+    fontSize: 15,
+    fontWeight: "800",
   },
   summary: {
     alignItems: "baseline",
