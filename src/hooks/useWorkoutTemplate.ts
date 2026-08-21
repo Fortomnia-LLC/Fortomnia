@@ -12,7 +12,6 @@ export type TemplateExercise = {
   rep_max: number;
   rep_min: number;
   target_duration_seconds: number | null;
-  target_duration_seconds: number | null;
   target_rir: number;
   target_sets: number;
 };
@@ -34,6 +33,7 @@ type TemplateExerciseRow = {
   position: number;
   rep_max: number;
   rep_min: number;
+  target_duration_seconds: number | null;
   target_rir: number;
   target_sets: number;
 };

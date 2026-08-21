@@ -25,7 +25,6 @@ export type PlannedExercise = {
   rep_max: number;
   rep_min: number;
   target_duration_seconds: number | null;
-  target_duration_seconds: number | null;
   target_rir: number;
   target_sets: number;
 };
@@ -64,6 +63,7 @@ type PlannedExerciseRow = {
   position: number;
   rep_max: number;
   rep_min: number;
+  target_duration_seconds: number | null;
   target_rir: number;
   target_sets: number;
 };

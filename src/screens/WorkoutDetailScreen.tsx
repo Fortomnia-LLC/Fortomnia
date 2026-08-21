@@ -161,24 +161,18 @@ export default function WorkoutDetailScreen() {
     router.push({
       pathname: "/workout/[id]/add-set",
       params: {
-        exerciseId: exercise.exercise_id,
-        id: workoutId,
-        performanceType: "reps",
-        durationSeconds:
-          exercise.target_duration_seconds === null
-            ? ""
-            : String(exercise.target_duration_seconds),
-        performanceType: exercise.performance_type,
-        repMax: String(exercise.rep_max),
-        repMin: String(exercise.rep_min),
-        reps: String(lastSet?.reps ?? exercise.rep_min),
         durationSeconds: String(
           lastSet?.duration_seconds ??
             exercise.target_duration_seconds ??
             "",
         ),
+        exerciseId: exercise.exercise_id,
+        id: workoutId,
         performanceType:
           lastSet?.performance_type ?? exercise.performance_type,
+        repMax: String(exercise.rep_max),
+        repMin: String(exercise.rep_min),
+        reps: String(lastSet?.reps ?? exercise.rep_min),
         rir: String(
           lastSet?.reps_in_reserve ?? exercise.target_rir,
         ),
@@ -223,11 +217,16 @@ export default function WorkoutDetailScreen() {
     router.push({
       pathname: "/workout/[id]/add-set",
       params: {
+        durationSeconds:
+          exercise.target_duration_seconds === null
+            ? ""
+            : String(exercise.target_duration_seconds),
         exerciseId: exercise.exercise_id,
         id: workoutId,
-         repMax: String(exercise.rep_max),
-         repMin: String(exercise.rep_min),
-         reps: String(exercise.rep_min),
+        performanceType: exercise.performance_type,
+        repMax: String(exercise.rep_max),
+        repMin: String(exercise.rep_min),
+        reps: String(exercise.rep_min),
         rir: String(exercise.target_rir),
       },
     });
