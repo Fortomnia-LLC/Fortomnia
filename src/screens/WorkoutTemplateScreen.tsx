@@ -147,6 +147,42 @@ export default function WorkoutTemplateScreen() {
       },
     });
   }
+ async function handleToggleSuperset(exercise: TemplateExercise) {
+    if (!session?.user.id || !templateId) {
+      return;
+    }
+
+    const exerciseIndex = templateExercises.findIndex(
+      (item) => item.id === exercise.id,
+    );
+    const previousExercise = templateExercises[exerciseIndex - 1];
+
+    if (!previousExercise) {
+      return;
+    }
+
+    const isRemoving =
+      exercise.superset_group !== null &&
+      exercise.superset_group === previousExercise.superset_group;
+    const supersetGroup = isRemoving
+      ? null
+      : [previousExercise.id, exercise.id].sort().join(":");
+
+    const { error } = await supabase
+      .from("workout_template_exercises")
+      .update({ superset_group: supersetGroup })
+      .in("id", [previousExercise.id, exercise.id])
+      .eq("template_id", templateId)
+      .eq("user_id", session.user.id);
+
+    if (error) {
+      Alert.alert("Unable to update superset", error.message);
+      return;
+    }
+
+    await refreshTemplate();
+  }
+
  function handleEditExercise(exercise: TemplateExercise) {
     router.push({
       pathname: "/template/[id]/add-exercise",
