@@ -40,7 +40,11 @@ export function parseFavoriteAthletes(value: string): string[] {
     const athlete = item.trim();
 
     if (athlete) {
-      unique.set(athlete.toLocaleLowerCase(), athlete);
+      const normalizedName = athlete.toLocaleLowerCase();
+
+      if (!unique.has(normalizedName)) {
+        unique.set(normalizedName, athlete);
+      }
     }
   }
 
