@@ -76,20 +76,45 @@ export function getNextWorkoutSet(
   sets: LoggedSet[],
   plannedExercises: PlannedExercise[],
 ): NextWorkoutSet | null {
-  for (const exercise of [...plannedExercises].sort(
+  const orderedExercises = [...plannedExercises].sort(
     (left, right) => left.position - right.position,
-  )) {
-    const exerciseSets = sets
-      .filter((set) => set.exercise_id === exercise.exercise_id)
-      .sort((left, right) => left.set_number - right.set_number);
+  );
+  const completedCount = (exercise: PlannedExercise) =>
+    sets.filter((set) => set.exercise_id === exercise.exercise_id).length;
 
-    if (exerciseSets.length >= exercise.target_sets) {
+  for (const exercise of orderedExercises) {
+    const block = exercise.superset_group
+      ? orderedExercises.filter(
+          (item) => item.superset_group === exercise.superset_group,
+        )
+      : [exercise];
+    const firstPosition = Math.min(...block.map((item) => item.position));
+
+    if (exercise.position !== firstPosition) {
       continue;
     }
 
+    const nextExercise = block
+      .filter((item) => completedCount(item) < item.target_sets)
+      .sort((left, right) => {
+        const countDifference =
+          completedCount(left) - completedCount(right);
+        return countDifference !== 0
+          ? countDifference
+          : left.position - right.position;
+      })[0];
+
+    if (!nextExercise) {
+      continue;
+    }
+
+    const exerciseSets = sets
+      .filter((set) => set.exercise_id === nextExercise.exercise_id)
+      .sort((left, right) => left.set_number - right.set_number);
+
     return {
       completedSets: exerciseSets.length,
-      exercise,
+      exercise: nextExercise,
       lastSet: exerciseSets.at(-1) ?? null,
       setNumber: exerciseSets.length + 1,
     };

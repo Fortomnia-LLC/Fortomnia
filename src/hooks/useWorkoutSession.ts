@@ -17,6 +17,7 @@ export type LoggedSet = {
   weight_unit: "lb" | "kg";
 };
 export type PlannedExercise = {
+  superset_group: string | null;
   performance_type: "reps" | "time";
   exercise_id: string;
   exercise_name: string;
@@ -53,6 +54,7 @@ type WorkoutSetRow = {
   weight_unit: "lb" | "kg";
 };
 type PlannedExerciseRow = {
+  superset_group: string | null;
   performance_type: "reps" | "time";
   exercise_id: string;
   exercises:
@@ -120,6 +122,7 @@ export function useWorkoutSession(workoutId: string | undefined) {
             id,
             exercise_id,
             position,
+            superset_group,
             performance_type,
             target_duration_seconds,
             target_sets,
@@ -196,6 +199,7 @@ export function useWorkoutSession(workoutId: string | undefined) {
         position: item.position,
         rep_max: item.rep_max,
         rep_min: item.rep_min,
+        superset_group: item.superset_group,
         target_duration_seconds: item.target_duration_seconds,
         target_rir: item.target_rir,
         target_sets: item.target_sets,

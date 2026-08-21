@@ -17,6 +17,7 @@ function planned(
   targetSets = 3,
 ): PlannedExercise {
   return {
+    superset_group: null,
     performance_type: "reps",
     exercise_id: id,
     exercise_name: name,
@@ -105,4 +106,53 @@ test("formats a timed template target", () => {
   };
 
   assert.equal(formatExerciseTarget(target), "3 sets × 1m 30s");
+});
+
+test("alternates the next set between superset exercises", () => {
+  const bench = {
+    ...planned("bench", "Bench", 1, 3),
+    superset_group: "bench:row",
+  };
+  const row = {
+    ...planned("row", "Row", 2, 3),
+    superset_group: "bench:row",
+  };
+
+  const afterBench = getNextWorkoutSet(
+    [logged("bench-1", "bench", 1)],
+    [bench, row],
+  );
+  assert.equal(afterBench?.exercise.exercise_id, "row");
+
+  const afterRow = getNextWorkoutSet(
+    [
+      logged("bench-1", "bench", 1),
+      logged("row-1", "row", 1),
+    ],
+    [bench, row],
+  );
+  assert.equal(afterRow?.exercise.exercise_id, "bench");
+  assert.equal(afterRow?.setNumber, 2);
+});
+
+test("moves past a completed superset block", () => {
+  const bench = {
+    ...planned("bench", "Bench", 1, 1),
+    superset_group: "bench:row",
+  };
+  const row = {
+    ...planned("row", "Row", 2, 1),
+    superset_group: "bench:row",
+  };
+  const curl = planned("curl", "Curl", 3, 2);
+
+  const result = getNextWorkoutSet(
+    [
+      logged("bench-1", "bench", 1),
+      logged("row-1", "row", 1),
+    ],
+    [bench, row, curl],
+  );
+
+  assert.equal(result?.exercise.exercise_id, "curl");
 });

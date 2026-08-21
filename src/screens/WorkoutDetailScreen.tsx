@@ -665,6 +665,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
   },
+  planSuperset: {
+    color: "#A78BFA",
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 1.5,
+    marginTop: 8,
+  },
   planTarget: {
     color: "#D1D5DB",
     fontSize: 13,

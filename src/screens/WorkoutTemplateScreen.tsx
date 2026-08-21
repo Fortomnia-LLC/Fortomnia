@@ -24,6 +24,8 @@ type TemplateExerciseCardProps = {
   isMoving: boolean;
   onDelete: (exercise: TemplateExercise) => void;
   onEdit: (exercise: TemplateExercise) => void;
+  onToggleSuperset: (exercise: TemplateExercise) => void;
+  previousExercise: TemplateExercise | null;
   onMove: (
     exercise: TemplateExercise,
     direction: "up" | "down",
@@ -38,6 +40,8 @@ function TemplateExerciseCard({
   onDelete,
   onEdit,
   onMove,
+  onToggleSuperset,
+  previousExercise,
 }: TemplateExerciseCardProps) {
   return (
     <View style={styles.card}>
@@ -52,6 +56,23 @@ function TemplateExerciseCard({
 {formatExerciseTarget(exercise)}
       </Text>
       <Text style={styles.rir}>{exercise.target_rir} target RIR</Text>
+      {exercise.superset_group ? (
+        <Text style={styles.supersetBadge}>SUPERSET</Text>
+      ) : null}
+
+      {previousExercise ? (
+        <Pressable
+          onPress={() => onToggleSuperset(exercise)}
+          style={styles.supersetButton}
+        >
+          <Text style={styles.supersetButtonText}>
+            {exercise.superset_group &&
+            exercise.superset_group === previousExercise.superset_group
+              ? "Remove superset"
+              : `Superset with ${previousExercise.exercise_name}`}
+          </Text>
+        </Pressable>
+      ) : null}
 
       <View style={styles.moveActions}>
         <Pressable
@@ -230,6 +251,7 @@ export default function WorkoutTemplateScreen() {
               rep_max: exercise.rep_max,
               rep_min: exercise.rep_min,
               session_id: workout.id,
+              superset_group: exercise.superset_group,
               target_duration_seconds: exercise.target_duration_seconds,
               target_rir: exercise.target_rir,
               target_sets: exercise.target_sets,
@@ -399,6 +421,8 @@ export default function WorkoutTemplateScreen() {
             onDelete={handleDeleteExercise}
             onEdit={handleEditExercise}
             onMove={handleMoveExercise}
+            onToggleSuperset={handleToggleSuperset}
+            previousExercise={templateExercises[index - 1] ?? null}
           />
         )}
         ListHeaderComponent={
@@ -624,6 +648,27 @@ const styles = StyleSheet.create({
     color: "#9CA3AF",
     fontSize: 13,
     marginTop: 5,
+  },
+  supersetBadge: {
+    color: "#A78BFA",
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 1.5,
+    marginTop: 8,
+  },
+  supersetButton: {
+    borderColor: "#A78BFA",
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  supersetButtonText: {
+    color: "#A78BFA",
+    fontSize: 13,
+    fontWeight: "700",
+    textAlign: "center",
   },
   moveActions: {
     flexDirection: "row",
