@@ -38,6 +38,7 @@ function logged(
     reps: 9,
     reps_in_reserve: 2,
     set_number: setNumber,
+    set_type: "working",
     weight,
     weight_unit: "lb",
   };
