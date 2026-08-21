@@ -358,6 +358,24 @@ function handleDeleteAccount() {
           </View>
         </View>
 
+        <Pressable
+          accessibilityHint="Opens the premium AI Coach preview"
+          accessibilityLabel="AI Coach premium preview"
+          accessibilityRole="button"
+          onPress={() => router.push("/ai-coach")}
+          style={styles.premiumCoachCard}
+        >
+          <View style={styles.premiumCoachContent}>
+            <Text style={styles.premiumCoachLabel}>PREMIUM PREVIEW</Text>
+            <Text style={styles.premiumCoachTitle}>Meet your future AI Coach</Text>
+            <Text style={styles.premiumCoachDescription}>
+              See what conversational coaching and adaptive programs will add.
+              Core training intelligence stays free.
+            </Text>
+          </View>
+          <Text accessibilityElementsHidden style={styles.premiumCoachArrow}>›</Text>
+        </Pressable>
+
         {profileError ? (
             <Text
               accessibilityLiveRegion="polite"
@@ -622,6 +640,43 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 21,
     marginTop: 7,
+  },
+  premiumCoachCard: {
+    alignItems: "center",
+    backgroundColor: "#15100C",
+    borderColor: "#F97316",
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 24,
+    padding: 17,
+  },
+  premiumCoachContent: {
+    flex: 1,
+  },
+  premiumCoachLabel: {
+    color: "#F97316",
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 1.3,
+  },
+  premiumCoachTitle: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "800",
+    marginTop: 6,
+  },
+  premiumCoachDescription: {
+    color: "#9CA3AF",
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 6,
+  },
+  premiumCoachArrow: {
+    color: "#F97316",
+    fontSize: 30,
+    marginLeft: 12,
   },
   error: {
     color: "#F87171",
