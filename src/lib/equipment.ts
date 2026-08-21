@@ -50,8 +50,10 @@ export function equipmentIsAvailable(
   equipment: string | null,
   available: EquipmentOption[],
 ): boolean {
+  const category = classifyEquipment(equipment);
+
   return (
     available.includes("full_gym") ||
-    available.includes(classifyEquipment(equipment))
+    (category !== "other" && available.includes(category))
   );
 }
