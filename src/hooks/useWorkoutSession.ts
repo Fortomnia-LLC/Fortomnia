@@ -10,6 +10,7 @@ export type LoggedSet = {
   reps: number;
   reps_in_reserve: number | null;
   set_number: number;
+  set_type: "warmup" | "working";
   weight: number;
   weight_unit: "lb" | "kg";
 };
@@ -41,6 +42,7 @@ type WorkoutSetRow = {
   reps: number;
   reps_in_reserve: number | null;
   set_number: number;
+  set_type: "warmup" | "working";
   weight: number | string;
   weight_unit: "lb" | "kg";
 };
@@ -91,6 +93,7 @@ export function useWorkoutSession(workoutId: string | undefined) {
             id,
             exercise_id,
             set_number,
+            set_type,
             reps,
             weight,
             weight_unit,
@@ -157,6 +160,7 @@ export function useWorkoutSession(workoutId: string | undefined) {
       reps: set.reps,
       reps_in_reserve: set.reps_in_reserve,
       set_number: set.set_number,
+      set_type: set.set_type,
       weight: Number(set.weight),
       weight_unit: set.weight_unit,
     };

@@ -17,6 +17,7 @@ function set(
     reps: 8,
     reps_in_reserve: 2,
     set_number: setNumber,
+    set_type: "working",
     weight: 100,
     weight_unit: "lb",
   };

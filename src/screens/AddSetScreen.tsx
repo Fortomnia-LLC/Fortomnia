@@ -32,6 +32,7 @@ export default function AddSetScreen() {
     reps: initialReps,
     rir: initialRir,
     setId,
+    setType: initialSetType,
     weight: initialWeight,
   } = useLocalSearchParams<{
     exerciseId?: string;
@@ -41,6 +42,7 @@ export default function AddSetScreen() {
     reps?: string;
     rir?: string;
     setId?: string;
+    setType?: "warmup" | "working";
     weight?: string;
   }>();
 
@@ -55,6 +57,9 @@ export default function AddSetScreen() {
 
   const [exerciseId, setExerciseId] = useState<string | null>(
     initialExerciseId ?? null,
+  );
+  const [setType, setSetType] = useState<"warmup" | "working">(
+    initialSetType === "warmup" ? "warmup" : "working",
   );
   const [weight, setWeight] = useState(initialWeight ?? "0");
   const [reps, setReps] = useState(initialReps ?? "");
@@ -174,6 +179,7 @@ export default function AddSetScreen() {
           exercise_id: exerciseId,
           reps: parsedReps,
           reps_in_reserve: parsedRir,
+          set_type: setType,
           weight: parsedWeight,
           weight_unit: profile?.preferred_weight_unit ?? "lb",
         })
@@ -224,6 +230,7 @@ export default function AddSetScreen() {
         reps_in_reserve: parsedRir,
         session_id: workoutId,
         set_number: nextSetNumber,
+        set_type: setType,
         user_id: session.user.id,
         weight: parsedWeight,
         weight_unit: profile?.preferred_weight_unit ?? "lb",
@@ -287,6 +294,28 @@ export default function AddSetScreen() {
           onSelect={setExerciseId}
           selectedExerciseId={exerciseId}
         />
+        <Text style={styles.label}>Set type</Text>
+        <View style={styles.setTypeOptions}>
+          {(["warmup", "working"] as const).map((option) => (
+            <Pressable
+              key={option}
+              onPress={() => setSetType(option)}
+              style={[
+                styles.setTypeButton,
+                setType === option && styles.setTypeButtonSelected,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.setTypeText,
+                  setType === option && styles.setTypeTextSelected,
+                ]}
+              >
+                {option === "warmup" ? "Warm-up" : "Working"}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
                   <View style={styles.previousCard}>
             <Text style={styles.previousEyebrow}>PREVIOUS SET</Text>
 
@@ -444,6 +473,31 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     marginBottom: 8,
+  },
+  setTypeOptions: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 20,
+  },
+  setTypeButton: {
+    alignItems: "center",
+    borderColor: "#333333",
+    borderRadius: 10,
+    borderWidth: 1,
+    flex: 1,
+    paddingVertical: 12,
+  },
+  setTypeButtonSelected: {
+    backgroundColor: "#F97316",
+    borderColor: "#F97316",
+  },
+  setTypeText: {
+    color: "#D1D5DB",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  setTypeTextSelected: {
+    color: "#0B0B0B",
   },
   previousCard: {
     backgroundColor: "#171717",

@@ -24,6 +24,7 @@ export type RecentExerciseSet = {
   reps: number;
   repsInReserve: number | null;
   sessionId: string;
+  setType?: "warmup" | "working";
   weight: number;
   weightUnit: ProgressionInput["weightUnit"];
 };
@@ -254,13 +255,17 @@ export function getExerciseRecommendation(
   rules: AthleteProgressionRules = DEFAULT_PROGRESSION_RULES,
   readinessHistory: ReadinessSnapshot[] = [],
 ): ExerciseRecommendation | null {
-  if (recentSets.length === 0) {
+  const workingSets = recentSets.filter(
+    (set) => set.setType !== "warmup",
+  );
+
+  if (workingSets.length === 0) {
     return null;
   }
 
   validateRules(rules);
 
-  const workouts = getRecentWorkoutPerformances(recentSets);
+  const workouts = getRecentWorkoutPerformances(workingSets);
   const latestWorkout = workouts[0];
   const limitingSet = latestWorkout.limitingSet;
   const setLabel = latestWorkout.workingSetCount === 1 ? "set" : "sets";

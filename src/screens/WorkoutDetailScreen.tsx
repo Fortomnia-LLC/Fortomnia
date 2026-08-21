@@ -44,7 +44,17 @@ function SetCard({
     <View style={styles.setCard}>
       <View style={styles.setHeader}>
         <Text style={styles.exerciseName}>{set.exercise_name}</Text>
-        <Text style={styles.setNumber}>SET {set.set_number}</Text>
+        <View style={styles.setLabels}>
+          <Text
+            style={[
+              styles.setTypeBadge,
+              set.set_type === "warmup" && styles.warmupBadge,
+            ]}
+          >
+            {set.set_type === "warmup" ? "WARM-UP" : "WORKING"}
+          </Text>
+          <Text style={styles.setNumber}>SET {set.set_number}</Text>
+        </View>
       </View>
 
       <Text style={styles.performance}>
@@ -178,6 +188,7 @@ export default function WorkoutDetailScreen() {
           set.reps_in_reserve === null
             ? ""
             : String(set.reps_in_reserve),
+        setType: set.set_type,
         weight: String(set.weight),
         ...(plannedExercise
           ? {
@@ -215,6 +226,7 @@ export default function WorkoutDetailScreen() {
             ? ""
             : String(set.reps_in_reserve),
         setId: set.id,
+        setType: set.set_type,
         weight: String(set.weight),
       },
     });
@@ -716,6 +728,19 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 17,
     fontWeight: "700",
+  },
+  setLabels: {
+    alignItems: "flex-end",
+    gap: 4,
+  },
+  setTypeBadge: {
+    color: "#34D399",
+    fontSize: 9,
+    fontWeight: "800",
+    letterSpacing: 1,
+  },
+  warmupBadge: {
+    color: "#FBBF24",
   },
   setNumber: {
     color: "#F97316",
