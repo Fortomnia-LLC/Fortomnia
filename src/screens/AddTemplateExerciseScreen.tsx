@@ -17,6 +17,7 @@ import { getTemplateTargetDefaults } from "../lib/coachProfile";
 import {
   defaultMetricUnit,
   DISTANCE_UNITS,
+  getExerciseMetricDefaults,
   PERFORMANCE_LABELS,
   PERFORMANCE_TYPES,
   type MetricUnit,
@@ -117,6 +118,8 @@ export default function AddTemplateExerciseScreen() {
   );
   const [hasAppliedCoachDefaults, setHasAppliedCoachDefaults] =
     useState(false);
+  const [metricDefaultExplanation, setMetricDefaultExplanation] =
+    useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -151,6 +154,31 @@ export default function AddTemplateExerciseScreen() {
       setExerciseId(exercises[0].id);
     }
   }, [exerciseId, exercises]);
+
+  useEffect(() => {
+    if (isEditing || performanceTypeParam !== undefined || !exerciseId) {
+      return;
+    }
+
+    const exercise = exercises.find((item) => item.id === exerciseId);
+
+    if (!exercise) {
+      return;
+    }
+
+    const defaults = getExerciseMetricDefaults(exercise);
+    setPerformanceType(defaults.performanceType);
+    setTargetDurationSeconds(
+      String(defaults.targetDurationSeconds ?? 30),
+    );
+    setTargetMetricUnit(defaults.targetMetricUnit ?? "meters");
+    setTargetMetricValue(
+      defaults.targetMetricValue === null
+        ? ""
+        : String(defaults.targetMetricValue),
+    );
+    setMetricDefaultExplanation(defaults.explanation);
+  }, [exerciseId, exercises, isEditing, performanceTypeParam]);
 
   async function handleSave() {
     if (!session?.user.id || !templateId || !exerciseId) {
@@ -379,6 +407,11 @@ export default function AddTemplateExerciseScreen() {
         ) : null}
 
         <Text style={styles.label}>Performance target</Text>
+        {metricDefaultExplanation && !isEditing ? (
+          <Text style={styles.metricDefaultText}>
+            Suggested: {metricDefaultExplanation} You can change this anytime.
+          </Text>
+        ) : null}
         <View style={styles.metricOptions}>
           {PERFORMANCE_TYPES.map((option) => (
             <Pressable
@@ -587,6 +620,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
     marginTop: 6,
+  },
+  metricDefaultText: {
+    color: "#9CA3AF",
+    fontSize: 13,
+    lineHeight: 19,
+    marginBottom: 12,
   },
   metricOptions: {
     flexDirection: "row",
