@@ -26,6 +26,7 @@ import {
 import {
   DEFAULT_PROGRESSION_RULES,
   getExerciseRecommendation,
+  getMetricProgressionRecommendation,
 } from "../lib/progression";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
@@ -109,7 +110,7 @@ export default function AddSetScreen() {
     previousError,
     previousSet,
     previousSets,
-  } = usePreviousExerciseSet(exerciseId, workoutId);
+  } = usePreviousExerciseSet(exerciseId, workoutId, performanceType);
 
   const parsedRepMin = initialRepMin === undefined
     ? undefined
@@ -143,6 +144,27 @@ export default function AddSetScreen() {
       score: day.readiness.score,
     })),
   );
+  const metricProgressionSuggestion =
+    performanceType === "reps"
+      ? null
+      : getMetricProgressionRecommendation(
+          previousSets.map((set) => ({
+            durationSeconds: set.duration_seconds,
+            metricUnit: set.metric_unit,
+            metricValue: set.metric_value,
+            performedAt: set.performed_at,
+            performanceType: set.performance_type as
+              | "time"
+              | "distance"
+              | "calories"
+              | "rounds",
+          })),
+          recoveryDays.map((day) => ({
+            band: day.readiness.band,
+            checkinDate: day.checkin_date,
+            score: day.readiness.score,
+          })),
+        );
 
   function applyProgressionSuggestion() {
     if (!progressionSuggestion) {
@@ -152,6 +174,22 @@ export default function AddSetScreen() {
     setWeight(String(progressionSuggestion.weight));
     setReps(String(progressionSuggestion.reps));
   }
+
+  function applyMetricProgressionSuggestion() {
+    if (!metricProgressionSuggestion) return;
+
+    if (metricProgressionSuggestion.performanceType === "time") {
+      setDurationSeconds(
+        String(metricProgressionSuggestion.durationSeconds ?? ""),
+      );
+    } else {
+      setMetricValue(String(metricProgressionSuggestion.metricValue ?? ""));
+      if (metricProgressionSuggestion.metricUnit) {
+        setMetricUnit(metricProgressionSuggestion.metricUnit);
+      }
+    }
+  }
+
    useEffect(() => {
     if (!exerciseId && exercises.length > 0) {
       setExerciseId(exercises[0].id);
@@ -484,6 +522,29 @@ export default function AddSetScreen() {
 
               <Pressable
                 onPress={applyProgressionSuggestion}
+                style={styles.useTargetButton}
+              >
+                <Text style={styles.useTargetText}>Use target</Text>
+              </Pressable>
+            </View>
+          ) : null}
+          {!isEditing && performanceType !== "reps" && metricProgressionSuggestion ? (
+            <View style={styles.suggestionCard}>
+              <Text style={styles.suggestionEyebrow}>
+                {metricProgressionSuggestion.recoveryContext === "repeated_low"
+                  ? "RECOVERY-AWARE TARGET"
+                  : "NEXT TARGET"}
+              </Text>
+              <Text style={styles.suggestionPerformance}>
+                {metricProgressionSuggestion.performanceType === "time"
+                  ? `${metricProgressionSuggestion.durationSeconds} seconds`
+                  : `${metricProgressionSuggestion.metricValue} ${metricProgressionSuggestion.metricUnit ?? metricProgressionSuggestion.performanceType}`}
+              </Text>
+              <Text style={styles.suggestionExplanation}>
+                {metricProgressionSuggestion.explanation}
+              </Text>
+              <Pressable
+                onPress={applyMetricProgressionSuggestion}
                 style={styles.useTargetButton}
               >
                 <Text style={styles.useTargetText}>Use target</Text>

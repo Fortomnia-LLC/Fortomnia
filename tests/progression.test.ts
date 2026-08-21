@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   DEFAULT_PROGRESSION_RULES,
   getExerciseRecommendation,
+  getMetricProgressionRecommendation,
   getRepsFirstSuggestion,
 } from "../src/lib/progression.ts";
 
@@ -279,4 +280,42 @@ test("ignores drop sets when calculating the next target", () => {
   assert.equal(recommendation.weight, 225);
   assert.equal(recommendation.reps, 8);
   assert.equal(recommendation.basedOnSetCount, 1);
+});
+
+
+test("progresses timed, distance, calorie, and round targets conservatively", () => {
+  const time = getMetricProgressionRecommendation([
+    { durationSeconds: 60, metricUnit: null, metricValue: null, performedAt: "2026-08-21T12:00:00Z", performanceType: "time" },
+  ]);
+  const distance = getMetricProgressionRecommendation([
+    { durationSeconds: null, metricUnit: "meters", metricValue: 1000, performedAt: "2026-08-21T12:00:00Z", performanceType: "distance" },
+  ]);
+  const calories = getMetricProgressionRecommendation([
+    { durationSeconds: null, metricUnit: "calories", metricValue: 12, performedAt: "2026-08-21T12:00:00Z", performanceType: "calories" },
+  ]);
+  const rounds = getMetricProgressionRecommendation([
+    { durationSeconds: null, metricUnit: "rounds", metricValue: 5, performedAt: "2026-08-21T12:00:00Z", performanceType: "rounds" },
+  ]);
+
+  assert.equal(time?.durationSeconds, 65);
+  assert.equal(distance?.metricValue, 1050);
+  assert.equal(calories?.metricValue, 13);
+  assert.equal(rounds?.metricValue, 6);
+  assert.equal(distance?.strategy, "progress");
+});
+
+test("repeated low recovery holds a metric target steady", () => {
+  const recommendation = getMetricProgressionRecommendation(
+    [
+      { durationSeconds: null, metricUnit: "meters", metricValue: 500, performedAt: "2026-08-21T12:00:00Z", performanceType: "distance" },
+    ],
+    [
+      { band: "recover", checkinDate: "2026-08-21", score: 30 },
+      { band: "recover", checkinDate: "2026-08-20", score: 35 },
+    ],
+  );
+
+  assert.equal(recommendation?.metricValue, 500);
+  assert.equal(recommendation?.strategy, "hold");
+  assert.match(recommendation?.explanation ?? "", /recovery/);
 });

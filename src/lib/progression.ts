@@ -334,3 +334,93 @@ export function getExerciseRecommendation(
     weight: shouldHoldForRecovery ? limitingSet.weight : suggestion.weight,
   };
 }
+
+
+export type MetricProgressionSet = {
+  durationSeconds: number | null;
+  metricUnit: "meters" | "kilometers" | "miles" | "yards" | "calories" | "rounds" | null;
+  metricValue: number | null;
+  performedAt: string;
+  performanceType: "time" | "distance" | "calories" | "rounds";
+};
+
+export type MetricProgressionRecommendation = {
+  durationSeconds: number | null;
+  explanation: string;
+  metricUnit: MetricProgressionSet["metricUnit"];
+  metricValue: number | null;
+  performanceType: MetricProgressionSet["performanceType"];
+  recoveryContext: ExerciseRecommendation["recoveryContext"];
+  strategy: "progress" | "hold";
+};
+
+export function getMetricProgressionRecommendation(
+  recentSets: MetricProgressionSet[],
+  readinessHistory: ReadinessSnapshot[] = [],
+): MetricProgressionRecommendation | null {
+  const latestSet = [...recentSets]
+    .filter((set) =>
+      set.performanceType === "time"
+        ? set.durationSeconds !== null && set.durationSeconds > 0
+        : set.metricValue !== null && set.metricValue > 0,
+    )
+    .sort((left, right) => right.performedAt.localeCompare(left.performedAt))[0];
+
+  if (!latestSet) return null;
+
+  const recoveryContext = getRecoveryContext(readinessHistory);
+  const shouldHold = recoveryContext === "repeated_low";
+  const strategy = shouldHold ? "hold" : "progress";
+  const recoveryExplanation =
+    recoveryContext === "repeated_low"
+      ? " Repeated low recovery check-ins hold the target steady today."
+      : recoveryContext === "single_low"
+        ? " One low recovery day does not override supported progression."
+        : "";
+
+  if (latestSet.performanceType === "time") {
+    const current = latestSet.durationSeconds!;
+    const next = shouldHold ? current : Math.max(current + 5, Math.round(current * 1.05));
+
+    return {
+      durationSeconds: next,
+      explanation:
+        (shouldHold
+          ? `Hold at ${current} seconds and prioritize a clean, controlled effort.`
+          : `Add a small duration challenge from ${current} to ${next} seconds.`) +
+        recoveryExplanation,
+      metricUnit: null,
+      metricValue: null,
+      performanceType: "time",
+      recoveryContext,
+      strategy,
+    };
+  }
+
+  const current = latestSet.metricValue!;
+  const next = shouldHold
+    ? current
+    : latestSet.performanceType === "rounds" ||
+        latestSet.performanceType === "calories"
+      ? current + 1
+      : Math.round(current * 1.05 * 10) / 10;
+
+  const label =
+    latestSet.performanceType === "distance"
+      ? latestSet.metricUnit ?? "meters"
+      : latestSet.performanceType;
+
+  return {
+    durationSeconds: null,
+    explanation:
+      (shouldHold
+        ? `Hold at ${current} ${label} and focus on execution.`
+        : `Build gradually from ${current} to ${next} ${label}.`) +
+      recoveryExplanation,
+    metricUnit: latestSet.metricUnit,
+    metricValue: next,
+    performanceType: latestSet.performanceType,
+    recoveryContext,
+    strategy,
+  };
+}
