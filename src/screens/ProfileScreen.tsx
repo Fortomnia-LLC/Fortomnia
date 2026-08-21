@@ -14,6 +14,16 @@ import {
   View,
 } from "react-native";
 import { useProfile } from "../hooks/useProfile";
+import {
+  buildCoachProfileSummary,
+  parseFavoriteAthletes,
+  TRAINING_GOAL_LABELS,
+  TRAINING_GOALS,
+  TRAINING_STYLE_LABELS,
+  TRAINING_STYLES,
+  type TrainingGoal,
+  type TrainingStyle,
+} from "../lib/coachProfile";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
 
@@ -30,6 +40,12 @@ export default function ProfileScreen() {
   } = useProfile();
 
   const [displayName, setDisplayName] = useState("");
+  const [trainingGoals, setTrainingGoals] = useState<TrainingGoal[]>([
+    "general_fitness",
+  ]);
+  const [trainingStyle, setTrainingStyle] =
+    useState<TrainingStyle>("mixed");
+  const [favoriteAthletes, setFavoriteAthletes] = useState("");
   const [weightUnit, setWeightUnit] = useState<WeightUnit>("lb");
   const [isSaving, setIsSaving] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
@@ -40,8 +56,23 @@ export default function ProfileScreen() {
     if (!profile) return;
 
     setDisplayName(profile.display_name ?? "");
+    setTrainingGoals(
+      profile.training_goals.length > 0
+        ? profile.training_goals
+        : ["general_fitness"],
+    );
+    setTrainingStyle(profile.training_style);
+    setFavoriteAthletes(profile.favorite_athletes.join(", "));
     setWeightUnit(profile.preferred_weight_unit);
   }, [profile]);
+
+  function toggleTrainingGoal(goal: TrainingGoal) {
+    setTrainingGoals((current) =>
+      current.includes(goal)
+        ? current.filter((item) => item !== goal)
+        : [...current, goal],
+    );
+  }
 
   async function handleSave() {
     const trimmedName = displayName.trim();
@@ -50,6 +81,13 @@ export default function ProfileScreen() {
       setStatusMessage("No authenticated user was found.");
       return;
     }
+
+    if (trainingGoals.length === 0) {
+      setStatusMessage("Choose at least one training goal.");
+      return;
+    }
+
+    const parsedAthletes = parseFavoriteAthletes(favoriteAthletes);
 
     if (!trimmedName) {
       setStatusMessage("Display name is required.");
@@ -63,7 +101,10 @@ export default function ProfileScreen() {
       .from("profiles")
       .update({
         display_name: trimmedName,
+        favorite_athletes: parsedAthletes,
         preferred_weight_unit: weightUnit,
+        training_goals: trainingGoals,
+        training_style: trainingStyle,
         updated_at: new Date().toISOString(),
       })
       .eq("id", session.user.id);
@@ -225,6 +266,96 @@ function handleDeleteAccount() {
               </Pressable>
             );
           })}
+        </View>
+
+        <View style={styles.coachSection}>
+          <Text style={styles.coachEyebrow}>AI COACH PROFILE</Text>
+          <Text style={styles.coachTitle}>What are you training for?</Text>
+          <Text style={styles.coachDescription}>
+            Choose every goal that should influence your recommendations.
+          </Text>
+
+          <View style={styles.choiceWrap}>
+            {TRAINING_GOALS.map((goal) => {
+              const isSelected = trainingGoals.includes(goal);
+
+              return (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isSelected }}
+                  key={goal}
+                  onPress={() => toggleTrainingGoal(goal)}
+                  style={[
+                    styles.choiceButton,
+                    isSelected && styles.choiceButtonSelected,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.choiceText,
+                      isSelected && styles.choiceTextSelected,
+                    ]}
+                  >
+                    {TRAINING_GOAL_LABELS[goal]}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          <Text style={styles.label}>Preferred training style</Text>
+          <View style={styles.choiceWrap}>
+            {TRAINING_STYLES.map((style) => {
+              const isSelected = trainingStyle === style;
+
+              return (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isSelected }}
+                  key={style}
+                  onPress={() => setTrainingStyle(style)}
+                  style={[
+                    styles.choiceButton,
+                    isSelected && styles.choiceButtonSelected,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.choiceText,
+                      isSelected && styles.choiceTextSelected,
+                    ]}
+                  >
+                    {TRAINING_STYLE_LABELS[style]}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          <Text style={styles.label}>Favorite athletes</Text>
+          <TextInput
+            accessibilityLabel="Favorite athletes"
+            autoCapitalize="words"
+            onChangeText={setFavoriteAthletes}
+            placeholder="Arnold Schwarzenegger, Serena Williams"
+            placeholderTextColor="#727885"
+            style={styles.input}
+            value={favoriteAthletes}
+          />
+          <Text style={styles.fieldHint}>
+            Separate names with commas. Add up to 10 inspirations.
+          </Text>
+
+          <View style={styles.coachSummary}>
+            <Text style={styles.coachSummaryLabel}>COACHING DIRECTION</Text>
+            <Text style={styles.coachSummaryText}>
+              {buildCoachProfileSummary(
+                trainingGoals,
+                trainingStyle,
+                parseFavoriteAthletes(favoriteAthletes),
+              )}
+            </Text>
+          </View>
         </View>
 
         {profileError ? (
@@ -414,6 +545,83 @@ const styles = StyleSheet.create({
   },
   unitTextSelected: {
     color: "#0B0B0B",
+  },
+  coachSection: {
+    borderTopColor: "#333333",
+    borderTopWidth: 1,
+    marginTop: 4,
+    paddingTop: 24,
+  },
+  coachEyebrow: {
+    color: "#F97316",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1.5,
+  },
+  coachTitle: {
+    color: "#FFFFFF",
+    fontSize: 22,
+    fontWeight: "800",
+    marginTop: 7,
+  },
+  coachDescription: {
+    color: "#9CA3AF",
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 16,
+    marginTop: 6,
+  },
+  choiceWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 22,
+  },
+  choiceButton: {
+    backgroundColor: "#1A1A1A",
+    borderColor: "#333333",
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 13,
+    paddingVertical: 10,
+  },
+  choiceButtonSelected: {
+    backgroundColor: "#F97316",
+    borderColor: "#F97316",
+  },
+  choiceText: {
+    color: "#D1D5DB",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  choiceTextSelected: {
+    color: "#0B0B0B",
+  },
+  fieldHint: {
+    color: "#727885",
+    fontSize: 12,
+    marginBottom: 20,
+    marginTop: -16,
+  },
+  coachSummary: {
+    backgroundColor: "#21170D",
+    borderColor: "#4A2D12",
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 24,
+    padding: 15,
+  },
+  coachSummaryLabel: {
+    color: "#F97316",
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 1.3,
+  },
+  coachSummaryText: {
+    color: "#D1D5DB",
+    fontSize: 14,
+    lineHeight: 21,
+    marginTop: 7,
   },
   error: {
     color: "#F87171",

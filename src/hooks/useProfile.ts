@@ -3,11 +3,18 @@ import { useFocusEffect } from 'expo-router';
 
 import { useAuth } from '../providers/AuthProvider';
 import { supabase } from '../lib/supabase';
+import type {
+  TrainingGoal,
+  TrainingStyle,
+} from '../lib/coachProfile';
 
 export type Profile = {
+  favorite_athletes: string[];
   display_name: string | null;
   id: string;
   preferred_weight_unit: 'lb' | 'kg';
+  training_goals: TrainingGoal[];
+  training_style: TrainingStyle;
 };
 
 export function useProfile() {
@@ -28,7 +35,9 @@ export function useProfile() {
 
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, display_name, preferred_weight_unit')
+      .select(
+        'id, display_name, preferred_weight_unit, training_goals, training_style, favorite_athletes',
+      )
       .eq('id', session.user.id)
       .single();
 
