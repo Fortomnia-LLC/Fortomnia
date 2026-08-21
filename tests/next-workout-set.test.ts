@@ -18,7 +18,6 @@ function planned(
 ): PlannedExercise {
   return {
     superset_group: null,
-    parent_set_id: null,
     performance_type: "reps",
     exercise_id: id,
     exercise_name: name,
@@ -43,6 +42,7 @@ function logged(
     exercise_id: exerciseId,
     exercise_name: exerciseId,
     id,
+    parent_set_id: null,
     performance_type: "reps",
     reps: 9,
     reps_in_reserve: 2,

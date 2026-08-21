@@ -47,11 +47,13 @@ type WorkoutSetRow = {
   | { name: string }[]
   | null;
   id: string;
+  parent_set_id: string | null;
   performance_type: "reps" | "time";
   reps: number;
   reps_in_reserve: number | null;
   set_number: number;
   set_type: "warmup" | "working";
+  set_variant: "standard" | "drop";
   weight: number | string;
   weight_unit: "lb" | "kg";
 };
