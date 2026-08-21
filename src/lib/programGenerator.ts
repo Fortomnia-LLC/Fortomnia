@@ -6,7 +6,7 @@ import {
   getTemplateTargetDefaults,
   type TrainingGoal,
   type TrainingStyle,
-} from "./coachProfile";
+} from "./coachProfile.ts";
 
 type ProgramExercise = {
   exerciseId: string;
