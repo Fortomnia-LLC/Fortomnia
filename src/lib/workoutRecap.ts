@@ -1,6 +1,6 @@
 import type { LoggedSet } from "../hooks/useWorkoutSession";
 import type { WorkoutRecommendation } from "../hooks/useWorkoutRecommendations";
-import { getSetTargetFeedback } from "./performanceFeedback";
+import { getSetTargetFeedback } from "./performanceFeedback.ts";
 
 export type WorkoutRecap = {
   evaluatedSets: number;
