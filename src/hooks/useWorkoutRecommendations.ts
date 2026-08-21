@@ -30,6 +30,7 @@ export type WorkoutRecommendation = {
   explanation: string;
   metricUnit: MetricUnit | null;
   metricValue: number | null;
+  performanceType: PerformanceType;
   reps: number | null;
   strategy: "progress" | "hold" | "deload";
   targetText: string;
@@ -120,6 +121,7 @@ export function useWorkoutRecommendations(
             explanation: recommendation.explanation,
             metricUnit: null,
             metricValue: null,
+            performanceType: "reps",
             reps: recommendation.reps,
             strategy: recommendation.strategy,
             targetText: `${recommendation.weight} ${recommendation.weightUnit} × ${recommendation.reps} reps`,
@@ -157,6 +159,7 @@ export function useWorkoutRecommendations(
           explanation: recommendation.explanation,
           metricUnit: recommendation.metricUnit,
           metricValue: recommendation.metricValue,
+          performanceType: recommendation.performanceType,
           reps: null,
           strategy: recommendation.strategy,
           targetText,

@@ -29,6 +29,7 @@ import {
   getNextWorkoutSet,
   groupWorkoutSets,
 } from "../lib/workoutSets";
+import { getSetTargetFeedback } from "../lib/performanceFeedback";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
 import { useState } from "react";
@@ -38,6 +39,7 @@ type SetCardProps = {
   onDelete: (set: LoggedSet) => void;
   onDropSet: (set: LoggedSet) => void;
   onEdit: (set: LoggedSet) => void;
+  recommendation: WorkoutRecommendation | null;
   set: LoggedSet;
 };
 
@@ -46,8 +48,25 @@ function SetCard({
   onDelete,
   onDropSet,
   onEdit,
+  recommendation,
   set,
 }: SetCardProps) {
+  const feedback =
+    recommendation &&
+    set.set_type === "working" &&
+    set.set_variant === "standard"
+      ? getSetTargetFeedback({
+          actualDurationSeconds: set.duration_seconds,
+          actualMetricValue: set.metric_value ?? null,
+          actualReps: set.reps,
+          actualWeight: set.weight,
+          performanceType: recommendation.performanceType,
+          targetDurationSeconds: recommendation.durationSeconds,
+          targetMetricValue: recommendation.metricValue,
+          targetReps: recommendation.reps,
+          targetWeight: recommendation.weight,
+        })
+      : null;
   return (
     <View style={styles.setCard}>
       <View style={styles.setHeader}>
@@ -72,6 +91,19 @@ function SetCard({
       <Text style={styles.performance}>
 {formatSetPerformance(set)}
       </Text>
+
+      {feedback ? (
+        <View
+          style={[
+            styles.feedbackCard,
+            feedback.status === "exceeded" && styles.feedbackExceeded,
+            feedback.status === "missed" && styles.feedbackMissed,
+          ]}
+        >
+          <Text style={styles.feedbackLabel}>{feedback.label}</Text>
+          <Text style={styles.feedbackText}>{feedback.explanation}</Text>
+        </View>
+      ) : null}
 
       {set.reps_in_reserve !== null ? (
         <Text style={styles.rir}>
@@ -502,6 +534,9 @@ if (isLoading) {
                 onDelete={handleDeleteSet}
                 onDropSet={handleAddDropSet}
                 onEdit={handleEditSet}
+                recommendation={
+                  recommendations[set.exercise_id] ?? null
+                }
                 set={set}
               />
             ))}
@@ -923,6 +958,34 @@ const styles = StyleSheet.create({
     color: "#D1D5DB",
     fontSize: 16,
     marginTop: 10,
+  },
+  feedbackCard: {
+    backgroundColor: "#10231B",
+    borderColor: "#34D399",
+    borderRadius: 9,
+    borderWidth: 1,
+    marginTop: 10,
+    padding: 10,
+  },
+  feedbackExceeded: {
+    backgroundColor: "#21170D",
+    borderColor: "#F97316",
+  },
+  feedbackMissed: {
+    backgroundColor: "#211414",
+    borderColor: "#F87171",
+  },
+  feedbackLabel: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1,
+  },
+  feedbackText: {
+    color: "#D1D5DB",
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: 4,
   },
   rir: {
     color: "#9CA3AF",
