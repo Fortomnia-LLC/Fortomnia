@@ -23,6 +23,13 @@ import {
   type EquationSex,
 } from "../lib/macroRecommendation";
 import { supabase } from "../lib/supabase";
+import {
+  cmToFeetInches,
+  feetInchesToCm,
+  kgToLb,
+  lbToKg,
+  type MeasurementSystem,
+} from "../lib/measurementUnits";
 import { useAuth } from "../providers/AuthProvider";
 
 function firstParam(value: string | string[] | undefined) {
@@ -54,8 +61,12 @@ export default function EditNutritionGoalsScreen() {
   const { session } = useAuth();
   const { profile } = useProfile();
   const [age, setAge] = useState("");
+  const [measurementSystem, setMeasurementSystem] =
+    useState<MeasurementSystem>("imperial");
   const [heightCm, setHeightCm] = useState("");
-  const [weightKg, setWeightKg] = useState("");
+  const [heightFeet, setHeightFeet] = useState("");
+  const [heightInches, setHeightInches] = useState("");
+  const [weightValue, setWeightValue] = useState("");
   const [equationSex, setEquationSex] =
     useState<EquationSex>("male");
   const [activityLevel, setActivityLevel] =
@@ -75,8 +86,30 @@ export default function EditNutritionGoalsScreen() {
   useEffect(() => {
     if (profile) {
       setAge(profile.age_years === null ? "" : String(profile.age_years));
-      setHeightCm(profile.height_cm === null ? "" : String(profile.height_cm));
-      setWeightKg(profile.weight_kg === null ? "" : String(profile.weight_kg));
+      const system =
+        profile.preferred_weight_unit === "kg" ? "metric" : "imperial";
+      setMeasurementSystem(system);
+
+      if (profile.height_cm === null) {
+        setHeightCm("");
+        setHeightFeet("");
+        setHeightInches("");
+      } else {
+        const imperialHeight = cmToFeetInches(profile.height_cm);
+        setHeightCm(String(profile.height_cm));
+        setHeightFeet(String(imperialHeight.feet));
+        setHeightInches(String(imperialHeight.inches));
+      }
+
+      setWeightValue(
+        profile.weight_kg === null
+          ? ""
+          : String(
+              system === "imperial"
+                ? kgToLb(profile.weight_kg)
+                : profile.weight_kg,
+            ),
+      );
       setEquationSex(profile.equation_sex ?? "male");
       setActivityLevel(profile.activity_level);
       setCalorieDirection(profile.calorie_direction);
@@ -98,6 +131,34 @@ export default function EditNutritionGoalsScreen() {
     initialProtein,
   ]);
 
+  function handleMeasurementSystemChange(next: MeasurementSystem) {
+    if (next === measurementSystem) return;
+
+    const parsedWeight = Number(weightValue);
+
+    if (Number.isFinite(parsedWeight) && parsedWeight > 0) {
+      setWeightValue(
+        String(
+          next === "imperial"
+            ? kgToLb(parsedWeight)
+            : lbToKg(parsedWeight),
+        ),
+      );
+    }
+
+    if (next === "imperial") {
+      const imperialHeight = cmToFeetInches(Number(heightCm));
+      setHeightFeet(String(imperialHeight.feet));
+      setHeightInches(String(imperialHeight.inches));
+    } else {
+      setHeightCm(
+        String(feetInchesToCm(Number(heightFeet), Number(heightInches))),
+      );
+    }
+
+    setMeasurementSystem(next);
+  }
+
   function handleCalculateRecommendation() {
     if (!profile) {
       setErrorMessage("Your coaching profile is still loading.");
@@ -110,9 +171,15 @@ export default function EditNutritionGoalsScreen() {
         age: Number(age),
         calorieDirection,
         equationSex,
-        heightCm: Number(heightCm),
+        heightCm:
+          measurementSystem === "imperial"
+            ? feetInchesToCm(Number(heightFeet), Number(heightInches))
+            : Number(heightCm),
         trainingGoals: profile.training_goals,
-        weightKg: Number(weightKg),
+        weightKg:
+          measurementSystem === "imperial"
+            ? lbToKg(Number(weightValue))
+            : Number(weightValue),
       });
 
       setCalories(String(recommendation.calories));
@@ -133,8 +200,14 @@ export default function EditNutritionGoalsScreen() {
 
   async function handleSave() {
     const parsedAge = Number(age);
-    const parsedHeight = Number(heightCm);
-    const parsedWeight = Number(weightKg);
+    const parsedHeight =
+      measurementSystem === "imperial"
+        ? feetInchesToCm(Number(heightFeet), Number(heightInches))
+        : Number(heightCm);
+    const parsedWeight =
+      measurementSystem === "imperial"
+        ? lbToKg(Number(weightValue))
+        : Number(weightValue);
     const parsedCalories = Number(calories);
     const parsedProtein = Number(protein);
     const parsedCarbs = Number(carbs);
@@ -217,6 +290,8 @@ export default function EditNutritionGoalsScreen() {
         calorie_direction: calorieDirection,
         equation_sex: equationSex,
         height_cm: Number.isFinite(parsedHeight) ? parsedHeight : null,
+        preferred_weight_unit:
+          measurementSystem === "imperial" ? "lb" : "kg",
         weight_kg: Number.isFinite(parsedWeight) ? parsedWeight : null,
         updated_at: new Date().toISOString(),
       })
@@ -257,19 +332,69 @@ export default function EditNutritionGoalsScreen() {
             trends.
           </Text>
 
-          <View style={styles.row}>
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Age</Text>
-              <TextInput
-                keyboardType="number-pad"
-                onChangeText={setAge}
-                placeholder="35"
-                placeholderTextColor="#727885"
-                style={styles.input}
-                value={age}
-              />
-            </View>
-            <View style={styles.inputGroup}>
+          <Text style={styles.label}>Measurement system</Text>
+          <View style={styles.choiceRow}>
+            {(["imperial", "metric"] as MeasurementSystem[]).map((option) => (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ selected: measurementSystem === option }}
+                key={option}
+                onPress={() => handleMeasurementSystemChange(option)}
+                style={[
+                  styles.choiceButton,
+                  measurementSystem === option && styles.choiceButtonSelected,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.choiceText,
+                    measurementSystem === option && styles.choiceTextSelected,
+                  ]}
+                >
+                  {option === "imperial" ? "Imperial (lb, ft)" : "Metric (kg, cm)"}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <Text style={styles.label}>Age</Text>
+          <TextInput
+            keyboardType="number-pad"
+            onChangeText={setAge}
+            placeholder="35"
+            placeholderTextColor="#727885"
+            style={styles.input}
+            value={age}
+          />
+
+          {measurementSystem === "imperial" ? (
+            <>
+              <Text style={styles.label}>Height</Text>
+              <View style={styles.row}>
+                <View style={styles.inputGroup}>
+                  <TextInput
+                    keyboardType="number-pad"
+                    onChangeText={setHeightFeet}
+                    placeholder="5 ft"
+                    placeholderTextColor="#727885"
+                    style={styles.input}
+                    value={heightFeet}
+                  />
+                </View>
+                <View style={styles.inputGroup}>
+                  <TextInput
+                    keyboardType="decimal-pad"
+                    onChangeText={setHeightInches}
+                    placeholder="10 in"
+                    placeholderTextColor="#727885"
+                    style={styles.input}
+                    value={heightInches}
+                  />
+                </View>
+              </View>
+            </>
+          ) : (
+            <>
               <Text style={styles.label}>Height (cm)</Text>
               <TextInput
                 keyboardType="decimal-pad"
@@ -279,17 +404,19 @@ export default function EditNutritionGoalsScreen() {
                 style={styles.input}
                 value={heightCm}
               />
-            </View>
-          </View>
+            </>
+          )}
 
-          <Text style={styles.label}>Body weight (kg)</Text>
+          <Text style={styles.label}>
+            Body weight ({measurementSystem === "imperial" ? "lb" : "kg"})
+          </Text>
           <TextInput
             keyboardType="decimal-pad"
-            onChangeText={setWeightKg}
-            placeholder="80"
+            onChangeText={setWeightValue}
+            placeholder={measurementSystem === "imperial" ? "175" : "80"}
             placeholderTextColor="#727885"
             style={styles.input}
-            value={weightKg}
+            value={weightValue}
           />
 
           <Text style={styles.label}>Equation sex</Text>

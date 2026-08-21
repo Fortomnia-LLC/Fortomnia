@@ -237,7 +237,7 @@ function handleDeleteAccount() {
           value={displayName}
         />
 
-        <Text style={styles.label}>Preferred weight unit</Text>
+        <Text style={styles.label}>Preferred measurement system</Text>
 
         <View style={styles.unitRow}>
           {(["lb", "kg"] as WeightUnit[]).map((unit) => {
@@ -245,7 +245,7 @@ function handleDeleteAccount() {
 
             return (
               <Pressable
-                  accessibilityLabel={`Use ${unit === "lb" ? "pounds" : "kilograms"}`}
+                  accessibilityLabel={`Use ${unit === "lb" ? "imperial" : "metric"} measurements`}
                   accessibilityRole="button"
                   accessibilityState={{ selected: isSelected }}
                 key={unit}
@@ -261,7 +261,7 @@ function handleDeleteAccount() {
                     isSelected && styles.unitTextSelected,
                   ]}
                 >
-                  {unit.toUpperCase()}
+                  {unit === "lb" ? "Imperial (lb, ft)" : "Metric (kg, cm)"}
                 </Text>
               </Pressable>
             );
