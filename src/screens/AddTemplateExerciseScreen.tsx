@@ -12,6 +12,8 @@ import {
 } from "react-native";
 import { ExercisePicker } from "../components/ExercisePicker";
 import { useExercises } from "../hooks/useExercises";
+import { useProfile } from "../hooks/useProfile";
+import { getTemplateTargetDefaults } from "../lib/coachProfile";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
 
@@ -68,6 +70,7 @@ export default function AddTemplateExerciseScreen() {
 
   const { session } = useAuth();
   const { exercises, isLoading } = useExercises();
+  const { profile } = useProfile();
 
     const [exerciseId, setExerciseId] = useState<string | null>(
     initialExerciseId ?? null,
@@ -86,8 +89,36 @@ export default function AddTemplateExerciseScreen() {
   const [targetRir, setTargetRir] = useState(
     initialTargetRir ?? "2",
   );
+  const [hasAppliedCoachDefaults, setHasAppliedCoachDefaults] =
+    useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (
+      profile &&
+      !isEditing &&
+      !hasAppliedCoachDefaults &&
+      repMinParam === undefined &&
+      repMaxParam === undefined
+    ) {
+      const defaults = getTemplateTargetDefaults(
+        profile.training_goals,
+        profile.training_style,
+      );
+      setTargetSets(String(defaults.targetSets));
+      setRepMin(String(defaults.repMin));
+      setRepMax(String(defaults.repMax));
+      setTargetRir(String(defaults.targetRir));
+      setHasAppliedCoachDefaults(true);
+    }
+  }, [
+    hasAppliedCoachDefaults,
+    isEditing,
+    profile,
+    repMaxParam,
+    repMinParam,
+  ]);
 
   useEffect(() => {
     if (!exerciseId && exercises.length > 0) {
@@ -287,6 +318,18 @@ export default function AddTemplateExerciseScreen() {
             selectedExerciseId={exerciseId}
           />
 
+        {profile && !isEditing ? (
+          <View style={styles.coachDefaultCard}>
+            <Text style={styles.coachDefaultEyebrow}>COACH DEFAULTS</Text>
+            <Text style={styles.coachDefaultText}>
+              {getTemplateTargetDefaults(
+                profile.training_goals,
+                profile.training_style,
+              ).explanation}
+            </Text>
+          </View>
+        ) : null}
+
         <Text style={styles.label}>Performance target</Text>
         <View style={styles.metricOptions}>
           {(["reps", "time"] as const).map((option) => (
@@ -433,6 +476,26 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     marginBottom: 8,
+  },
+  coachDefaultCard: {
+    backgroundColor: "#21170D",
+    borderColor: "#4A2D12",
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 20,
+    padding: 14,
+  },
+  coachDefaultEyebrow: {
+    color: "#F97316",
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 1.3,
+  },
+  coachDefaultText: {
+    color: "#D1D5DB",
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 6,
   },
   metricOptions: {
     flexDirection: "row",

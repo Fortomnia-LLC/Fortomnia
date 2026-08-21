@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   buildCoachProfileSummary,
+  getTemplateTargetDefaults,
   parseFavoriteAthletes,
 } from "../src/lib/coachProfile.ts";
 
@@ -34,4 +35,22 @@ test("builds an explainable coaching direction", () => {
   assert.match(summary, /build strength, build muscle/);
   assert.match(summary, /powerbuilding approach/);
   assert.match(summary, /Arnold Schwarzenegger/);
+});
+
+test("strength goals produce strength-oriented template defaults", () => {
+  const defaults = getTemplateTargetDefaults(["strength"], "mixed");
+
+  assert.equal(defaults.targetSets, 4);
+  assert.equal(defaults.repMin, 3);
+  assert.equal(defaults.repMax, 5);
+});
+
+test("bodybuilding style produces hypertrophy-oriented defaults", () => {
+  const defaults = getTemplateTargetDefaults(
+    ["general_fitness"],
+    "bodybuilding",
+  );
+
+  assert.equal(defaults.repMin, 8);
+  assert.equal(defaults.repMax, 12);
 });
