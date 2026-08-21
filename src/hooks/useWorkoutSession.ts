@@ -6,8 +6,8 @@ import { supabase } from "../lib/supabase";
 
 export type LoggedSet = {
   duration_seconds: number | null;
-  metric_unit: MetricUnit | null;
-  metric_value: number | null;
+  metric_unit?: MetricUnit | null;
+  metric_value?: number | null;
   exercise_id: string;
   exercise_name: string;
   id: string;
@@ -31,8 +31,8 @@ export type PlannedExercise = {
   rep_max: number;
   rep_min: number;
   target_duration_seconds: number | null;
-  target_metric_unit: MetricUnit | null;
-  target_metric_value: number | null;
+  target_metric_unit?: MetricUnit | null;
+  target_metric_value?: number | null;
   target_rir: number;
   target_sets: number;
 };
@@ -46,8 +46,8 @@ export type WorkoutDetail = {
 
 type WorkoutSetRow = {
   duration_seconds: number | null;
-  metric_unit: MetricUnit | null;
-  metric_value: number | null;
+  metric_unit?: MetricUnit | null;
+  metric_value?: number | null;
   exercise_id: string;
   exercises:
   | { name: string }
@@ -77,8 +77,8 @@ type PlannedExerciseRow = {
   rep_max: number;
   rep_min: number;
   target_duration_seconds: number | null;
-  target_metric_unit: MetricUnit | null;
-  target_metric_value: number | null;
+  target_metric_unit?: MetricUnit | null;
+  target_metric_value?: number | null;
   target_rir: number;
   target_sets: number;
 };
@@ -190,7 +190,7 @@ export function useWorkoutSession(workoutId: string | undefined) {
     return {
       duration_seconds: set.duration_seconds,
       metric_unit: set.metric_unit,
-      metric_value: set.metric_value === null ? null : Number(set.metric_value),
+      metric_value: set.metric_value == null ? null : Number(set.metric_value),
       exercise_id: set.exercise_id,
       exercise_name: exercise?.name ?? "Unknown exercise",
       id: set.id,
@@ -226,7 +226,7 @@ export function useWorkoutSession(workoutId: string | undefined) {
         target_duration_seconds: item.target_duration_seconds,
         target_metric_unit: item.target_metric_unit,
         target_metric_value:
-          item.target_metric_value === null ? null : Number(item.target_metric_value),
+          item.target_metric_value == null ? null : Number(item.target_metric_value),
         target_rir: item.target_rir,
         target_sets: item.target_sets,
       };

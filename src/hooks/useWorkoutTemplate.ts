@@ -14,8 +14,8 @@ export type TemplateExercise = {
   rep_max: number;
   rep_min: number;
   target_duration_seconds: number | null;
-  target_metric_unit: MetricUnit | null;
-  target_metric_value: number | null;
+  target_metric_unit?: MetricUnit | null;
+  target_metric_value?: number | null;
   target_rir: number;
   target_sets: number;
 };
@@ -39,8 +39,8 @@ type TemplateExerciseRow = {
   rep_max: number;
   rep_min: number;
   target_duration_seconds: number | null;
-  target_metric_unit: MetricUnit | null;
-  target_metric_value: number | null;
+  target_metric_unit?: MetricUnit | null;
+  target_metric_value?: number | null;
   target_rir: number;
   target_sets: number;
 };
@@ -129,7 +129,7 @@ export function useWorkoutTemplate(templateId: string | undefined) {
         target_duration_seconds: item.target_duration_seconds,
         target_metric_unit: item.target_metric_unit,
         target_metric_value:
-          item.target_metric_value === null ? null : Number(item.target_metric_value),
+          item.target_metric_value == null ? null : Number(item.target_metric_value),
         target_rir: item.target_rir,
         target_sets: item.target_sets,
       };

@@ -167,8 +167,8 @@ export function getNextWorkoutSet(
 export function formatSetPerformance(set: LoggedSet): string {
   if (
     ["distance", "calories", "rounds"].includes(set.performance_type) &&
-    set.metric_value !== null &&
-    set.metric_unit !== null
+    set.metric_value != null &&
+    set.metric_unit != null
   ) {
     const metric = formatMetricValue(
       set.performance_type,
@@ -210,8 +210,8 @@ type ExerciseTarget = {
 export function formatExerciseTarget(target: ExerciseTarget): string {
   if (
     ["distance", "calories", "rounds"].includes(target.performance_type) &&
-    target.target_metric_value !== null &&
-    target.target_metric_unit !== null
+    target.target_metric_value != null &&
+    target.target_metric_unit != null
   ) {
     return `${target.target_sets} sets × ${formatMetricValue(
       target.performance_type,

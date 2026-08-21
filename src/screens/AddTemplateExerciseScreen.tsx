@@ -93,7 +93,7 @@ export default function AddTemplateExerciseScreen() {
     const [exerciseId, setExerciseId] = useState<string | null>(
     initialExerciseId ?? null,
   );
-  const [performanceType, setPerformanceType] = useState<"reps" | "time">(
+  const [performanceType, setPerformanceType] = useState<PerformanceType>(
     PERFORMANCE_TYPES.includes(initialPerformanceType as PerformanceType)
       ? (initialPerformanceType as PerformanceType)
       : "reps",
@@ -160,6 +160,7 @@ export default function AddTemplateExerciseScreen() {
 
     const parsedSets = Number(targetSets);
     const parsedDuration = Number(targetDurationSeconds);
+    const parsedMetricValue = Number(targetMetricValue);
     const parsedMin = Number(repMin);
     const parsedMax = Number(repMax);
     const parsedRir = Number(targetRir);
