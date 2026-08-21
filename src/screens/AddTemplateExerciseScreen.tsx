@@ -590,6 +590,7 @@ const styles = StyleSheet.create({
   },
   metricOptions: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 10,
     marginBottom: 20,
   },
@@ -599,6 +600,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     flex: 1,
+    minWidth: 90,
     paddingVertical: 12,
   },
   metricButtonSelected: {
