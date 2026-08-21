@@ -18,6 +18,10 @@ import {
   type PlannedExercise,
   useWorkoutSession,
 } from "../hooks/useWorkoutSession";
+import {
+  type WorkoutRecommendation,
+  useWorkoutRecommendations,
+} from "../hooks/useWorkoutRecommendations";
 
 import {
   formatExerciseTarget,
@@ -109,7 +113,11 @@ type PlannedExerciseCardProps = {
   canLog: boolean;
   completedSets: number;
   exercise: PlannedExercise;
-  onLog: (exercise: PlannedExercise) => void;
+  onLog: (
+    exercise: PlannedExercise,
+    recommendation: WorkoutRecommendation | null,
+  ) => void;
+  recommendation: WorkoutRecommendation | null;
 };
 
 function PlannedExerciseCard({
@@ -117,6 +125,7 @@ function PlannedExerciseCard({
   completedSets,
   exercise,
   onLog,
+  recommendation,
 }: PlannedExerciseCardProps) {
   const targetReached = completedSets >= exercise.target_sets;
 
@@ -133,16 +142,34 @@ function PlannedExerciseCard({
 {formatExerciseTarget(exercise)}
       </Text>
 
+      {recommendation ? (
+        <View style={styles.planRecommendation}>
+          <Text style={styles.planRecommendationLabel}>
+            {recommendation.strategy === "hold"
+              ? "RECOVERY-AWARE TARGET"
+              : "TODAY'S TARGET"}
+          </Text>
+          <Text style={styles.planRecommendationTarget}>
+            {recommendation.targetText}
+          </Text>
+          <Text style={styles.planRecommendationExplanation}>
+            {recommendation.explanation}
+          </Text>
+        </View>
+      ) : null}
+
       <Text style={styles.planProgress}>
         {completedSets} of {exercise.target_sets} sets logged
       </Text>
 
       {canLog && !targetReached ? (
         <Pressable
-          onPress={() => onLog(exercise)}
+          onPress={() => onLog(exercise, recommendation)}
           style={styles.planLogButton}
         >
-          <Text style={styles.planLogText}>Log next set</Text>
+          <Text style={styles.planLogText}>
+            {recommendation ? "Log recommended set" : "Log next set"}
+          </Text>
         </Pressable>
       ) : targetReached ? (
         <Text style={styles.planComplete}>TARGET COMPLETE</Text>
@@ -166,6 +193,10 @@ export default function WorkoutDetailScreen() {
     workout,
   } = useWorkoutSession(workoutId);
   const nextWorkoutSet = getNextWorkoutSet(sets, plannedExercises);
+  const { recommendations } = useWorkoutRecommendations(
+    plannedExercises,
+    workoutId,
+  );
 
   function handleLogNextSet() {
     if (!nextWorkoutSet) {
@@ -265,26 +296,42 @@ export default function WorkoutDetailScreen() {
     });
   }
 
-  function handleLogPlannedExercise(exercise: PlannedExercise) {
+  function handleLogPlannedExercise(
+    exercise: PlannedExercise,
+    recommendation: WorkoutRecommendation | null,
+  ) {
     router.push({
       pathname: "/workout/[id]/add-set",
       params: {
         durationSeconds:
-          exercise.target_duration_seconds === null
-            ? ""
-            : String(exercise.target_duration_seconds),
+          recommendation?.durationSeconds !== null &&
+          recommendation?.durationSeconds !== undefined
+            ? String(recommendation.durationSeconds)
+            : exercise.target_duration_seconds === null
+              ? ""
+              : String(exercise.target_duration_seconds),
         exerciseId: exercise.exercise_id,
         id: workoutId,
-        metricUnit: exercise.target_metric_unit ?? undefined,
+        metricUnit:
+          recommendation?.metricUnit ??
+          exercise.target_metric_unit ??
+          undefined,
         metricValue:
-          exercise.target_metric_value === null
-            ? ""
-            : String(exercise.target_metric_value),
+          recommendation?.metricValue !== null &&
+          recommendation?.metricValue !== undefined
+            ? String(recommendation.metricValue)
+            : exercise.target_metric_value === null
+              ? ""
+              : String(exercise.target_metric_value),
         performanceType: exercise.performance_type,
         repMax: String(exercise.rep_max),
         repMin: String(exercise.rep_min),
-        reps: String(exercise.rep_min),
+        reps: String(recommendation?.reps ?? exercise.rep_min),
         rir: String(exercise.target_rir),
+        ...(recommendation?.weight !== null &&
+        recommendation?.weight !== undefined
+          ? { weight: String(recommendation.weight) }
+          : {}),
       },
     });
   }
@@ -542,6 +589,9 @@ if (isLoading) {
                       exercise={exercise}
                       key={exercise.id}
                       onLog={handleLogPlannedExercise}
+                      recommendation={
+                        recommendations[exercise.exercise_id] ?? null
+                      }
                     />
                   ))}
                 </View>
@@ -742,7 +792,33 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 8,
   },
-    planProgress: {
+    planRecommendation: {
+    backgroundColor: "#171717",
+    borderColor: "#F97316",
+    borderRadius: 10,
+    borderWidth: 1,
+    marginTop: 10,
+    padding: 11,
+  },
+  planRecommendationLabel: {
+    color: "#F97316",
+    fontSize: 9,
+    fontWeight: "800",
+    letterSpacing: 1.2,
+  },
+  planRecommendationTarget: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "800",
+    marginTop: 5,
+  },
+  planRecommendationExplanation: {
+    color: "#9CA3AF",
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: 5,
+  },
+  planProgress: {
     color: "#9CA3AF",
     fontSize: 13,
     marginTop: 6,
