@@ -319,3 +319,49 @@ test("repeated low recovery holds a metric target steady", () => {
   assert.equal(recommendation?.strategy, "hold");
   assert.match(recommendation?.explanation ?? "", /recovery/);
 });
+
+
+test("repeated low recovery holds every metric target steady", () => {
+  const readiness = [
+    { band: "recover" as const, checkinDate: "2026-08-21", score: 30 },
+    { band: "recover" as const, checkinDate: "2026-08-20", score: 35 },
+  ];
+
+  const time = getMetricProgressionRecommendation(
+    [{ durationSeconds: 60, metricUnit: null, metricValue: null, performedAt: "2026-08-21T12:00:00Z", performanceType: "time" }],
+    readiness,
+  );
+  const calories = getMetricProgressionRecommendation(
+    [{ durationSeconds: null, metricUnit: "calories", metricValue: 12, performedAt: "2026-08-21T12:00:00Z", performanceType: "calories" }],
+    readiness,
+  );
+  const rounds = getMetricProgressionRecommendation(
+    [{ durationSeconds: null, metricUnit: "rounds", metricValue: 5, performedAt: "2026-08-21T12:00:00Z", performanceType: "rounds" }],
+    readiness,
+  );
+
+  assert.equal(time?.durationSeconds, 60);
+  assert.equal(calories?.metricValue, 12);
+  assert.equal(rounds?.metricValue, 5);
+
+  for (const recommendation of [time, calories, rounds]) {
+    assert.equal(recommendation?.strategy, "hold");
+    assert.equal(recommendation?.recoveryContext, "repeated_low");
+    assert.match(recommendation?.explanation ?? "", /recovery/i);
+  }
+});
+
+test("one low recovery day does not suppress metric progression", () => {
+  const recommendation = getMetricProgressionRecommendation(
+    [{ durationSeconds: null, metricUnit: "rounds", metricValue: 5, performedAt: "2026-08-21T12:00:00Z", performanceType: "rounds" }],
+    [
+      { band: "recover", checkinDate: "2026-08-21", score: 35 },
+      { band: "ready", checkinDate: "2026-08-20", score: 75 },
+    ],
+  );
+
+  assert.equal(recommendation?.metricValue, 6);
+  assert.equal(recommendation?.strategy, "progress");
+  assert.equal(recommendation?.recoveryContext, "single_low");
+  assert.match(recommendation?.explanation ?? "", /one low recovery day/i);
+});
