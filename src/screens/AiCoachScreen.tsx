@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   screen: { backgroundColor: "#0B0B0B", flex: 1 },
   content: { paddingBottom: 40, paddingHorizontal: 24, paddingTop: 20 },
   backButton: { alignSelf: "flex-start", paddingVertical: 8 },
-  backText: { color: "#F97316", fontSize: 16, fontWeight: "700" },
+  backText: { color: "#2563EB", fontSize: 16, fontWeight: "700" },
   hero: {
     backgroundColor: "#15100C",
     borderColor: "#4A2D12",
@@ -233,13 +233,13 @@ const styles = StyleSheet.create({
   error: { color: "#F87171", fontSize: 13, lineHeight: 19, marginTop: 16 },
   refreshButton: {
     alignItems: "center",
-    borderColor: "#F97316",
+    borderColor: "#2563EB",
     borderRadius: 12,
     borderWidth: 1,
     marginTop: 20,
     paddingVertical: 13,
   },
-  refreshText: { color: "#F97316", fontSize: 14, fontWeight: "800" },
+  refreshText: { color: "#2563EB", fontSize: 14, fontWeight: "800" },
   comingSoonButton: {
     alignItems: "center",
     backgroundColor: "#292929",

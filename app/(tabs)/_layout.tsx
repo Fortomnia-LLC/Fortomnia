@@ -9,7 +9,7 @@ export default function TabLayout() {
         sceneStyle: {
           backgroundColor: "#0B0B0B",
         },
-        tabBarActiveTintColor: "#F97316",
+        tabBarActiveTintColor: "#2563EB",
         tabBarHideOnKeyboard: true,
         tabBarInactiveTintColor: "#6B7280",
         tabBarLabelStyle: {

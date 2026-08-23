@@ -432,7 +432,7 @@ loadingScreen: {
     marginBottom: 28,
   },
   navigationText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 16,
     fontWeight: "700",
   },
@@ -493,8 +493,8 @@ loadingScreen: {
     paddingVertical: 8,
   },
   optionButtonSelected: {
-    backgroundColor: "#F97316",
-    borderColor: "#F97316",
+    backgroundColor: "#2563EB",
+    borderColor: "#2563EB",
   },
   optionText: {
     color: "#D1D5DB",
@@ -514,7 +514,7 @@ loadingScreen: {
   },
   toggleButtonSelected: {
     backgroundColor: "#2A180B",
-    borderColor: "#F97316",
+    borderColor: "#2563EB",
   },
   toggleText: {
     color: "#D1D5DB",
@@ -531,7 +531,7 @@ loadingScreen: {
   },
   saveButton: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: "#2563EB",
     borderRadius: 10,
     marginTop: 24,
     paddingVertical: 14,

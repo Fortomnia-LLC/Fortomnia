@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   navigationText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 16,
     fontWeight: "700",
   },
@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: "#2563EB",
     borderRadius: 10,
     marginTop: 18,
     paddingVertical: 12,

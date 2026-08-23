@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
   },
   button: {
     alignItems: "center",
-    backgroundColor: "#F59E0B",
+    backgroundColor: "#2563EB",
     borderRadius: 12,
     justifyContent: "center",
     minHeight: 52,
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   backButtonText: {
-    color: "#F59E0B",
+    color: "#2563EB",
     fontSize: 15,
     fontWeight: "600",
   },

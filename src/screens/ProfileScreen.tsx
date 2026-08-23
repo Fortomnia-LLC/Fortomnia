@@ -553,8 +553,8 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   unitButtonSelected: {
-    backgroundColor: "#F97316",
-    borderColor: "#F97316",
+    backgroundColor: "#2563EB",
+    borderColor: "#2563EB",
   },
   unitText: {
     color: "#9CA3AF",
@@ -604,8 +604,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   choiceButtonSelected: {
-    backgroundColor: "#F97316",
-    borderColor: "#F97316",
+    backgroundColor: "#2563EB",
+    borderColor: "#2563EB",
   },
   choiceText: {
     color: "#D1D5DB",
@@ -688,7 +688,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: "#2563EB",
     borderRadius: 12,
     justifyContent: "center",
     minHeight: 52,
@@ -727,20 +727,20 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   legalButtonArrow: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 28,
     marginLeft: 12,
   },
   signOutButton: {
     alignItems: "center",
-    borderColor: "#F97316",
+    borderColor: "#2563EB",
     borderRadius: 12,
     borderWidth: 1,
     marginTop: 16,
     paddingVertical: 14,
   },
   signOutText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 16,
     fontWeight: "600",
   },

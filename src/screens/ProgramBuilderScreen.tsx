@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
   screen: { backgroundColor: "#0B0B0B", flex: 1 },
   content: { paddingBottom: 40, paddingHorizontal: 20, paddingTop: 18 },
   backButton: { alignSelf: "flex-start", paddingVertical: 10 },
-  backText: { color: "#F97316", fontSize: 16, fontWeight: "700" },
+  backText: { color: "#2563EB", fontSize: 16, fontWeight: "700" },
   eyebrow: {
     color: "#F97316",
     fontSize: 11,
@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 14,
   },
-  dayButtonSelected: { backgroundColor: "#F97316", borderColor: "#F97316" },
+  dayButtonSelected: { backgroundColor: "#2563EB", borderColor: "#2563EB" },
   dayText: { color: "#D1D5DB", fontSize: 17, fontWeight: "800" },
   dayTextSelected: { color: "#0B0B0B" },
   sectionHint: {
@@ -382,8 +382,8 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
   },
   equipmentButtonSelected: {
-    backgroundColor: "#F97316",
-    borderColor: "#F97316",
+    backgroundColor: "#2563EB",
+    borderColor: "#2563EB",
   },
   equipmentText: {
     color: "#D1D5DB",
@@ -436,7 +436,7 @@ const styles = StyleSheet.create({
   error: { color: "#F87171", lineHeight: 20, marginBottom: 16 },
   createButton: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: "#2563EB",
     borderRadius: 12,
     justifyContent: "center",
     minHeight: 54,

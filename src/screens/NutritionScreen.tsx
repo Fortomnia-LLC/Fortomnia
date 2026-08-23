@@ -430,7 +430,7 @@ const styles = StyleSheet.create({
   },
   todayButton: {
     alignItems: "center",
-    borderColor: "#F97316",
+    borderColor: "#2563EB",
     borderRadius: 10,
     borderWidth: 1,
     justifyContent: "center",
@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   todayButtonText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 13,
     fontWeight: "800",
   },
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
   },
   logButton: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: "#2563EB",
     borderRadius: 12,
     justifyContent: "center",
     marginBottom: 12,
@@ -455,7 +455,7 @@ const styles = StyleSheet.create({
   },
   goalsButton: {
     alignItems: "center",
-    borderColor: "#F97316",
+    borderColor: "#2563EB",
     borderRadius: 12,
     borderWidth: 1,
     justifyContent: "center",
@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
     minHeight: 52,
   },
   goalsButtonText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 16,
     fontWeight: "800",
   },
@@ -596,14 +596,14 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   editButton: {
-    borderColor: "#F97316",
+    borderColor: "#2563EB",
     borderRadius: 8,
     borderWidth: 1,
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
   editButtonText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 13,
     fontWeight: "700",
   },

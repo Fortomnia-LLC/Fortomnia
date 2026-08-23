@@ -325,8 +325,8 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
   },
   filterButtonSelected: {
-    backgroundColor: "#F97316",
-    borderColor: "#F97316",
+    backgroundColor: "#2563EB",
+    borderColor: "#2563EB",
   },
   filterText: {
     color: "#D1D5DB",
@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
   },
   exerciseButtonSelected: {
     backgroundColor: "#2A180B",
-    borderColor: "#F97316",
+    borderColor: "#2563EB",
   },
   exerciseHeader: {
     alignItems: "center",

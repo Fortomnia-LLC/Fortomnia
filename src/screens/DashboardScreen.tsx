@@ -567,7 +567,7 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: "#2563EB",
     borderRadius: 10,
     marginTop: 16,
     paddingVertical: 12,
@@ -669,7 +669,7 @@ const styles = StyleSheet.create({
   },
   quickButton: {
     alignItems: "center",
-    borderColor: "#F97316",
+    borderColor: "#2563EB",
     borderRadius: 10,
     borderWidth: 1,
     flex: 1,
@@ -677,7 +677,7 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
   },
   quickButtonText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 13,
     fontWeight: "700",
   },

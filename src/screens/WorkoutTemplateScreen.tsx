@@ -584,7 +584,7 @@ const styles = StyleSheet.create({
     paddingTop: 18,
   },
   navigationText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 16,
     fontWeight: "700",
   },
@@ -609,7 +609,7 @@ const styles = StyleSheet.create({
   },
   startButton: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: "#2563EB",
     borderRadius: 12,
     justifyContent: "center",
     marginBottom: 12,
@@ -625,7 +625,7 @@ const styles = StyleSheet.create({
   },
   addButton: {
     alignItems: "center",
-    borderColor: "#F97316",
+    borderColor: "#2563EB",
     borderRadius: 12,
     borderWidth: 1,
     justifyContent: "center",
@@ -633,7 +633,7 @@ const styles = StyleSheet.create({
     minHeight: 52,
   },
   addButtonText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 16,
     fontWeight: "800",
   },
@@ -738,14 +738,14 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   editButton: {
-    borderColor: "#F97316",
+    borderColor: "#2563EB",
     borderRadius: 8,
     borderWidth: 1,
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
   editButtonText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 13,
     fontWeight: "700",
   },
@@ -786,14 +786,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   backButton: {
-    borderColor: "#F97316",
+    borderColor: "#2563EB",
     borderRadius: 12,
     borderWidth: 1,
     paddingHorizontal: 18,
     paddingVertical: 12,
   },
   backText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontWeight: "700",
   },
 });

@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   resetLinkText: {
-    color: '#F59E0B',
+    color: '#2563EB',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
   },
   button: {
     alignItems: 'center',
-    backgroundColor: '#F59E0B',
+    backgroundColor: '#2563EB',
     borderRadius: 12,
     minHeight: 52,
     justifyContent: 'center',

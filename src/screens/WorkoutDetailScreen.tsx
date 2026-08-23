@@ -747,7 +747,7 @@ const styles = StyleSheet.create({
     paddingTop: 18,
   },
   navigationText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 16,
     fontWeight: "700",
   },
@@ -833,7 +833,7 @@ const styles = StyleSheet.create({
   },
   recapDoneButton: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: "#2563EB",
     borderRadius: 10,
     marginTop: 16,
     paddingVertical: 12,
@@ -896,7 +896,7 @@ const styles = StyleSheet.create({
   },
   nextSetButton: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: "#2563EB",
     borderRadius: 10,
     marginTop: 16,
     paddingVertical: 12,
@@ -979,14 +979,14 @@ const styles = StyleSheet.create({
   },
   planLogButton: {
     alignItems: "center",
-    borderColor: "#F97316",
+    borderColor: "#2563EB",
     borderRadius: 8,
     borderWidth: 1,
     marginTop: 12,
     paddingVertical: 9,
   },
   planLogText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 13,
     fontWeight: "800",
   },
@@ -1024,14 +1024,14 @@ const styles = StyleSheet.create({
   },
   groupNextSetButton: {
     alignItems: "center",
-    borderColor: "#F97316",
+    borderColor: "#2563EB",
     borderRadius: 10,
     borderWidth: 1,
     marginTop: 2,
     paddingVertical: 11,
   },
   groupNextSetText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 14,
     fontWeight: "800",
   },
@@ -1129,14 +1129,14 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   editSetButton: {
-    borderColor: "#F97316",
+    borderColor: "#2563EB",
     borderRadius: 8,
     borderWidth: 1,
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
   editSetText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 13,
     fontWeight: "700",
   },
@@ -1176,19 +1176,19 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   backButton: {
-    borderColor: "#F97316",
+    borderColor: "#2563EB",
     borderRadius: 12,
     borderWidth: 1,
     paddingHorizontal: 18,
     paddingVertical: 12,
   },
   backText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontWeight: "700",
   },
   logSetButton: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: "#2563EB",
     borderRadius: 12,
     justifyContent: "center",
     marginBottom: 24,
@@ -1201,7 +1201,7 @@ const styles = StyleSheet.create({
   },
     completeButton: {
     alignItems: "center",
-    borderColor: "#F97316",
+    borderColor: "#2563EB",
     borderRadius: 12,
     borderWidth: 1,
     justifyContent: "center",
@@ -1209,7 +1209,7 @@ const styles = StyleSheet.create({
     minHeight: 52,
   },
   completeText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 16,
     fontWeight: "800",
   },

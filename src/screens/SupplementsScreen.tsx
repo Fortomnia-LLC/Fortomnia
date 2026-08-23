@@ -581,7 +581,7 @@ const styles = StyleSheet.create({
   },
   todayButton: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: "#2563EB",
     borderRadius: 9,
     flex: 1,
     paddingHorizontal: 8,
@@ -618,7 +618,7 @@ const styles = StyleSheet.create({
   },
   addButton: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: "#2563EB",
     borderRadius: 12,
     justifyContent: "center",
     marginBottom: 24,
@@ -734,7 +734,7 @@ const styles = StyleSheet.create({
   },
   editButton: {
     alignItems: "center",
-    borderColor: "#F97316",
+    borderColor: "#2563EB",
     borderRadius: 8,
     borderWidth: 1,
     marginTop: 12,
@@ -742,7 +742,7 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
   },
   editButtonText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 13,
     fontWeight: "700",
   },

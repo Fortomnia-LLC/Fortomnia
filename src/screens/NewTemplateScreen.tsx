@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
   },
   builderButton: {
     backgroundColor: "#15100C",
-    borderColor: "#F97316",
+    borderColor: "#2563EB",
     borderRadius: 14,
     borderWidth: 1,
     marginBottom: 26,
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
   },
   createButton: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: "#2563EB",
     borderRadius: 12,
     justifyContent: "center",
     minHeight: 52,

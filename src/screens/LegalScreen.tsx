@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   navigationText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 16,
     fontWeight: "700",
   },

@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   navigationText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 16,
     fontWeight: "700",
   },
@@ -199,14 +199,14 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
   createButton: {
-    borderColor: "#F97316",
+    borderColor: "#2563EB",
     borderRadius: 10,
     borderWidth: 1,
     paddingHorizontal: 14,
     paddingVertical: 9,
   },
   createButtonText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 13,
     fontWeight: "700",
   },

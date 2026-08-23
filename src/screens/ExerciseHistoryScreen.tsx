@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
     paddingTop: 18,
   },
   navigationText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 16,
     fontWeight: "700",
   },
@@ -441,14 +441,14 @@ const styles = StyleSheet.create({
     marginTop: -10,
   },
   editButton: {
-    borderColor: "#F97316",
+    borderColor: "#2563EB",
     borderRadius: 10,
     borderWidth: 1,
     paddingHorizontal: 14,
     paddingVertical: 9,
   },
   editButtonText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 13,
     fontWeight: "700",
   },
@@ -500,14 +500,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   backButton: {
-    borderColor: "#F97316",
+    borderColor: "#2563EB",
     borderRadius: 12,
     borderWidth: 1,
     paddingHorizontal: 18,
     paddingVertical: 12,
   },
   backText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontWeight: "700",
   },
 });
