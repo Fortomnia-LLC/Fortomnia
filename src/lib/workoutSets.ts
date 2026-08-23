@@ -203,7 +203,7 @@ type ExerciseTarget = {
   target_duration_seconds: number | null;
   target_metric_unit?: MetricUnit | null;
   target_metric_value?: number | null;
-  target_rir: number;
+  target_rir: number | null;
   target_sets: number;
 };
 
