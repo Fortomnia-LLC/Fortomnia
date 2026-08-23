@@ -13,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { getLocalDateKey } from "../lib/dates";
+import { WEEKDAY_OPTIONS } from "../lib/supplementSchedule";
 import {
   type SupplementCategory,
   type SupplementFrequency,
@@ -44,6 +45,7 @@ const routes: SupplementRoute[] = [
 const frequencies: SupplementFrequency[] = [
   "daily",
   "weekly",
+  "selected_days",
   "as_needed",
 ];
 
@@ -76,6 +78,7 @@ export default function NewSupplementScreen() {
     notes: notesParam,
     protocolId: protocolIdParam,
     route: routeParam,
+    scheduledDays: scheduledDaysParam,
     scheduledTime: scheduledTimeParam,
     endDate: endDateParam,
 startDate: startDateParam,
@@ -88,6 +91,7 @@ startDate: startDateParam,
     notes?: string;
     protocolId?: string;
     route?: string;
+    scheduledDays?: string;
     scheduledTime?: string;
     endDate?: string;
     startDate?: string;
@@ -106,7 +110,11 @@ startDate: startDateParam,
   const initialFrequency = firstParam(frequencyParam) as
     | SupplementFrequency
     | undefined;
-    const initialScheduledTime = firstParam(scheduledTimeParam);
+  const initialScheduledDays = firstParam(scheduledDaysParam)
+    ?.split(",")
+    .map(Number)
+    .filter((day) => Number.isInteger(day) && day >= 0 && day <= 6) ?? [];
+  const initialScheduledTime = firstParam(scheduledTimeParam);
   const initialStartDate = firstParam(startDateParam);
   const initialEndDate = firstParam(endDateParam);
   const initialNotes = firstParam(notesParam);
@@ -127,6 +135,9 @@ startDate: startDateParam,
     useState<SupplementFrequency>(
       initialFrequency ?? "daily",
     );
+  const [scheduledDays, setScheduledDays] = useState<number[]>(
+    initialScheduledDays,
+  );
   const [scheduledTime, setScheduledTime] = useState(
     initialScheduledTime ?? "",
   );
@@ -147,6 +158,7 @@ startDate: startDateParam,
     setFrequency(initialFrequency ?? "daily");
     setStartDate(initialStartDate ?? getLocalDateKey());
     setEndDate(initialEndDate ?? "");
+    setScheduledDays(initialScheduledDays);
     setScheduledTime(initialScheduledTime ?? "");
     setNotes(initialNotes ?? "");
     setErrorMessage(null);
@@ -161,6 +173,7 @@ startDate: startDateParam,
     initialRoute,
     initialEndDate,
     initialStartDate,
+    initialScheduledDays.join(","),
     initialScheduledTime,
   ]);
 
@@ -220,6 +233,11 @@ if (trimmedEndDate && trimmedEndDate < trimmedStartDate) {
   return;
 }
 
+if (frequency === "selected_days" && scheduledDays.length === 0) {
+  setErrorMessage("Choose at least one scheduled day.");
+  return;
+}
+
     setIsSaving(true);
     setErrorMessage(null);
 
@@ -234,6 +252,7 @@ if (trimmedEndDate && trimmedEndDate < trimmedStartDate) {
           name: trimmedName,
           notes: notes.trim() || null,
           route,
+          scheduled_days: frequency === "selected_days" ? scheduledDays : [],
           end_date: trimmedEndDate || null,
           start_date: trimmedStartDate,
           scheduled_time: trimmedTime || null,
@@ -266,6 +285,7 @@ if (trimmedEndDate && trimmedEndDate < trimmedStartDate) {
         name: trimmedName,
         notes: notes.trim() || null,
         route,
+        scheduled_days: frequency === "selected_days" ? scheduledDays : [],
         scheduled_time: trimmedTime || null,
         end_date: trimmedEndDate || null,
         start_date: trimmedStartDate,
@@ -427,6 +447,42 @@ if (trimmedEndDate && trimmedEndDate < trimmedStartDate) {
             );
           })}
         </View>
+        {frequency === "selected_days" ? (
+          <>
+            <Text style={styles.label}>Scheduled days</Text>
+            <View style={styles.optionRow}>
+              {WEEKDAY_OPTIONS.map((day) => {
+                const selected = scheduledDays.includes(day.value);
+
+                return (
+                  <Pressable
+                    key={day.value}
+                    onPress={() =>
+                      setScheduledDays((current) =>
+                        selected
+                          ? current.filter((value) => value !== day.value)
+                          : [...current, day.value].sort(),
+                      )
+                    }
+                    style={[
+                      styles.optionButton,
+                      selected && styles.optionButtonSelected,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.optionText,
+                        selected && styles.optionTextSelected,
+                      ]}
+                    >
+                      {day.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </>
+        ) : null}
           <Text style={styles.label}>
 
            Start date {frequency === "weekly" ? "(weekly anchor)" : ""}

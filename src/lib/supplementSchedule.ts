@@ -1,5 +1,22 @@
 import type { SupplementProtocol } from "../hooks/useSupplements";
 
+export const WEEKDAY_OPTIONS = [
+  { label: "Sun", value: 0 },
+  { label: "Mon", value: 1 },
+  { label: "Tue", value: 2 },
+  { label: "Wed", value: 3 },
+  { label: "Thu", value: 4 },
+  { label: "Fri", value: 5 },
+  { label: "Sat", value: 6 },
+] as const;
+
+export function formatScheduledDays(days: number[]) {
+  return WEEKDAY_OPTIONS
+    .filter((option) => days.includes(option.value))
+    .map((option) => option.label)
+    .join(", ");
+}
+
 export function isWithinProtocolDates(
   protocol: SupplementProtocol,
   dateKey: string,
@@ -29,6 +46,11 @@ export function isProtocolDue(
 
   if (protocol.frequency === "as_needed") {
     return false;
+  }
+
+  if (protocol.frequency === "selected_days") {
+    const weekday = new Date(`${dateKey}T00:00:00Z`).getUTCDay();
+    return protocol.scheduled_days.includes(weekday);
   }
 
   const selectedTime = new Date(`${dateKey}T00:00:00Z`).getTime();

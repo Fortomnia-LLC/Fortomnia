@@ -21,7 +21,11 @@ export type SupplementRoute =
   | "inhaled"
   | "other";
 
-export type SupplementFrequency = "daily" | "weekly" | "as_needed";
+export type SupplementFrequency =
+  | "daily"
+  | "weekly"
+  | "selected_days"
+  | "as_needed";
 
 export type SupplementProtocol = {
   category: SupplementCategory;
@@ -34,6 +38,7 @@ export type SupplementProtocol = {
   name: string;
   notes: string | null;
   route: SupplementRoute;
+  scheduled_days: number[];
   scheduled_time: string | null;
   start_date: string;
 };
@@ -85,6 +90,7 @@ export function useSupplements(logDate: string) {
             dose_unit,
             route,
             frequency,
+            scheduled_days,
             scheduled_time,
             start_date,
             end_date,

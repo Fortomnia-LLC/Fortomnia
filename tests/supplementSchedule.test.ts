@@ -57,3 +57,15 @@ test("as-needed protocols are available but never scheduled as due", () => {
   assert.equal(isProtocolDue(item, "2026-08-04"), false);
   assert.equal(isProtocolAvailable(item, "2026-08-04"), true);
 });
+
+test("selected-day protocols are due only on chosen weekdays", () => {
+  const item = protocol({
+    frequency: "selected_days",
+    scheduled_days: [1, 3, 5],
+  });
+
+  assert.equal(isProtocolDue(item, "2026-08-03"), true);
+  assert.equal(isProtocolDue(item, "2026-08-04"), false);
+  assert.equal(isProtocolDue(item, "2026-08-05"), true);
+  assert.equal(isProtocolDue(item, "2026-08-07"), true);
+});

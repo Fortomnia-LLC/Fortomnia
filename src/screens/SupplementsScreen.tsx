@@ -18,6 +18,7 @@ import {
 } from "../hooks/useSupplements";
 import { supabase } from "../lib/supabase";
 import {
+  formatScheduledDays,
   isProtocolAvailable,
   isProtocolDue,
 } from "../lib/supplementSchedule";
@@ -92,7 +93,9 @@ function ProtocolCard({
       </Text>
 
       <Text style={styles.schedule}>
-        {protocol.frequency.replace("_", " ")}
+        {protocol.frequency === "selected_days"
+          ? formatScheduledDays(protocol.scheduled_days)
+          : protocol.frequency.replace("_", " ")}
         {protocol.scheduled_time
           ? ` • ${protocol.scheduled_time.slice(0, 5)}`
           : ""}
@@ -212,6 +215,7 @@ const takenCount = scheduledProtocols.filter(
         notes: protocol.notes ?? "",
         protocolId: protocol.id,
         route: protocol.route,
+        scheduledDays: protocol.scheduled_days.join(","),
         scheduledTime: protocol.scheduled_time?.slice(0, 5) ?? "",
         startDate: protocol.start_date,
       },
