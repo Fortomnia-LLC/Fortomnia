@@ -2,6 +2,8 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -282,6 +284,10 @@ if (trimmedEndDate && trimmedEndDate < trimmedStartDate) {
 
   return (
     <SafeAreaView style={styles.screen}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
       <ScrollView
         automaticallyAdjustKeyboardInsets
         contentContainerStyle={styles.content}
@@ -484,6 +490,7 @@ if (trimmedEndDate && trimmedEndDate < trimmedStartDate) {
           )}
         </Pressable>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
