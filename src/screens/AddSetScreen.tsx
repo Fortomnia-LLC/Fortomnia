@@ -24,6 +24,7 @@ import {
   PERFORMANCE_TYPES,
   type MetricUnit,
   type PerformanceType,
+  usesRepsInReserve,
 } from "../lib/performanceMetrics";
 import {
   DEFAULT_PROGRESSION_RULES,
@@ -259,8 +260,10 @@ export default function AddSetScreen() {
     const savedReps = performanceType === "reps" ? parsedReps : 1;
     const savedDuration =
       performanceType === "time" ? parsedDurationSeconds : null;
+    const savedRir = usesRepsInReserve(performanceType) ? parsedRir : null;
 
     if (
+      usesRepsInReserve(performanceType) &&
       parsedRir !== null &&
       (!Number.isInteger(parsedRir) ||
         parsedRir < 0 ||
@@ -300,7 +303,7 @@ export default function AddSetScreen() {
           parent_set_id: setVariant === "drop" ? parentSetId : null,
           performance_type: performanceType,
           reps: savedReps,
-          reps_in_reserve: parsedRir,
+          reps_in_reserve: savedRir,
           set_type: setType,
           set_variant: setVariant,
           weight: parsedWeight,
@@ -355,7 +358,7 @@ export default function AddSetScreen() {
         parent_set_id: setVariant === "drop" ? parentSetId : null,
         performance_type: performanceType,
         reps: savedReps,
-        reps_in_reserve: parsedRir,
+        reps_in_reserve: savedRir,
         session_id: workoutId,
         set_number: nextSetNumber,
         set_type: setType,
@@ -638,15 +641,19 @@ export default function AddSetScreen() {
           </>
         ) : null}
 
-        <Text style={styles.label}>Reps in reserve</Text>
-        <TextInput
-          keyboardType="number-pad"
-          onChangeText={setRir}
-          placeholder="2"
-          placeholderTextColor="#727885"
-          style={styles.input}
-          value={rir}
-        />
+        {usesRepsInReserve(performanceType) ? (
+          <>
+            <Text style={styles.label}>Reps in reserve</Text>
+            <TextInput
+              keyboardType="number-pad"
+              onChangeText={setRir}
+              placeholder="2"
+              placeholderTextColor="#727885"
+              style={styles.input}
+              value={rir}
+            />
+          </>
+        ) : null}
 
         {errorMessage ? (
           <Text style={styles.error}>{errorMessage}</Text>

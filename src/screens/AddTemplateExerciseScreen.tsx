@@ -24,6 +24,7 @@ import {
   PERFORMANCE_TYPES,
   type MetricUnit,
   type PerformanceType,
+  usesRepsInReserve,
 } from "../lib/performanceMetrics";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
@@ -247,11 +248,13 @@ export default function AddTemplateExerciseScreen() {
     const savedMax = performanceType === "reps" ? parsedMax : 1;
     const savedDuration =
       performanceType === "time" ? parsedDuration : null;
+    const savedRir = usesRepsInReserve(performanceType) ? parsedRir : null;
 
     if (
-      !Number.isInteger(parsedRir) ||
+      usesRepsInReserve(performanceType) &&
+      (!Number.isInteger(parsedRir) ||
       parsedRir < 0 ||
-      parsedRir > 10
+      parsedRir > 10)
     ) {
       setErrorMessage("Target RIR must be from 0 to 10.");
       return;
@@ -270,7 +273,7 @@ export default function AddTemplateExerciseScreen() {
           target_duration_seconds: savedDuration,
           target_metric_unit: savedMetricUnit,
           target_metric_value: savedMetricValue,
-          target_rir: parsedRir,
+          target_rir: savedRir,
           target_sets: parsedSets,
         })
         .eq("id", editingExerciseId)
@@ -327,7 +330,7 @@ export default function AddTemplateExerciseScreen() {
         rep_max: savedMax,
         rep_min: savedMin,
         target_duration_seconds: savedDuration,
-        target_rir: parsedRir,
+        target_rir: savedRir,
         target_sets: parsedSets,
         template_id: templateId,
         user_id: session.user.id,
@@ -526,14 +529,18 @@ export default function AddTemplateExerciseScreen() {
           </>
         ) : null}
 
-        <Text style={styles.label}>Target RIR</Text>
-        <TextInput
-          keyboardType="number-pad"
-          onChangeText={setTargetRir}
-          selectTextOnFocus
-          style={styles.input}
-          value={targetRir}
-        />
+        {usesRepsInReserve(performanceType) ? (
+          <>
+            <Text style={styles.label}>Target RIR</Text>
+            <TextInput
+              keyboardType="number-pad"
+              onChangeText={setTargetRir}
+              selectTextOnFocus
+              style={styles.input}
+              value={targetRir}
+            />
+          </>
+        ) : null}
 
         {errorMessage ? (
           <Text style={styles.error}>{errorMessage}</Text>

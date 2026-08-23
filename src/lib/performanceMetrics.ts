@@ -30,6 +30,10 @@ export const DISTANCE_UNITS: MetricUnit[] = [
   "yards",
 ];
 
+export function usesRepsInReserve(type: PerformanceType): boolean {
+  return type === "reps";
+}
+
 export function defaultMetricUnit(type: PerformanceType): MetricUnit | null {
   if (type === "distance") return "meters";
   if (type === "calories") return "calories";

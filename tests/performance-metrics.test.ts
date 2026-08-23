@@ -5,6 +5,7 @@ import {
   defaultMetricUnit,
   formatMetricValue,
   getExerciseMetricDefaults,
+  usesRepsInReserve,
 } from "../src/lib/performanceMetrics.ts";
 
 test("chooses safe default units for new metrics", () => {
@@ -81,4 +82,13 @@ test("selects calories, time, rounds, and reps by exercise context", () => {
     }).performanceType,
     "reps",
   );
+});
+
+
+test("limits RIR to rep-based performance", () => {
+  assert.equal(usesRepsInReserve("reps"), true);
+
+  for (const type of ["time", "distance", "calories", "rounds"] as const) {
+    assert.equal(usesRepsInReserve(type), false);
+  }
 });

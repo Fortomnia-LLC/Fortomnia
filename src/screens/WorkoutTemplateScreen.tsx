@@ -55,7 +55,9 @@ function TemplateExerciseCard({
       <Text style={styles.target}>
 {formatExerciseTarget(exercise)}
       </Text>
-      <Text style={styles.rir}>{exercise.target_rir} target RIR</Text>
+      {exercise.performance_type === "reps" ? (
+        <Text style={styles.rir}>{exercise.target_rir} target RIR</Text>
+      ) : null}
       {exercise.superset_group ? (
         <Text style={styles.supersetBadge}>SUPERSET</Text>
       ) : null}
@@ -201,7 +203,8 @@ export default function WorkoutTemplateScreen() {
           exercise.target_metric_value === null
             ? ""
             : String(exercise.target_metric_value),
-        targetRir: String(exercise.target_rir),
+        targetRir:
+          exercise.target_rir === null ? "" : String(exercise.target_rir),
         targetSets: String(exercise.target_sets),
         templateExerciseId: exercise.id,
       },
@@ -552,8 +555,7 @@ export default function WorkoutTemplateScreen() {
           <View style={styles.emptyCard}>
             <Text style={styles.emptyTitle}>No exercises yet</Text>
             <Text style={styles.emptyText}>
-              Add the first exercise and define its sets, rep range,
-              and target RIR.
+              Add the first exercise and define its sets and performance target.
             </Text>
           </View>
         }

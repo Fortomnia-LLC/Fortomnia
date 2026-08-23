@@ -259,9 +259,10 @@ export default function WorkoutDetailScreen() {
         repMax: String(exercise.rep_max),
         repMin: String(exercise.rep_min),
         reps: String(lastSet?.reps ?? exercise.rep_min),
-        rir: String(
-          lastSet?.reps_in_reserve ?? exercise.target_rir,
-        ),
+        rir:
+          (lastSet?.performance_type ?? exercise.performance_type) === "reps"
+            ? String(lastSet?.reps_in_reserve ?? exercise.target_rir ?? "")
+            : "",
         ...(lastSet ? { weight: String(lastSet.weight) } : {}),
       },
     });
@@ -361,7 +362,10 @@ export default function WorkoutDetailScreen() {
         repMax: String(exercise.rep_max),
         repMin: String(exercise.rep_min),
         reps: String(recommendation?.reps ?? exercise.rep_min),
-        rir: String(exercise.target_rir),
+        rir:
+          exercise.performance_type === "reps"
+            ? String(exercise.target_rir ?? "")
+            : "",
         ...(recommendation?.weight !== null &&
         recommendation?.weight !== undefined
           ? { weight: String(recommendation.weight) }
@@ -715,8 +719,7 @@ if (isLoading) {
           <View style={styles.emptyCard}>
             <Text style={styles.emptyTitle}>No sets logged yet</Text>
             <Text style={styles.emptyText}>
-              The next step is selecting an exercise and recording
-              weight, reps, and RIR.
+              The next step is selecting an exercise and recording its performance.
             </Text>
           </View>
         }
