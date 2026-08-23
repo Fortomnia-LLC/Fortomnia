@@ -45,12 +45,14 @@ export default function EditNutritionGoalsScreen() {
     carbs: carbsParam,
     fat: fatParam,
     fiber: fiberParam,
+    mealCount: mealCountParam,
     protein: proteinParam,
   } = useLocalSearchParams<{
     calories?: string;
     carbs?: string;
     fat?: string;
     fiber?: string;
+    mealCount?: string;
     protein?: string;
   }>();
 
@@ -59,6 +61,7 @@ export default function EditNutritionGoalsScreen() {
   const initialCarbs = firstParam(carbsParam) ?? "200";
   const initialFat = firstParam(fatParam) ?? "70";
   const initialFiber = firstParam(fiberParam) ?? "25";
+  const initialMealCount = firstParam(mealCountParam) ?? "3";
 
   const { session } = useAuth();
   const { profile } = useProfile();
@@ -82,6 +85,7 @@ export default function EditNutritionGoalsScreen() {
   const [carbs, setCarbs] = useState(initialCarbs);
   const [fat, setFat] = useState(initialFat);
   const [fiber, setFiber] = useState(initialFiber);
+  const [mealCount, setMealCount] = useState(initialMealCount);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -124,12 +128,14 @@ export default function EditNutritionGoalsScreen() {
     setCarbs(initialCarbs);
     setFat(initialFat);
     setFiber(initialFiber);
+    setMealCount(initialMealCount);
     setErrorMessage(null);
   }, [
     initialCalories,
     initialCarbs,
     initialFat,
     initialFiber,
+    initialMealCount,
     initialProtein,
   ]);
 
@@ -215,6 +221,7 @@ export default function EditNutritionGoalsScreen() {
     const parsedCarbs = Number(carbs);
     const parsedFat = Number(fat);
     const parsedFiber = Number(fiber);
+    const parsedMealCount = Number(mealCount);
 
     if (!session?.user.id) {
       setErrorMessage("No authenticated user was found.");
@@ -229,6 +236,15 @@ export default function EditNutritionGoalsScreen() {
       setErrorMessage(
         "Calories must be a whole number from 500 to 10,000.",
       );
+      return;
+    }
+
+    if (
+      !Number.isInteger(parsedMealCount) ||
+      parsedMealCount < 1 ||
+      parsedMealCount > 8
+    ) {
+      setErrorMessage("Meals per day must be a whole number from 1 to 8.");
       return;
     }
 
@@ -264,6 +280,7 @@ export default function EditNutritionGoalsScreen() {
           carbs_target_g: parsedCarbs,
           fat_target_g: parsedFat,
           fiber_target_g: parsedFiber,
+          meal_count: parsedMealCount,
           protein_target_g: parsedProtein,
           updated_at: new Date().toISOString(),
           user_id: session.user.id,
@@ -513,6 +530,15 @@ export default function EditNutritionGoalsScreen() {
             </Text>
           ) : null}
         </View>
+
+        <Text style={styles.label}>Meals per day</Text>
+        <TextInput
+          keyboardType="number-pad"
+          onChangeText={setMealCount}
+          selectTextOnFocus
+          style={styles.input}
+          value={mealCount}
+        />
 
         <Text style={styles.label}>Calories</Text>
         <TextInput

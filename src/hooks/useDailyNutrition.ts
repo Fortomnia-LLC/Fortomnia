@@ -25,6 +25,7 @@ export type NutritionGoals = {
   carbs_target_g: number;
   fat_target_g: number;
   fiber_target_g: number;
+  meal_count: number;
   protein_target_g: number;
 };
 
@@ -43,6 +44,7 @@ type NutritionGoalsRow = {
   carbs_target_g: number | string;
   fat_target_g: number | string;
   fiber_target_g: number | string;
+  meal_count: number;
   protein_target_g: number | string;
 };
 
@@ -51,6 +53,7 @@ const defaultGoals: NutritionGoals = {
   carbs_target_g: 200,
   fat_target_g: 70,
   fiber_target_g: 25,
+  meal_count: 3,
   protein_target_g: 150,
 };
 
@@ -94,7 +97,8 @@ export function useDailyNutrition(entryDate: string) {
             protein_target_g,
             carbs_target_g,
             fat_target_g,
-            fiber_target_g
+            fiber_target_g,
+            meal_count
           `,
         )
         .maybeSingle(),
@@ -134,6 +138,7 @@ export function useDailyNutrition(entryDate: string) {
             carbs_target_g: Number(goalRow.carbs_target_g),
             fat_target_g: Number(goalRow.fat_target_g),
             fiber_target_g: Number(goalRow.fiber_target_g),
+            meal_count: goalRow.meal_count,
             protein_target_g: Number(goalRow.protein_target_g),
           }
         : defaultGoals,

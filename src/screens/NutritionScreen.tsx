@@ -16,6 +16,7 @@ import {
   useDailyNutrition,
 } from "../hooks/useDailyNutrition";
 import { getLocalDateKey } from "../lib/dates";
+import { getPerMealTargets } from "../lib/mealTargets";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
 type NutritionEntryCardProps = {
@@ -125,6 +126,7 @@ export default function NutritionScreen() {
   } = useDailyNutrition(selectedDate);
   const calorieRemaining =
     goals.calorie_target - totals.calories;
+  const perMealTargets = getPerMealTargets(goals, goals.meal_count);
   function handleEditEntry(entry: NutritionEntry) {
     router.push({
       pathname: "/new-nutrition-entry",
@@ -282,6 +284,7 @@ export default function NutritionScreen() {
                   carbs: String(goals.carbs_target_g),
                   fat: String(goals.fat_target_g),
                   fiber: String(goals.fiber_target_g),
+                  mealCount: String(goals.meal_count),
                   protein: String(goals.protein_target_g),
                 },
               }}
@@ -348,6 +351,20 @@ export default function NutritionScreen() {
               Fiber: {Math.round(totals.fiber_g)}g of{" "}
               {Math.round(goals.fiber_target_g)}g
             </Text>
+
+            <View style={styles.perMealCard}>
+              <Text style={styles.perMealTitle}>
+                PER-MEAL TARGET • {goals.meal_count} MEALS
+              </Text>
+              <Text style={styles.perMealCalories}>
+                About {perMealTargets.calories} calories per meal
+              </Text>
+              <Text style={styles.perMealMacros}>
+                P {perMealTargets.proteinGrams}g • C {perMealTargets.carbsGrams}g
+                {" • "}F {perMealTargets.fatGrams}g • Fiber{" "}
+                {perMealTargets.fiberGrams}g
+              </Text>
+            </View>
 
             <Text style={styles.sectionTitle}>
   {isToday ? "Today's food" : "Food log"}
@@ -539,6 +556,31 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginBottom: 28,
     marginTop: 12,
+  },
+  perMealCard: {
+    backgroundColor: "#171717",
+    borderColor: "#292929",
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 24,
+    padding: 14,
+  },
+  perMealTitle: {
+    color: "#2563EB",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1,
+  },
+  perMealCalories: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+    marginTop: 8,
+  },
+  perMealMacros: {
+    color: "#9CA3AF",
+    fontSize: 13,
+    marginTop: 5,
   },
   sectionTitle: {
     color: "#FFFFFF",
