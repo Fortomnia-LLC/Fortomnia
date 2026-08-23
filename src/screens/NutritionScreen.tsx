@@ -36,7 +36,7 @@ function NutritionEntryCard({
         <View style={styles.entryTitleGroup}>
           <Text style={styles.entryName}>{entry.food_name}</Text>
           <Text style={styles.mealType}>
-            {entry.meal_type.toUpperCase()}
+            {entry.meal_number ? `MEAL ${entry.meal_number}` : entry.meal_type.toUpperCase()}
           </Text>
         </View>
 
@@ -138,7 +138,8 @@ export default function NutritionScreen() {
         fat: String(entry.fat_g),
         fiber: String(entry.fiber_g),
         foodName: entry.food_name,
-        mealType: entry.meal_type,
+        mealCount: String(goals.meal_count),
+        mealNumber: String(entry.meal_number ?? 1),
         protein: String(entry.protein_g),
         serving: entry.serving_description ?? "",
       },
@@ -268,7 +269,10 @@ export default function NutritionScreen() {
                          <Link
               href={{
                 pathname: "/new-nutrition-entry",
-                params: { date: selectedDate },
+                params: {
+                  date: selectedDate,
+                  mealCount: String(goals.meal_count),
+                },
               }}
               asChild
             >

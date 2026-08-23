@@ -13,17 +13,10 @@ import {
   View,
 } from "react-native";
 
-import { type MealType } from "../hooks/useDailyNutrition";
 import { getLocalDateKey } from "../lib/dates";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
 
-const mealTypes: MealType[] = [
-  "breakfast",
-  "lunch",
-  "dinner",
-  "snack",
-];
 function firstParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
@@ -37,7 +30,8 @@ export default function AddNutritionEntryScreen() {
     fat: fatParam,
     fiber: fiberParam,
     foodName: foodNameParam,
-    mealType: mealTypeParam,
+    mealCount: mealCountParam,
+    mealNumber: mealNumberParam,
     protein: proteinParam,
     serving: servingParam,
   } = useLocalSearchParams<{
@@ -48,16 +42,22 @@ export default function AddNutritionEntryScreen() {
     fat?: string;
     fiber?: string;
     foodName?: string;
-    mealType?: string;
+    mealCount?: string;
+    mealNumber?: string;
     protein?: string;
     serving?: string;
   }>();
 
   const entryDate = firstParam(dateParam) ?? getLocalDateKey();
   const editingEntryId = firstParam(entryIdParam);
-  const initialMealType = firstParam(mealTypeParam) as
-    | MealType
-    | undefined;
+  const mealCount = Math.min(
+    8,
+    Math.max(1, Number(firstParam(mealCountParam)) || 3),
+  );
+  const initialMealNumber = Math.min(
+    mealCount,
+    Math.max(1, Number(firstParam(mealNumberParam)) || 1),
+  );
   const initialFoodName = firstParam(foodNameParam);
   const initialServing = firstParam(servingParam);
   const initialCalories = firstParam(caloriesParam);
@@ -68,9 +68,7 @@ export default function AddNutritionEntryScreen() {
   const isEditing = Boolean(editingEntryId);
 
   const { session } = useAuth();
-  const [mealType, setMealType] = useState<MealType>(
-    initialMealType ?? "breakfast",
-  );
+  const [mealNumber, setMealNumber] = useState(initialMealNumber);
   const [foodName, setFoodName] = useState(initialFoodName ?? "");
   const [serving, setServing] = useState(initialServing ?? "");
   const [calories, setCalories] = useState(initialCalories ?? "");
@@ -82,7 +80,7 @@ export default function AddNutritionEntryScreen() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    setMealType(initialMealType ?? "breakfast");
+    setMealNumber(initialMealNumber);
     setFoodName(initialFoodName ?? "");
     setServing(initialServing ?? "");
     setCalories(initialCalories ?? "");
@@ -98,7 +96,7 @@ export default function AddNutritionEntryScreen() {
     initialFat,
     initialFiber,
     initialFoodName,
-    initialMealType,
+    initialMealNumber,
     initialProtein,
     initialServing,
   ]);
@@ -180,7 +178,8 @@ export default function AddNutritionEntryScreen() {
           fat_g: parsedFat,
           fiber_g: parsedFiber,
           food_name: trimmedName,
-          meal_type: mealType,
+          meal_number: mealNumber,
+          meal_type: "snack",
           protein_g: parsedProtein,
           serving_description: serving.trim() || null,
           updated_at: new Date().toISOString(),
@@ -212,7 +211,8 @@ export default function AddNutritionEntryScreen() {
         fat_g: parsedFat,
         fiber_g: parsedFiber,
         food_name: trimmedName,
-        meal_type: mealType,
+        meal_number: mealNumber,
+        meal_type: "snack",
         protein_g: parsedProtein,
         serving_description: serving.trim() || null,
         user_id: session.user.id,
@@ -267,29 +267,31 @@ export default function AddNutritionEntryScreen() {
 
         <Text style={styles.label}>Meal</Text>
         <View style={styles.mealRow}>
-          {mealTypes.map((option) => {
-            const selected = mealType === option;
+          {Array.from({ length: mealCount }, (_, index) => index + 1).map(
+            (option) => {
+              const selected = mealNumber === option;
 
-            return (
-              <Pressable
-                key={option}
-                onPress={() => setMealType(option)}
-                style={[
-                  styles.mealButton,
-                  selected && styles.mealButtonSelected,
-                ]}
-              >
-                <Text
+              return (
+                <Pressable
+                  key={option}
+                  onPress={() => setMealNumber(option)}
                   style={[
-                    styles.mealText,
-                    selected && styles.mealTextSelected,
+                    styles.mealButton,
+                    selected && styles.mealButtonSelected,
                   ]}
                 >
-                  {option}
-                </Text>
-              </Pressable>
-            );
-          })}
+                  <Text
+                    style={[
+                      styles.mealText,
+                      selected && styles.mealTextSelected,
+                    ]}
+                  >
+                    Meal {option}
+                  </Text>
+                </Pressable>
+              );
+            },
+          )}
         </View>
 
         <Text style={styles.label}>Food name</Text>

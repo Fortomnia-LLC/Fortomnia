@@ -14,6 +14,7 @@ export type NutritionEntry = {
   fiber_g: number;
   food_name: string;
   id: string;
+  meal_number: number | null;
   meal_type: MealType;
   notes: string | null;
   protein_g: number;
@@ -76,6 +77,7 @@ export function useDailyNutrition(entryDate: string) {
             entry_date,
             consumed_at,
             meal_type,
+            meal_number,
             food_name,
             serving_description,
             calories,
