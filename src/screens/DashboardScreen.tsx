@@ -503,7 +503,6 @@ const styles = StyleSheet.create({
   },
   error: {
     color: "#F87171",
-    lineHeight: 20,
     marginBottom: 18,
   },
   sectionTitle: {
@@ -562,7 +561,6 @@ const styles = StyleSheet.create({
   details: {
     color: "#9CA3AF",
     fontSize: 14,
-    lineHeight: 20,
     marginTop: 10,
   },
   primaryButton: {
@@ -599,7 +597,6 @@ const styles = StyleSheet.create({
   metricLabel: {
     color: "#D1D5DB",
     fontSize: 12,
-    lineHeight: 17,
     marginTop: 5,
   },
   activityStrip: {
@@ -623,7 +620,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "800",
     height: 24,
-    lineHeight: 24,
     overflow: "hidden",
     textAlign: "center",
     width: 24,
@@ -659,7 +655,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     color: "#9CA3AF",
     fontSize: 13,
-    lineHeight: 19,
     marginTop: 14,
     paddingTop: 14,
   },
@@ -704,7 +699,6 @@ const styles = StyleSheet.create({
   recoveryCardText: {
     color: "#9CA3AF",
     fontSize: 13,
-    lineHeight: 19,
     marginTop: 5,
   },
   recoveryScoreRow: {

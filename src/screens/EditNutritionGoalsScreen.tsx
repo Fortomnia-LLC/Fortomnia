@@ -626,7 +626,6 @@ const styles = StyleSheet.create({
   subtitle: {
     color: "#9CA3AF",
     fontSize: 16,
-    lineHeight: 24,
     marginBottom: 28,
     marginTop: 8,
   },
@@ -670,14 +669,12 @@ const styles = StyleSheet.create({
   recommendationDescription: {
     color: "#9CA3AF",
     fontSize: 13,
-    lineHeight: 19,
     marginBottom: 18,
     marginTop: 6,
   },
   fieldHint: {
     color: "#727885",
     fontSize: 12,
-    lineHeight: 17,
     marginBottom: 10,
     marginTop: -4,
   },
@@ -726,7 +723,6 @@ const styles = StyleSheet.create({
   recommendationExplanation: {
     color: "#D1D5DB",
     fontSize: 12,
-    lineHeight: 18,
     marginTop: 12,
   },
   row: {

@@ -634,7 +634,6 @@ const styles = StyleSheet.create({
   emptyText: {
     color: "#9CA3AF",
     fontSize: 14,
-    lineHeight: 21,
     marginTop: 8,
   },
 });

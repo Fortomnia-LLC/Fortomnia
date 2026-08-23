@@ -64,7 +64,6 @@ const styles = StyleSheet.create({
   description: {
     color: "#9CA3AF",
     fontSize: 17,
-    lineHeight: 26,
     marginBottom: 30,
     marginTop: 10,
   },
@@ -84,6 +83,5 @@ const styles = StyleSheet.create({
   cardText: {
     color: "#D1D5DB",
     fontSize: 15,
-    lineHeight: 22,
-  },
+    },
 });

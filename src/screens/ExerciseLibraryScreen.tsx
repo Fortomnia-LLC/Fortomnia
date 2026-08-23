@@ -173,7 +173,6 @@ const styles = StyleSheet.create({
   subtitle: {
     color: "#9CA3AF",
     fontSize: 15,
-    lineHeight: 22,
     marginTop: 8,
   },
   summary: {
@@ -221,7 +220,6 @@ const styles = StyleSheet.create({
   archivedDescription: {
     color: "#9CA3AF",
     fontSize: 13,
-    lineHeight: 19,
     marginBottom: 14,
     marginTop: 6,
   },

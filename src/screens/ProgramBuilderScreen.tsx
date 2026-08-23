@@ -337,7 +337,6 @@ const styles = StyleSheet.create({
   subtitle: {
     color: "#9CA3AF",
     fontSize: 15,
-    lineHeight: 22,
     marginBottom: 28,
     marginTop: 9,
   },
@@ -363,7 +362,6 @@ const styles = StyleSheet.create({
   sectionHint: {
     color: "#8F96A3",
     fontSize: 13,
-    lineHeight: 18,
     marginBottom: 12,
     marginTop: -7,
   },
@@ -402,7 +400,7 @@ const styles = StyleSheet.create({
     padding: 15,
   },
   profileLabel: { color: "#F97316", fontSize: 10, fontWeight: "900", letterSpacing: 1.2 },
-  profileText: { color: "#D1D5DB", fontSize: 14, lineHeight: 20, marginTop: 6, textTransform: "capitalize" },
+  profileText: { color: "#D1D5DB", fontSize: 14, marginTop: 6, textTransform: "capitalize" },
   templateCard: {
     backgroundColor: "#151515",
     borderColor: "#2B2B2B",
@@ -412,7 +410,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   templateName: { color: "#FFFFFF", fontSize: 20, fontWeight: "800" },
-  templateExplanation: { color: "#9CA3AF", fontSize: 13, lineHeight: 19, marginBottom: 14, marginTop: 6 },
+  templateExplanation: { color: "#9CA3AF", fontSize: 13, marginBottom: 14, marginTop: 6 },
   exerciseRow: {
     borderTopColor: "#292929",
     borderTopWidth: 1,
@@ -432,8 +430,8 @@ const styles = StyleSheet.create({
   exerciseContent: { flex: 1 },
   exerciseName: { color: "#FFFFFF", fontSize: 15, fontWeight: "800" },
   exerciseTarget: { color: "#D1D5DB", fontSize: 12, marginTop: 4 },
-  exerciseWhy: { color: "#777F8C", fontSize: 11, lineHeight: 16, marginTop: 4 },
-  error: { color: "#F87171", lineHeight: 20, marginBottom: 16 },
+  exerciseWhy: { color: "#777F8C", fontSize: 11, marginTop: 4 },
+  error: { color: "#F87171", marginBottom: 16 },
   createButton: {
     alignItems: "center",
     backgroundColor: "#2563EB",
@@ -446,7 +444,6 @@ const styles = StyleSheet.create({
   disclaimer: {
     color: "#727885",
     fontSize: 11,
-    lineHeight: 17,
     marginTop: 14,
     textAlign: "center",
   },

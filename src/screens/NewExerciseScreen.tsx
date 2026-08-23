@@ -458,7 +458,6 @@ loadingScreen: {
   subtitle: {
     color: "#9CA3AF",
     fontSize: 15,
-    lineHeight: 22,
     marginBottom: 12,
     marginTop: 8,
   },
@@ -533,7 +532,6 @@ loadingScreen: {
   },
   error: {
     color: "#F87171",
-    lineHeight: 20,
     marginTop: 18,
   },
   saveButton: {

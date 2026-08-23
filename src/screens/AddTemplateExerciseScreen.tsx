@@ -598,7 +598,6 @@ const styles = StyleSheet.create({
   subtitle: {
     color: "#9CA3AF",
     fontSize: 16,
-    lineHeight: 24,
     marginBottom: 28,
     marginTop: 8,
   },
@@ -625,13 +624,11 @@ const styles = StyleSheet.create({
   coachDefaultText: {
     color: "#D1D5DB",
     fontSize: 13,
-    lineHeight: 19,
     marginTop: 6,
   },
   metricDefaultText: {
     color: "#9CA3AF",
     fontSize: 13,
-    lineHeight: 19,
     marginBottom: 12,
   },
   metricOptions: {

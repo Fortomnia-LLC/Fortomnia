@@ -154,8 +154,7 @@ const styles = StyleSheet.create({
   error: {
     color: '#F87171',
     fontSize: 15,
-    lineHeight: 22,
-  },
+    },
   button: {
     alignItems: 'center',
     backgroundColor: '#2563EB',

@@ -167,8 +167,8 @@ const styles = StyleSheet.create({
   },
   badgeText: { color: "#0B0B0B", fontSize: 10, fontWeight: "900", letterSpacing: 1.2 },
   eyebrow: { color: "#F97316", fontSize: 11, fontWeight: "800", letterSpacing: 1.5 },
-  title: { color: "#FFFFFF", fontSize: 30, fontWeight: "900", lineHeight: 35, marginTop: 8 },
-  subtitle: { color: "#B8BDC7", fontSize: 15, lineHeight: 22, marginTop: 12 },
+  title: { color: "#FFFFFF", fontSize: 30, fontWeight: "900", marginTop: 8 },
+  subtitle: { color: "#B8BDC7", fontSize: 15, marginTop: 12 },
   statusCard: {
     alignItems: "center",
     backgroundColor: "#171717",
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
   },
   activeLabel: { color: "#4ADE80", fontSize: 10, fontWeight: "900", letterSpacing: 1.2 },
   activeTitle: { color: "#FFFFFF", fontSize: 19, fontWeight: "800", marginTop: 7 },
-  activeText: { color: "#B8C9BD", fontSize: 14, lineHeight: 20, marginTop: 7 },
+  activeText: { color: "#B8C9BD", fontSize: 14, marginTop: 7 },
   lockedCard: {
     backgroundColor: "#171717",
     borderColor: "#333333",
@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
   lockIcon: { color: "#F97316", fontSize: 18 },
   lockedContent: { flex: 1 },
   lockedTitle: { color: "#FFFFFF", fontSize: 18, fontWeight: "800" },
-  lockedText: { color: "#9CA3AF", fontSize: 13, lineHeight: 19, marginTop: 6 },
+  lockedText: { color: "#9CA3AF", fontSize: 13, marginTop: 6 },
   sectionTitle: { color: "#FFFFFF", fontSize: 21, fontWeight: "800", marginBottom: 12, marginTop: 28 },
   featureCard: {
     backgroundColor: "#151515",
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
   featureMarker: { color: "#F97316", fontSize: 16, fontWeight: "900" },
   featureContent: { flex: 1 },
   featureTitle: { color: "#FFFFFF", fontSize: 15, fontWeight: "800" },
-  featureDescription: { color: "#8F96A3", fontSize: 13, lineHeight: 18, marginTop: 4 },
+  featureDescription: { color: "#8F96A3", fontSize: 13, marginTop: 4 },
   freeCard: {
     backgroundColor: "#111B24",
     borderColor: "#243746",
@@ -229,8 +229,8 @@ const styles = StyleSheet.create({
   },
   freeLabel: { color: "#60A5FA", fontSize: 10, fontWeight: "900", letterSpacing: 1.2 },
   freeTitle: { color: "#FFFFFF", fontSize: 18, fontWeight: "800", marginTop: 7 },
-  freeText: { color: "#AAB8C6", fontSize: 13, lineHeight: 19, marginTop: 6 },
-  error: { color: "#F87171", fontSize: 13, lineHeight: 19, marginTop: 16 },
+  freeText: { color: "#AAB8C6", fontSize: 13, marginTop: 6 },
+  error: { color: "#F87171", fontSize: 13, marginTop: 16 },
   refreshButton: {
     alignItems: "center",
     borderColor: "#2563EB",

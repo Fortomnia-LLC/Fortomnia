@@ -272,7 +272,6 @@ const styles = StyleSheet.create({
   subtitle: {
     color: "#9CA3AF",
     fontSize: 16,
-    lineHeight: 24,
     marginBottom: 32,
     marginTop: 8,
   },
@@ -299,7 +298,6 @@ const styles = StyleSheet.create({
   builderDescription: {
     color: "#9CA3AF",
     fontSize: 13,
-    lineHeight: 19,
     marginTop: 6,
   },
   label: {

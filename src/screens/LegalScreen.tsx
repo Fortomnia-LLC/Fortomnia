@@ -210,7 +210,6 @@ const styles = StyleSheet.create({
   subtitle: {
     color: "#9CA3AF",
     fontSize: 15,
-    lineHeight: 22,
     marginBottom: 22,
     marginTop: 8,
   },
@@ -243,13 +242,11 @@ const styles = StyleSheet.create({
   body: {
     color: "#D1D5DB",
     fontSize: 14,
-    lineHeight: 21,
     marginTop: 7,
   },
   releaseNotice: {
     color: "#9CA3AF",
     fontSize: 12,
-    lineHeight: 18,
     textAlign: "center",
   },
 });

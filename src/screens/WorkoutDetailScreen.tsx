@@ -828,7 +828,6 @@ const styles = StyleSheet.create({
   recapDirection: {
     color: "#D1D5DB",
     fontSize: 14,
-    lineHeight: 20,
     marginTop: 15,
   },
   recapDoneButton: {
@@ -969,7 +968,6 @@ const styles = StyleSheet.create({
   planRecommendationExplanation: {
     color: "#9CA3AF",
     fontSize: 12,
-    lineHeight: 17,
     marginTop: 5,
   },
   planProgress: {
@@ -1103,7 +1101,6 @@ const styles = StyleSheet.create({
   feedbackText: {
     color: "#D1D5DB",
     fontSize: 12,
-    lineHeight: 17,
     marginTop: 4,
   },
   rir: {
@@ -1167,7 +1164,6 @@ const styles = StyleSheet.create({
   emptyText: {
     color: "#9CA3AF",
     fontSize: 14,
-    lineHeight: 21,
     marginTop: 8,
   },
   error: {

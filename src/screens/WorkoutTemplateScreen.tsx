@@ -603,7 +603,6 @@ const styles = StyleSheet.create({
   subtitle: {
     color: "#9CA3AF",
     fontSize: 15,
-    lineHeight: 22,
     marginBottom: 22,
     marginTop: 8,
   },
@@ -777,7 +776,6 @@ const styles = StyleSheet.create({
   emptyText: {
     color: "#9CA3AF",
     fontSize: 14,
-    lineHeight: 21,
     marginTop: 8,
   },
   error: {

@@ -517,7 +517,6 @@ const styles = StyleSheet.create({
   subtitle: {
     color: "#9CA3AF",
     fontSize: 16,
-    lineHeight: 24,
     marginBottom: 32,
     marginTop: 8,
   },
@@ -585,7 +584,6 @@ const styles = StyleSheet.create({
   coachDescription: {
     color: "#9CA3AF",
     fontSize: 14,
-    lineHeight: 20,
     marginBottom: 16,
     marginTop: 6,
   },
@@ -638,7 +636,6 @@ const styles = StyleSheet.create({
   coachSummaryText: {
     color: "#D1D5DB",
     fontSize: 14,
-    lineHeight: 21,
     marginTop: 7,
   },
   premiumCoachCard: {
@@ -670,7 +667,6 @@ const styles = StyleSheet.create({
   premiumCoachDescription: {
     color: "#9CA3AF",
     fontSize: 13,
-    lineHeight: 19,
     marginTop: 6,
   },
   premiumCoachArrow: {
