@@ -22,6 +22,7 @@ function protocol(
     name: "Test protocol",
     notes: null,
     route: "oral",
+    scheduled_days: [],
     scheduled_time: null,
     start_date: "2026-08-01",
     ...overrides,
