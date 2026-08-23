@@ -16,6 +16,7 @@ import {
   useDailyNutrition,
 } from "../hooks/useDailyNutrition";
 import { getLocalDateKey } from "../lib/dates";
+import { buildMealProgress } from "../lib/mealProgress";
 import { getPerMealTargets } from "../lib/mealTargets";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
@@ -127,6 +128,7 @@ export default function NutritionScreen() {
   const calorieRemaining =
     goals.calorie_target - totals.calories;
   const perMealTargets = getPerMealTargets(goals, goals.meal_count);
+  const mealProgress = buildMealProgress(entries, goals.meal_count);
   function handleEditEntry(entry: NutritionEntry) {
     router.push({
       pathname: "/new-nutrition-entry",
@@ -370,6 +372,44 @@ export default function NutritionScreen() {
               </Text>
             </View>
 
+            <Text style={styles.mealProgressHeading}>Meal progress</Text>
+            <View style={styles.mealProgressList}>
+              {mealProgress.map((meal) => {
+                const caloriesRemaining =
+                  perMealTargets.calories - meal.calories;
+
+                return (
+                  <View key={meal.mealNumber} style={styles.mealProgressCard}>
+                    <View style={styles.mealProgressHeader}>
+                      <Text style={styles.mealProgressTitle}>
+                        Meal {meal.mealNumber}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.mealProgressRemaining,
+                          caloriesRemaining < 0 && styles.overTarget,
+                        ]}
+                      >
+                        {caloriesRemaining >= 0
+                          ? `${caloriesRemaining} cal left`
+                          : `${Math.abs(caloriesRemaining)} cal over`}
+                      </Text>
+                    </View>
+                    <Text style={styles.mealProgressCalories}>
+                      {meal.calories} / {perMealTargets.calories} calories
+                    </Text>
+                    <Text style={styles.mealProgressMacros}>
+                      P {Math.round(meal.proteinGrams)}g /{" "}
+                      {perMealTargets.proteinGrams}g • C{" "}
+                      {Math.round(meal.carbsGrams)}g /{" "}
+                      {perMealTargets.carbsGrams}g • F{" "}
+                      {Math.round(meal.fatGrams)}g / {perMealTargets.fatGrams}g
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+
             <Text style={styles.sectionTitle}>
   {isToday ? "Today's food" : "Food log"}
 </Text>
@@ -585,6 +625,48 @@ const styles = StyleSheet.create({
     color: "#9CA3AF",
     fontSize: 13,
     marginTop: 5,
+  },
+  mealProgressHeading: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 10,
+  },
+  mealProgressList: {
+    gap: 8,
+    marginBottom: 24,
+  },
+  mealProgressCard: {
+    backgroundColor: "#171717",
+    borderColor: "#292929",
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 13,
+  },
+  mealProgressHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  mealProgressTitle: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  mealProgressRemaining: {
+    color: "#34D399",
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  mealProgressCalories: {
+    color: "#D1D5DB",
+    fontSize: 13,
+    marginTop: 7,
+  },
+  mealProgressMacros: {
+    color: "#9CA3AF",
+    fontSize: 12,
+    marginTop: 4,
   },
   sectionTitle: {
     color: "#FFFFFF",
