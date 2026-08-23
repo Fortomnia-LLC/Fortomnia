@@ -6,12 +6,12 @@ Use the exact commit and build identifiers intended for release. Record Pass, Fa
 
 | Item | iPhone | Android |
 | --- | --- | --- |
-| Commit SHA | `e95f205b0558695bf74b96e6c4edada5d6608864` | `e95f205b0558695bf74b96e6c4edada5d6608864` |
-| EAS build ID | `44513947-bcab-48ef-95f8-20a3efb54ff3` | `d0b06ea0-31f7-4dbd-9a8b-156bb4a843a8` |
+| Commit SHA | `1be8faba960d50a614515444e1c0843b5d603eda` | `e95f205b0558695bf74b96e6c4edada5d6608864` |
+| EAS build ID | `05f9a2fe-4125-43d7-9050-61d31c65a890` | `d0b06ea0-31f7-4dbd-9a8b-156bb4a843a8` |
 | App version/build number | 1.0.0 / 2 | Preview build |
 | Device and OS version | iPhone 17 Pro / iOS 26.6 | Pending tester reports |
 | Tester | grc0830 | Three external testers |
-| Test date | 2026-08-22 | In progress |
+| Test date | 2026-08-23 | In progress |
 
 ## Installation and startup
 
@@ -19,10 +19,10 @@ Use the exact commit and build identifiers intended for release. Record Pass, Fa
 | --- | --- | --- | --- |
 | Clean install succeeds | Pass |  |  |
 | App icon and splash render correctly | Pass |  |  |
-| Cold launch succeeds | Pass |  |  |
-| Returning from background restores the session | Pass |  |  |
-| Airplane-mode launch shows a recoverable state | Pass |  |  |
-| Reconnecting restores data without restarting | Pass |  |  |
+| Cold launch succeeds | Pass |  | Current Milestone 14 preview rechecked |
+| Returning from background restores the session | Pass |  | Current Milestone 14 preview rechecked |
+| Airplane-mode launch shows a recoverable state | Pass |  | Current Milestone 14 preview rechecked |
+| Reconnecting restores data without restarting | Pass |  | Current Milestone 14 preview rechecked |
 
 ## Account lifecycle
 
@@ -39,18 +39,18 @@ Use the exact commit and build identifiers intended for release. Record Pass, Fa
 
 | Test | iPhone | Android | Notes |
 | --- | --- | --- | --- |
-| Generate or open a workout template | Pass |  |  |
-| Exercise cards show today’s targets | Pass |  |  |
-| “Log recommended set” prefills correctly | Pass |  |  |
-| Strength target feedback is correct | Pass |  |  |
-| Time target feedback is correct |  |  | Not separately confirmed |
-| Distance target feedback is correct |  |  | Not separately confirmed |
-| Calorie target feedback is correct |  |  | Not separately confirmed |
-| Round target feedback is correct |  |  | Not separately confirmed |
+| Generate or open a workout template | Pass |  | Current Milestone 14 preview rechecked |
+| Exercise cards show today’s targets | Pass |  | Current Milestone 14 preview rechecked |
+| “Log recommended set” prefills correctly | Pass |  | Current Milestone 14 preview rechecked |
+| Strength target feedback is correct | Pass |  | Current Milestone 14 preview rechecked |
+| Time target feedback is correct |  |  | Automated; device flow not separately confirmed |
+| Distance target feedback is correct |  |  | Automated; device flow not separately confirmed |
+| Calorie target feedback is correct |  |  | Automated; device flow not separately confirmed |
+| Round target feedback is correct |  |  | Automated; device flow not separately confirmed |
 | Warm-ups and drop sets are not evaluated | Pass |  |  |
-| Low-readiness targets hold conservatively |  |  | Not separately confirmed |
-| Completing a workout shows the recap | Pass |  |  |
-| Recap totals and next direction are correct | Pass |  |  |
+| Low-readiness targets hold conservatively |  |  | Automated; device flow not separately confirmed |
+| Completing a workout shows the recap | Pass |  | Current Milestone 14 preview rechecked |
+| Recap totals and next direction are correct | Pass |  | Current Milestone 14 preview rechecked |
 
 ## Measurements and forms
 
@@ -60,14 +60,15 @@ Use the exact commit and build identifiers intended for release. Record Pass, Fa
 | Nutrition accepts pounds and feet/inches | Pass |  |  |
 | Metric profile and nutrition values save | Pass |  |  |
 | Switching systems converts existing values | Pass |  |  |
-| Keyboard does not hide active fields or buttons |  |  | Not separately confirmed |
-| Forms remain usable with large accessibility text |  |  | Not separately confirmed |
+| Primary actions and selected controls use the blue palette | Pass |  | Current Milestone 14 preview rechecked |
+| Keyboard does not hide active fields or buttons | Pass |  | Log Set, Log Food, and Nutrition Goals checked |
+| Forms remain usable with large accessibility text | Pass |  | Maximum text size requires more scrolling but has no clipping or hidden controls |
 
 ## Release decision
 
 Release only when every critical row passes on both platforms, the exact commit passes GitHub Actions, and no unresolved crash, data-loss, authentication, or account-deletion defect remains.
 
-- iPhone approval: Core critical flows passed; remaining metric/accessibility rows pending
+- iPhone approval: Current preview passes all focused regression checks; metric-specific device flows remain to be sampled
 - Android approval: Pending three external tester reports
 - Final approved commit: ____________________
 - Release decision/date: ____________________
