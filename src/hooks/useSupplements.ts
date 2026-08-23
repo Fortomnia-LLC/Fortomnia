@@ -24,6 +24,7 @@ export type SupplementRoute =
 export type SupplementFrequency =
   | "daily"
   | "weekly"
+  | "every_other_week"
   | "selected_days"
   | "as_needed";
 

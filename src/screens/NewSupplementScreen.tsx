@@ -45,12 +45,13 @@ const routes: SupplementRoute[] = [
 const frequencies: SupplementFrequency[] = [
   "daily",
   "weekly",
+  "every_other_week",
   "selected_days",
   "as_needed",
 ];
 
 function formatOption(value: string) {
-  return value.replace("_", " ");
+  return value.replaceAll("_", " ");
 }
 function firstParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
@@ -485,7 +486,13 @@ if (frequency === "selected_days" && scheduledDays.length === 0) {
         ) : null}
           <Text style={styles.label}>
 
-           Start date {frequency === "weekly" ? "(weekly anchor)" : ""}
+           Start date {
+             frequency === "weekly"
+               ? "(weekly anchor)"
+               : frequency === "every_other_week"
+                 ? "(14-day anchor)"
+                 : ""
+           }
           </Text>
           <TextInput
             autoCapitalize="none"

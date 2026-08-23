@@ -61,7 +61,9 @@ export function isProtocolDue(
     (selectedTime - startTime) / 86_400_000,
   );
 
-  return elapsedDays >= 0 && elapsedDays % 7 === 0;
+  const intervalDays =
+    protocol.frequency === "every_other_week" ? 14 : 7;
+  return elapsedDays >= 0 && elapsedDays % intervalDays === 0;
 }
 
 export function isProtocolAvailable(

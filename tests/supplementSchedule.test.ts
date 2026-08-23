@@ -70,3 +70,11 @@ test("selected-day protocols are due only on chosen weekdays", () => {
   assert.equal(isProtocolDue(item, "2026-08-05"), true);
   assert.equal(isProtocolDue(item, "2026-08-07"), true);
 });
+
+test("every-other-week protocols repeat every fourteen days", () => {
+  const item = protocol({ frequency: "every_other_week" });
+
+  assert.equal(isProtocolDue(item, "2026-08-01"), true);
+  assert.equal(isProtocolDue(item, "2026-08-08"), false);
+  assert.equal(isProtocolDue(item, "2026-08-15"), true);
+});

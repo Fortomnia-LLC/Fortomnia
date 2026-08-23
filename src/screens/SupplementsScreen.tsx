@@ -95,7 +95,7 @@ function ProtocolCard({
       <Text style={styles.schedule}>
         {protocol.frequency === "selected_days"
           ? formatScheduledDays(protocol.scheduled_days)
-          : protocol.frequency.replace("_", " ")}
+          : protocol.frequency.replaceAll("_", " ")}
         {protocol.scheduled_time
           ? ` • ${protocol.scheduled_time.slice(0, 5)}`
           : ""}
