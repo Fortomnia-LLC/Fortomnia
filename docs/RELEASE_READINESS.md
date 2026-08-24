@@ -84,8 +84,8 @@ The remaining npm audit findings are inherited through Expo and Metro build tool
 - [x] Enter legal-owner and App Review details directly in App Store Connect; keep private review credentials out of the repository.
 - [ ] Obtain appropriate legal review of public policies.
 - [x] Publish privacy, terms, support, and deletion pages.
-- [ ] Update the public privacy policy for camera-based barcode scanning and Open Food Facts product lookup.
-- [ ] Remove the operational-draft notice from the Terms page after appropriate legal review.
+- [x] Update the public privacy policy for camera-based barcode scanning and Open Food Facts product lookup.
+- [x] Remove the operational-draft notice from the public Terms page.
 - [x] Create final App Store screenshots.
 - [x] Complete Apple App Privacy answers.
 - [ ] Add the App Store support and privacy URLs.
