@@ -1,6 +1,6 @@
 # Fortomnia Release Readiness
 
-Last updated: August 21, 2026
+Last updated: August 24, 2026
 
 ## Automated validation
 
@@ -83,7 +83,9 @@ The remaining npm audit findings are inherited through Expo and Metro build tool
 - [x] Replace the support email placeholder in every policy.
 - [x] Enter legal-owner and App Review details directly in App Store Connect; keep private review credentials out of the repository.
 - [ ] Obtain appropriate legal review of public policies.
-- [ ] Publish privacy, terms, support, and deletion pages.
+- [x] Publish privacy, terms, support, and deletion pages.
+- [ ] Update the public privacy policy for camera-based barcode scanning and Open Food Facts product lookup.
+- [ ] Remove the operational-draft notice from the Terms page after appropriate legal review.
 - [x] Create final App Store screenshots.
 - [x] Complete Apple App Privacy answers.
 - [ ] Add the App Store support and privacy URLs.
@@ -99,7 +101,7 @@ The remaining npm audit findings are inherited through Expo and Metro build tool
 - [ ] Complete trademark review and filing.
 - [x] Create the Fortomnia website.
 - [x] Connect fortomnia.com and validate HTTPS.
-- [ ] Publish public legal and support pages.
+- [x] Publish public legal and support pages.
 - [x] Configure a monitored support email address.
 - [x] Configure domain email authentication and delivery.
 - [ ] Add website and policy URLs to App Store Connect.
