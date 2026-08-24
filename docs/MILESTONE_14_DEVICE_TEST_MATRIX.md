@@ -28,12 +28,12 @@ Use the exact commit and build identifiers intended for release. Record Pass, Fa
 
 | Test | iPhone | Android | Notes |
 | --- | --- | --- | --- |
-| Create a fresh account | Pass |  |  |
-| Confirm email and return to Fortomnia | Pass |  |  |
-| Sign in and sign out | Pass |  |  |
-| Request and complete password reset | Pass |  |  |
+| Create a fresh account | Pass |  | Rechecked in native preview `33667a87-7564-432c-ba98-5093214beaf4` |
+| Confirm email and return to Fortomnia | Pass |  | Rechecked in native preview `33667a87-7564-432c-ba98-5093214beaf4` |
+| Sign in and sign out | Pass |  | Rechecked in native preview `33667a87-7564-432c-ba98-5093214beaf4` |
+| Request and complete password reset | Pass |  | Rechecked in native preview `33667a87-7564-432c-ba98-5093214beaf4` |
 | Reinstall and restore an existing session | Pass |  |  |
-| Delete the test account and verify sign-out | Pass |  |  |
+| Delete the test account and verify sign-out | Pass |  | Rechecked in native preview `33667a87-7564-432c-ba98-5093214beaf4` |
 
 ## Training intelligence
 
@@ -43,8 +43,8 @@ Use the exact commit and build identifiers intended for release. Record Pass, Fa
 | Exercise cards show today’s targets | Pass |  | Current Milestone 14 preview rechecked |
 | “Log recommended set” prefills correctly | Pass |  | Current Milestone 14 preview rechecked |
 | Strength target feedback is correct | Pass |  | Current Milestone 14 preview rechecked |
-| Time target feedback is correct |  |  | Automated; device flow not separately confirmed |
-| Distance target feedback is correct |  |  | Automated; device flow not separately confirmed |
+| Time target feedback is correct | Pass |  | Metric native device flow passed in preview `33667a87-7564-432c-ba98-5093214beaf4` |
+| Distance target feedback is correct | Pass |  | Metric native device flow passed in preview `33667a87-7564-432c-ba98-5093214beaf4` |
 | Calorie target feedback is correct |  |  | Automated; device flow not separately confirmed |
 | Round target feedback is correct |  |  | Automated; device flow not separately confirmed |
 | Warm-ups and drop sets are not evaluated | Pass |  |  |
@@ -58,7 +58,7 @@ Use the exact commit and build identifiers intended for release. Record Pass, Fa
 | --- | --- | --- | --- |
 | Imperial profile preference saves | Pass |  |  |
 | Nutrition accepts pounds and feet/inches | Pass |  |  |
-| Metric profile and nutrition values save | Pass |  |  |
+| Metric profile and nutrition values save | Pass |  | Metric workout flow and hidden RIR behavior rechecked in native preview `33667a87-7564-432c-ba98-5093214beaf4` |
 | Switching systems converts existing values | Pass |  |  |
 | Primary actions and selected controls use the blue palette | Pass |  | Current Milestone 14 preview rechecked |
 | Keyboard does not hide active fields or buttons | Pass |  | Log Set, Log Food, and Nutrition Goals checked |
@@ -71,7 +71,7 @@ Use the exact commit and build identifiers intended for release. Record Pass, Fa
 
 Release only when every critical row passes on both platforms, the exact commit passes GitHub Actions, and no unresolved crash, data-loss, authentication, or account-deletion defect remains.
 
-- iPhone approval: Native preview `33667a87-7564-432c-ba98-5093214beaf4` passes focused release regression checks; final account lifecycle and metric-specific device flows remain
+- iPhone approval: Native preview `33667a87-7564-432c-ba98-5093214beaf4` passes focused release regression checks, account lifecycle, and Metric time/distance flows
 - Android approval: Pending three external tester reports
 - Final approved commit: ____________________
 - Release decision/date: ____________________
