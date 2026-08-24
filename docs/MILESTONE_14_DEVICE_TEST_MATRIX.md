@@ -22,7 +22,7 @@ Use the exact commit and build identifiers intended for release. Record Pass, Fa
 | EAS submission ID | `e0d939b2-6452-4354-86d5-8293c3eff140` |
 | App version/build number | 1.0.0 / 3 |
 | Profile | production |
-| Apple upload | Submitted successfully; processing for TestFlight on 2026-08-24 |
+| Apple upload | Testing in Team (Expo) and Fortomnia External Beta; automatic tester notification enabled on 2026-08-24 |
 
 ## Installation and startup
 
