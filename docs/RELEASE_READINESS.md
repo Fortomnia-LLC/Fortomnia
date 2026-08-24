@@ -92,7 +92,7 @@ The remaining npm audit findings are inherited through Expo and Metro build tool
 - [x] Prepare and verify the App Review account.
 - [x] Upload the release candidate to TestFlight.
 - [ ] Complete external TestFlight testing.
-- [ ] Submit the approved build for App Review.
+- [x] Submit production iOS build 3 for App Review (Waiting for Review).
 
 ## Brand and website
 
