@@ -15,6 +15,10 @@ import {
 
 import { useProfile } from "../hooks/useProfile";
 import {
+  validateWeekdayCalorieTargets,
+  WEEKDAY_LABELS,
+} from "../lib/calorieTargets";
+import {
   ACTIVITY_LABELS,
   ACTIVITY_LEVELS,
   CALORIE_DIRECTION_LABELS,
@@ -47,6 +51,7 @@ export default function EditNutritionGoalsScreen() {
     fiber: fiberParam,
     mealCount: mealCountParam,
     protein: proteinParam,
+    weekdayCalories: weekdayCaloriesParam,
   } = useLocalSearchParams<{
     calories?: string;
     carbs?: string;
@@ -54,6 +59,7 @@ export default function EditNutritionGoalsScreen() {
     fiber?: string;
     mealCount?: string;
     protein?: string;
+    weekdayCalories?: string;
   }>();
 
   const initialCalories = firstParam(caloriesParam) ?? "2000";
@@ -61,6 +67,9 @@ export default function EditNutritionGoalsScreen() {
   const initialCarbs = firstParam(carbsParam) ?? "200";
   const initialFat = firstParam(fatParam) ?? "70";
   const initialFiber = firstParam(fiberParam) ?? "25";
+  const initialWeekdayCalories = firstParam(weekdayCaloriesParam)
+    ?.split(",")
+    .filter(Boolean) ?? [];
   const initialMealCount = firstParam(mealCountParam) ?? "3";
 
   const { session } = useAuth();
@@ -86,6 +95,14 @@ export default function EditNutritionGoalsScreen() {
   const [fat, setFat] = useState(initialFat);
   const [fiber, setFiber] = useState(initialFiber);
   const [mealCount, setMealCount] = useState(initialMealCount);
+  const [customizeWeekdays, setCustomizeWeekdays] = useState(
+    initialWeekdayCalories.length === 7,
+  );
+  const [weekdayCalories, setWeekdayCalories] = useState<string[]>(
+    initialWeekdayCalories.length === 7
+      ? initialWeekdayCalories
+      : Array(7).fill(initialCalories),
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -129,6 +146,12 @@ export default function EditNutritionGoalsScreen() {
     setFat(initialFat);
     setFiber(initialFiber);
     setMealCount(initialMealCount);
+    setCustomizeWeekdays(initialWeekdayCalories.length === 7);
+    setWeekdayCalories(
+      initialWeekdayCalories.length === 7
+        ? initialWeekdayCalories
+        : Array(7).fill(initialCalories),
+    );
     setErrorMessage(null);
   }, [
     initialCalories,
@@ -137,6 +160,7 @@ export default function EditNutritionGoalsScreen() {
     initialFiber,
     initialMealCount,
     initialProtein,
+    initialWeekdayCalories.join(","),
   ]);
 
   function handleMeasurementSystemChange(next: MeasurementSystem) {
@@ -222,6 +246,7 @@ export default function EditNutritionGoalsScreen() {
     const parsedFat = Number(fat);
     const parsedFiber = Number(fiber);
     const parsedMealCount = Number(mealCount);
+    const parsedWeekdayCalories = weekdayCalories.map(Number);
 
     if (!session?.user.id) {
       setErrorMessage("No authenticated user was found.");
@@ -245,6 +270,16 @@ export default function EditNutritionGoalsScreen() {
       parsedMealCount > 8
     ) {
       setErrorMessage("Meals per day must be a whole number from 1 to 8.");
+      return;
+    }
+
+    if (
+      customizeWeekdays &&
+      !validateWeekdayCalorieTargets(parsedWeekdayCalories)
+    ) {
+      setErrorMessage(
+        "Every weekday calorie target must be a whole number from 500 to 10,000.",
+      );
       return;
     }
 
@@ -284,6 +319,9 @@ export default function EditNutritionGoalsScreen() {
           protein_target_g: parsedProtein,
           updated_at: new Date().toISOString(),
           user_id: session.user.id,
+          weekday_calorie_targets: customizeWeekdays
+            ? parsedWeekdayCalories
+            : [],
         },
         {
           onConflict: "user_id",
@@ -549,6 +587,53 @@ export default function EditNutritionGoalsScreen() {
           value={calories}
         />
 
+        <Pressable
+          onPress={() => {
+            setCustomizeWeekdays((current) => !current);
+            if (!customizeWeekdays) {
+              setWeekdayCalories(Array(7).fill(calories));
+            }
+          }}
+          style={[
+            styles.weekdayToggle,
+            customizeWeekdays && styles.weekdayToggleSelected,
+          ]}
+        >
+          <Text
+            style={[
+              styles.weekdayToggleText,
+              customizeWeekdays && styles.weekdayToggleTextSelected,
+            ]}
+          >
+            {customizeWeekdays
+              ? "Use one daily calorie target"
+              : "Customize calories by weekday"}
+          </Text>
+        </Pressable>
+
+        {customizeWeekdays ? (
+          <View style={styles.weekdayTargets}>
+            {WEEKDAY_LABELS.map((label, index) => (
+              <View key={label} style={styles.weekdayTargetRow}>
+                <Text style={styles.weekdayTargetLabel}>{label}</Text>
+                <TextInput
+                  keyboardType="number-pad"
+                  onChangeText={(value) =>
+                    setWeekdayCalories((current) =>
+                      current.map((target, targetIndex) =>
+                        targetIndex === index ? value : target,
+                      ),
+                    )
+                  }
+                  selectTextOnFocus
+                  style={[styles.input, styles.weekdayTargetInput]}
+                  value={weekdayCalories[index]}
+                />
+              </View>
+            ))}
+          </View>
+        ) : null}
+
         <View style={styles.row}>
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Protein (g)</Text>
@@ -660,6 +745,41 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     marginBottom: 8,
+  },
+  weekdayToggle: {
+    alignItems: "center",
+    borderColor: "#2563EB",
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 20,
+    padding: 12,
+  },
+  weekdayToggleSelected: {
+    backgroundColor: "#172554",
+  },
+  weekdayToggleText: {
+    color: "#2563EB",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  weekdayToggleTextSelected: {
+    color: "#93C5FD",
+  },
+  weekdayTargets: {
+    marginBottom: 8,
+  },
+  weekdayTargetRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12,
+  },
+  weekdayTargetLabel: {
+    color: "#D1D5DB",
+    flex: 1,
+    fontSize: 14,
+  },
+  weekdayTargetInput: {
+    flex: 1,
   },
   input: {
     backgroundColor: "#171717",

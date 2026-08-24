@@ -15,6 +15,10 @@ import {
   type NutritionEntry,
   useDailyNutrition,
 } from "../hooks/useDailyNutrition";
+import {
+  getCalorieTargetForDate,
+  WEEKDAY_LABELS,
+} from "../lib/calorieTargets";
 import { getLocalDateKey } from "../lib/dates";
 import { buildMealProgress } from "../lib/mealProgress";
 import { getPerMealTargets } from "../lib/mealTargets";
@@ -125,9 +129,19 @@ export default function NutritionScreen() {
     refreshNutrition,
     totals,
   } = useDailyNutrition(selectedDate);
-  const calorieRemaining =
-    goals.calorie_target - totals.calories;
-  const perMealTargets = getPerMealTargets(goals, goals.meal_count);
+  const effectiveCalorieTarget = getCalorieTargetForDate(
+    goals.calorie_target,
+    goals.weekday_calorie_targets,
+    selectedDate,
+  );
+  const selectedWeekday = new Date(
+    `${selectedDate}T00:00:00Z`,
+  ).getUTCDay();
+  const calorieRemaining = effectiveCalorieTarget - totals.calories;
+  const perMealTargets = getPerMealTargets(
+    { ...goals, calorie_target: effectiveCalorieTarget },
+    goals.meal_count,
+  );
   const mealProgress = buildMealProgress(entries, goals.meal_count);
   function handleEditEntry(entry: NutritionEntry) {
     router.push({
@@ -292,6 +306,7 @@ export default function NutritionScreen() {
                   fiber: String(goals.fiber_target_g),
                   mealCount: String(goals.meal_count),
                   protein: String(goals.protein_target_g),
+                  weekdayCalories: goals.weekday_calorie_targets.join(","),
                 },
               }}
               asChild
@@ -321,7 +336,10 @@ export default function NutritionScreen() {
                 {totals.calories}
               </Text>
               <Text style={styles.calorieTarget}>
-                of {goals.calorie_target} calories
+                of {effectiveCalorieTarget} calories
+                {goals.weekday_calorie_targets.length === 7
+                  ? ` • ${WEEKDAY_LABELS[selectedWeekday]} target`
+                  : ""}
               </Text>
               <Text
                 style={[
