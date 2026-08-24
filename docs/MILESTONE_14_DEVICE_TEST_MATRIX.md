@@ -13,6 +13,17 @@ Use the exact commit and build identifiers intended for release. Record Pass, Fa
 | Tester | grc0830 | Three external testers |
 | Test date | 2026-08-24 | In progress |
 
+## Production candidate
+
+| Item | Value |
+| --- | --- |
+| Commit SHA | `c2496e420c9831d9a95f7cfe1005281a0b144aac` |
+| EAS build ID | `0c62911d-1000-4861-8c9f-1927e3ecdcb7` |
+| EAS submission ID | `e0d939b2-6452-4354-86d5-8293c3eff140` |
+| App version/build number | 1.0.0 / 3 |
+| Profile | production |
+| Apple upload | Submitted successfully; processing for TestFlight on 2026-08-24 |
+
 ## Installation and startup
 
 | Test | iPhone | Android | Notes |
