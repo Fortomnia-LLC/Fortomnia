@@ -1,3 +1,8 @@
+import {
+  type BarcodeScanningResult,
+  CameraView,
+  useCameraPermissions,
+} from "expo-camera";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -14,6 +19,7 @@ import {
 } from "react-native";
 
 import { getLocalDateKey } from "../lib/dates";
+import { lookupFoodBarcode } from "../lib/foodBarcode";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
 
@@ -68,6 +74,8 @@ export default function AddNutritionEntryScreen() {
   const isEditing = Boolean(editingEntryId);
 
   const { session } = useAuth();
+  const [cameraPermission, requestCameraPermission] =
+    useCameraPermissions();
   const [mealNumber, setMealNumber] = useState(initialMealNumber);
   const [foodName, setFoodName] = useState(initialFoodName ?? "");
   const [serving, setServing] = useState(initialServing ?? "");
@@ -77,6 +85,10 @@ export default function AddNutritionEntryScreen() {
   const [fat, setFat] = useState(initialFat ?? "");
   const [fiber, setFiber] = useState(initialFiber ?? "");
   const [isSaving, setIsSaving] = useState(false);
+  const [isLookingUpBarcode, setIsLookingUpBarcode] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [scanLocked, setScanLocked] = useState(false);
+  const [scanMessage, setScanMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -115,6 +127,68 @@ export default function AddNutritionEntryScreen() {
       setErrorMessage(null);
     }, [isEditing]),
   );
+
+  async function handleOpenScanner() {
+    setErrorMessage(null);
+    setScanMessage(null);
+
+    const permission =
+      cameraPermission?.granted
+        ? cameraPermission
+        : await requestCameraPermission();
+
+    if (!permission.granted) {
+      setErrorMessage(
+        "Camera access is required to scan a food barcode. You can still enter the food manually.",
+      );
+      return;
+    }
+
+    setScanLocked(false);
+    setScannerOpen(true);
+  }
+
+  async function handleBarcodeScanned(result: BarcodeScanningResult) {
+    if (scanLocked || isLookingUpBarcode) return;
+
+    setScanLocked(true);
+    setIsLookingUpBarcode(true);
+    setErrorMessage(null);
+
+    try {
+      const food = await lookupFoodBarcode(result.data);
+
+      if (!food) {
+        setScanMessage(
+          "That barcode was not found. You can enter the food manually or scan another product.",
+        );
+        setScannerOpen(false);
+        return;
+      }
+
+      setFoodName(food.name);
+      setServing(food.serving);
+      setCalories(String(food.calories));
+      setProtein(String(food.proteinGrams));
+      setCarbs(String(food.carbsGrams));
+      setFat(String(food.fatGrams));
+      setFiber(String(food.fiberGrams));
+      setScanMessage(
+        "Food found. Review the serving and nutrition values before saving.",
+      );
+      setScannerOpen(false);
+    } catch (error) {
+      setScanMessage(
+        error instanceof Error
+          ? error.message
+          : "The barcode could not be looked up.",
+      );
+      setScannerOpen(false);
+    } finally {
+      setIsLookingUpBarcode(false);
+      setScanLocked(false);
+    }
+  }
 
   async function handleSave() {
     const trimmedName = foodName.trim();
@@ -294,6 +368,52 @@ export default function AddNutritionEntryScreen() {
           )}
         </View>
 
+        {!isEditing ? (
+          <>
+            <Pressable
+              disabled={isLookingUpBarcode}
+              onPress={() =>
+                scannerOpen
+                  ? setScannerOpen(false)
+                  : void handleOpenScanner()
+              }
+              style={[
+                styles.scanButton,
+                isLookingUpBarcode && styles.disabled,
+              ]}
+            >
+              {isLookingUpBarcode ? (
+                <ActivityIndicator color="#2563EB" />
+              ) : (
+                <Text style={styles.scanButtonText}>
+                  {scannerOpen ? "Close scanner" : "Scan food barcode"}
+                </Text>
+              )}
+            </Pressable>
+
+            {scannerOpen ? (
+              <View style={styles.cameraFrame}>
+                <CameraView
+                  barcodeScannerSettings={{
+                    barcodeTypes: ["ean13", "ean8", "upc_a", "upc_e"],
+                  }}
+                  onBarcodeScanned={
+                    scanLocked ? undefined : handleBarcodeScanned
+                  }
+                  style={styles.camera}
+                />
+                <Text style={styles.cameraHint}>
+                  Center the UPC or EAN barcode in the camera.
+                </Text>
+              </View>
+            ) : null}
+
+            {scanMessage ? (
+              <Text style={styles.scanMessage}>{scanMessage}</Text>
+            ) : null}
+          </>
+        ) : null}
+
         <Text style={styles.label}>Food name</Text>
         <TextInput
           autoCapitalize="words"
@@ -466,6 +586,43 @@ const styles = StyleSheet.create({
   },
   mealTextSelected: {
     color: "#2563EB",
+  },
+  scanButton: {
+    alignItems: "center",
+    borderColor: "#2563EB",
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: "center",
+    marginBottom: 20,
+    minHeight: 50,
+  },
+  scanButtonText: {
+    color: "#2563EB",
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  cameraFrame: {
+    backgroundColor: "#171717",
+    borderColor: "#333333",
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 20,
+    overflow: "hidden",
+  },
+  camera: {
+    height: 260,
+    width: "100%",
+  },
+  cameraHint: {
+    color: "#D1D5DB",
+    fontSize: 13,
+    padding: 12,
+    textAlign: "center",
+  },
+  scanMessage: {
+    color: "#9CA3AF",
+    fontSize: 13,
+    marginBottom: 18,
   },
   input: {
     backgroundColor: "#171717",
