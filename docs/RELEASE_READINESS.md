@@ -88,7 +88,7 @@ The remaining npm audit findings are inherited through Expo and Metro build tool
 - [x] Remove the operational-draft notice from the public Terms page.
 - [x] Create final App Store screenshots.
 - [x] Complete Apple App Privacy answers.
-- [ ] Add the App Store support and privacy URLs.
+- [x] Add the App Store support and privacy URLs.
 - [x] Prepare and verify the App Review account.
 - [x] Upload the release candidate to TestFlight.
 - [ ] Complete external TestFlight testing.
@@ -104,7 +104,7 @@ The remaining npm audit findings are inherited through Expo and Metro build tool
 - [x] Publish public legal and support pages.
 - [x] Configure a monitored support email address.
 - [x] Configure domain email authentication and delivery.
-- [ ] Add website and policy URLs to App Store Connect.
+- [x] Add website and policy URLs to App Store Connect.
 
 ## Milestone 14 release-candidate verification
 
