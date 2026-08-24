@@ -1,10 +1,8 @@
 # Fortomnia Terms of Use
 
-**Last updated: August 9, 2026**
+**Last updated: August 24, 2026**
 
 These Terms of Use ("Terms") govern your use of Fortomnia. By creating an account or using Fortomnia, you agree to these Terms. If you do not agree, do not use the app.
-
-> **Draft notice:** These Terms are an operational draft and should receive appropriate legal review before public release. Replace `support@fortomnia.com` before publishing.
 
 ## The Service
 
