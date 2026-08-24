@@ -11,7 +11,7 @@ Use the exact commit and build identifiers intended for release. Record Pass, Fa
 | App version/build number | 1.0.0 / 2 | Preview build |
 | Device and OS version | iPhone 17 Pro / iOS 26.6 | Pending tester reports |
 | Tester | grc0830 | Three external testers |
-| Test date | 2026-08-23 | In progress |
+| Test date | 2026-08-23; focused Expo Go nutrition/scanner pass 2026-08-24 | In progress |
 
 ## Installation and startup
 
@@ -63,6 +63,8 @@ Use the exact commit and build identifiers intended for release. Record Pass, Fa
 | Primary actions and selected controls use the blue palette | Pass |  | Current Milestone 14 preview rechecked |
 | Keyboard does not hide active fields or buttons | Pass |  | Log Set, Log Food, and Nutrition Goals checked |
 | Forms remain usable with large accessibility text | Pass |  | Maximum text size requires more scrolling but has no clipping or hidden controls |
+| Weekday calorie targets save and change with the selected date | Pass |  | Expo Go focused test on `095c75ce19eeaf82b640e04c6cf00bc5f2ae5e99`; repeat in exact native candidate |
+| Food barcode scan finds a product and populates the food form | Pass |  | Expo Go focused test on `095c75ce19eeaf82b640e04c6cf00bc5f2ae5e99`; repeat in exact native candidate |
 
 ## Release decision
 
