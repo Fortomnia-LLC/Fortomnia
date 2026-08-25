@@ -325,15 +325,17 @@ export default function WorkoutDetailScreen() {
       return;
     }
 
+    const activeTimerEndsAt: number = timerEndsAt;
+
     function updateTimer() {
-      const remaining = getRestSecondsRemaining(timerEndsAt);
+      const remaining = getRestSecondsRemaining(activeTimerEndsAt);
       setRestRemainingSeconds(remaining);
 
       if (
         remaining === 0 &&
-        completedRestEndRef.current !== timerEndsAt
+        completedRestEndRef.current !== activeTimerEndsAt
       ) {
-        completedRestEndRef.current = timerEndsAt;
+        completedRestEndRef.current = activeTimerEndsAt;
         setRestEndsAt(null);
         Vibration.vibrate(300);
       }
