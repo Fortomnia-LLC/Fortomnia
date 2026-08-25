@@ -319,19 +319,21 @@ export default function WorkoutDetailScreen() {
   }, []);
 
   useEffect(() => {
-    if (restEndsAt === null) {
+    const timerEndsAt = restEndsAt;
+
+    if (timerEndsAt === null) {
       return;
     }
 
     function updateTimer() {
-      const remaining = getRestSecondsRemaining(restEndsAt);
+      const remaining = getRestSecondsRemaining(timerEndsAt);
       setRestRemainingSeconds(remaining);
 
       if (
         remaining === 0 &&
-        completedRestEndRef.current !== restEndsAt
+        completedRestEndRef.current !== timerEndsAt
       ) {
-        completedRestEndRef.current = restEndsAt;
+        completedRestEndRef.current = timerEndsAt;
         setRestEndsAt(null);
         Vibration.vibrate(300);
       }
