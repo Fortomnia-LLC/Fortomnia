@@ -2,6 +2,7 @@ import {
   useLocalSearchParams,
   useRouter,
 } from "expo-router";
+import * as SecureStore from "expo-secure-store";
 import {
   ActivityIndicator,
   Alert,
@@ -10,6 +11,7 @@ import {
   SafeAreaView,
   StyleSheet,
   Text,
+  Vibration,
   View,
 } from "react-native";
 
@@ -33,7 +35,15 @@ import { getSetTargetFeedback } from "../lib/performanceFeedback";
 import { buildWorkoutRecap } from "../lib/workoutRecap";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
-import { useState } from "react";
+import {
+  DEFAULT_REST_DURATION_SECONDS,
+  adjustRestDuration,
+  formatRestDuration,
+  getRestSecondsRemaining,
+} from "../lib/restTimer";
+import { useEffect, useRef, useState } from "react";
+
+const REST_TIMER_STORAGE_KEY = "fortomnia.restTimerDurationSeconds";
 
 type SetCardProps = {
   canModify: boolean;
@@ -217,6 +227,15 @@ export default function WorkoutDetailScreen() {
   const workoutId = Array.isArray(id) ? id[0] : id;
   const { session } = useAuth();
   const [isCompleting, setIsCompleting] = useState(false);
+  const [restDurationSeconds, setRestDurationSeconds] = useState(
+    DEFAULT_REST_DURATION_SECONDS,
+  );
+  const [restEndsAt, setRestEndsAt] = useState<number | null>(null);
+  const [restRemainingSeconds, setRestRemainingSeconds] = useState(
+    DEFAULT_REST_DURATION_SECONDS,
+  );
+  const knownSetIdsRef = useRef<Set<string> | null>(null);
+  const completedRestEndRef = useRef<number | null>(null);
   const {
     errorMessage,
     isLoading,
@@ -231,6 +250,125 @@ export default function WorkoutDetailScreen() {
     workoutId,
   );
   const workoutRecap = buildWorkoutRecap(sets, recommendations);
+  const isRestTimerRunning = restEndsAt !== null;
+
+  function startRestTimer(durationSeconds = restDurationSeconds) {
+    completedRestEndRef.current = null;
+    setRestRemainingSeconds(durationSeconds);
+    setRestEndsAt(Date.now() + durationSeconds * 1000);
+  }
+
+  function changeRestDuration(changeSeconds: number) {
+    const nextDuration = adjustRestDuration(
+      restDurationSeconds,
+      changeSeconds,
+    );
+
+    setRestDurationSeconds(nextDuration);
+    setRestRemainingSeconds(nextDuration);
+
+    if (isRestTimerRunning) {
+      startRestTimer(nextDuration);
+    }
+
+    void SecureStore.setItemAsync(
+      REST_TIMER_STORAGE_KEY,
+      String(nextDuration),
+    ).catch((error: unknown) => {
+      console.warn(
+        "Unable to save rest timer duration:",
+        error instanceof Error ? error.message : "Unknown error",
+      );
+    });
+  }
+
+  function skipRestTimer() {
+    setRestEndsAt(null);
+    setRestRemainingSeconds(0);
+  }
+
+  useEffect(() => {
+    let isMounted = true;
+
+    void SecureStore.getItemAsync(REST_TIMER_STORAGE_KEY)
+      .then((storedDuration) => {
+        if (!isMounted || storedDuration === null) {
+          return;
+        }
+
+        const parsedDuration = Number(storedDuration);
+
+        if (!Number.isFinite(parsedDuration)) {
+          return;
+        }
+
+        const savedDuration = adjustRestDuration(parsedDuration, 0);
+        setRestDurationSeconds(savedDuration);
+        setRestRemainingSeconds(savedDuration);
+      })
+      .catch((error: unknown) => {
+        console.warn(
+          "Unable to restore rest timer duration:",
+          error instanceof Error ? error.message : "Unknown error",
+        );
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (restEndsAt === null) {
+      return;
+    }
+
+    function updateTimer() {
+      const remaining = getRestSecondsRemaining(restEndsAt);
+      setRestRemainingSeconds(remaining);
+
+      if (
+        remaining === 0 &&
+        completedRestEndRef.current !== restEndsAt
+      ) {
+        completedRestEndRef.current = restEndsAt;
+        setRestEndsAt(null);
+        Vibration.vibrate(300);
+      }
+    }
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 250);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [restEndsAt]);
+
+  useEffect(() => {
+    if (isLoading || errorMessage) {
+      return;
+    }
+
+    const currentSetIds = new Set(sets.map((set) => set.id));
+    const previousSetIds = knownSetIdsRef.current;
+
+    if (
+      previousSetIds &&
+      !workout?.completed_at &&
+      sets.some((set) => !previousSetIds.has(set.id))
+    ) {
+      startRestTimer();
+    }
+
+    knownSetIdsRef.current = currentSetIds;
+  }, [
+    errorMessage,
+    isLoading,
+    restDurationSeconds,
+    sets,
+    workout?.completed_at,
+  ]);
 
   function handleLogNextSet() {
     if (!nextWorkoutSet) {
@@ -589,6 +727,85 @@ if (isLoading) {
               <Text style={styles.summaryLabel}>logged sets</Text>
             </View>
 
+            {!workout.completed_at ? (
+              <View style={styles.restTimerCard}>
+                <View style={styles.restTimerHeader}>
+                  <View>
+                    <Text style={styles.restTimerEyebrow}>REST TIMER</Text>
+                    <Text style={styles.restTimerStatus}>
+                      {isRestTimerRunning
+                        ? "Resting"
+                        : restRemainingSeconds === 0
+                          ? "Ready for the next set"
+                          : "Ready to start"}
+                    </Text>
+                  </View>
+                  <Text
+                    accessibilityLiveRegion="polite"
+                    accessibilityRole="timer"
+                    style={styles.restTimerValue}
+                  >
+                    {formatRestDuration(restRemainingSeconds)}
+                  </Text>
+                </View>
+
+                <View style={styles.restDurationControls}>
+                  <Pressable
+                    accessibilityLabel="Decrease rest duration by 15 seconds"
+                    accessibilityRole="button"
+                    onPress={() => changeRestDuration(-15)}
+                    style={styles.restDurationButton}
+                  >
+                    <Text style={styles.restDurationButtonText}>−15</Text>
+                  </Pressable>
+                  <Text style={styles.restDurationLabel}>
+                    Default {formatRestDuration(restDurationSeconds)}
+                  </Text>
+                  <Pressable
+                    accessibilityLabel="Increase rest duration by 15 seconds"
+                    accessibilityRole="button"
+                    onPress={() => changeRestDuration(15)}
+                    style={styles.restDurationButton}
+                  >
+                    <Text style={styles.restDurationButtonText}>+15</Text>
+                  </Pressable>
+                </View>
+
+                <View style={styles.restTimerActions}>
+                  <Pressable
+                    accessibilityLabel={
+                      isRestTimerRunning
+                        ? "Restart rest timer"
+                        : "Start rest timer"
+                    }
+                    accessibilityRole="button"
+                    onPress={() => startRestTimer()}
+                    style={styles.restTimerStartButton}
+                  >
+                    <Text style={styles.restTimerStartText}>
+                      {isRestTimerRunning ? "Restart" : "Start"}
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityLabel="Skip rest timer"
+                    accessibilityRole="button"
+                    disabled={!isRestTimerRunning}
+                    onPress={skipRestTimer}
+                    style={[
+                      styles.restTimerSkipButton,
+                      !isRestTimerRunning && styles.buttonDisabled,
+                    ]}
+                  >
+                    <Text style={styles.restTimerSkipText}>Skip</Text>
+                  </Pressable>
+                </View>
+
+                <Text style={styles.restTimerHint}>
+                  Starts automatically after you log a new set.
+                </Text>
+              </View>
+            ) : null}
+
             {workout.completed_at ? (
               <View style={styles.recapCard}>
                 <Text style={styles.recapEyebrow}>WORKOUT COMPLETE</Text>
@@ -864,6 +1081,99 @@ const styles = StyleSheet.create({
   summaryLabel: {
     color: "#D1D5DB",
     fontSize: 15,
+  },
+  restTimerCard: {
+    backgroundColor: "#111827",
+    borderColor: "#2563EB",
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: 24,
+    padding: 18,
+  },
+  restTimerHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  restTimerEyebrow: {
+    color: "#60A5FA",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1.5,
+  },
+  restTimerStatus: {
+    color: "#D1D5DB",
+    fontSize: 13,
+    marginTop: 5,
+  },
+  restTimerValue: {
+    color: "#FFFFFF",
+    fontSize: 36,
+    fontVariant: ["tabular-nums"],
+    fontWeight: "800",
+  },
+  restDurationControls: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12,
+    justifyContent: "center",
+    marginTop: 18,
+  },
+  restDurationButton: {
+    alignItems: "center",
+    borderColor: "#2563EB",
+    borderRadius: 10,
+    borderWidth: 1,
+    minWidth: 58,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  restDurationButtonText: {
+    color: "#60A5FA",
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  restDurationLabel: {
+    color: "#D1D5DB",
+    fontSize: 13,
+    minWidth: 92,
+    textAlign: "center",
+  },
+  restTimerActions: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 16,
+  },
+  restTimerStartButton: {
+    alignItems: "center",
+    backgroundColor: "#2563EB",
+    borderRadius: 10,
+    flex: 1,
+    paddingVertical: 12,
+  },
+  restTimerStartText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  restTimerSkipButton: {
+    alignItems: "center",
+    borderColor: "#4B5563",
+    borderRadius: 10,
+    borderWidth: 1,
+    flex: 1,
+    paddingVertical: 12,
+  },
+  restTimerSkipText: {
+    color: "#D1D5DB",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  restTimerHint: {
+    color: "#9CA3AF",
+    fontSize: 12,
+    marginTop: 12,
+    textAlign: "center",
   },
     nextSetCard: {
     backgroundColor: "#21170D",
