@@ -13,6 +13,19 @@ This checklist tracks Android work for the Fortomnia app in the `ironforge` Expo
 
 The Android application ID becomes permanent after the first Google Play upload. Confirm it again before creating the Play Console application. Do not use the separate `IronForgeApp` Expo project for these builds.
 
+## Verified Android platform baseline
+
+Verified on August 25, 2026 at Milestone 14 revision `5e45cc6`:
+
+- GitHub quality run 87 passed unit tests, TypeScript validation, and Expo Doctor.
+- Expo SDK 54 targets Android 16 / API level 36.
+- API level 36 meets Google Play's requirement for new apps and updates beginning August 31, 2026.
+- Edge-to-edge is enabled as required by Android 16.
+- The camera permission is limited to barcode scanning and Android audio recording is disabled.
+- Preview builds produce an installable APK; production builds produce the AAB required by Google Play.
+
+References: [Expo SDK 54 platform support](https://docs.expo.dev/versions/v54.0.0/) and [Google Play target API requirements](https://support.google.com/googleplay/android-developer/answer/11926878).
+
 ## Build profiles
 
 ### Internal device build
@@ -66,7 +79,8 @@ Record device model, Android version, build URL, and any defects for each pass.
 - [ ] Prepare phone screenshots, short description, full description, and feature graphic
 - [ ] Upload the production app bundle to Internal testing first
 - [ ] Add testers and complete an internal test pass
-- [ ] Review Google Play testing requirements before planning production release
+- [ ] Determine whether the Play Console account is personal or organization-owned
+- [ ] If it is a new personal account, complete a closed test with at least 12 continuously opted-in testers for 14 days before applying for production access
 - [ ] Promote through closed/open testing only after defects are resolved
 
 ## Release gate
@@ -78,3 +92,6 @@ Android is ready for broader testing only when:
 3. The production app bundle uploads without signing or manifest errors.
 4. Authentication, workout logging, and training recommendations behave consistently with iOS.
 5. Privacy, account deletion, and Play Console declarations are complete and accurate.
+6. Any production-access testing requirement for the developer account has been completed.
+
+New personal Play Console accounts created after November 13, 2023 currently require at least 12 closed-test participants to remain opted in continuously for 14 days before production access can be requested. See [Google Play testing requirements](https://support.google.com/googleplay/android-developer/answer/14151465).
