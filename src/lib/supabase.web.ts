@@ -7,6 +7,7 @@ import {
 } from '@supabase/supabase-js';
 
 import { supabasePublishableKey, supabaseUrl } from './env';
+import { createJwtClockSkewRetryFetch } from './supabaseFetch';
 
 const webStorage = {
   async getItem(key: string) {
@@ -33,6 +34,9 @@ export const supabase = createClient(
       persistSession: true,
       detectSessionInUrl: false,
       lock: processLock,
+    },
+    global: {
+      fetch: createJwtClockSkewRetryFetch(fetch),
     },
   },
 );
