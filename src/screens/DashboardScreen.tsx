@@ -13,10 +13,16 @@ import { useWeeklyAnalytics } from "../hooks/useWeeklyAnalytics";
 import { useDailyNutrition } from "../hooks/useDailyNutrition";
 import { useProfile } from "../hooks/useProfile";
 import { useRecoveryCheckIns } from "../hooks/useRecoveryCheckIns";
-import { useSupplements } from "../hooks/useSupplements";
+import {
+  getSupplementLogKey,
+  useSupplements,
+} from "../hooks/useSupplements";
 import { useWorkoutSessions } from "../hooks/useWorkoutSessions";
 import { getLocalDateKey } from "../lib/dates";
-import { isProtocolDue } from "../lib/supplementSchedule";
+import {
+  getSupplementDoseSchedules,
+  isProtocolDue,
+} from "../lib/supplementSchedule";
 import { useAuth } from "../providers/AuthProvider";
 
 export default function DashboardScreen() {
@@ -41,7 +47,7 @@ export default function DashboardScreen() {
   const {
     errorMessage: supplementError,
     isLoading: supplementsLoading,
-    latestLogByProtocol,
+    latestLogByProtocolSlot,
     protocols,
     refreshSupplements,
   } = useSupplements(today);
@@ -80,10 +86,22 @@ export default function DashboardScreen() {
     (protocol) =>
       protocol.is_active && isProtocolDue(protocol, today),
   );
-  const supplementsTaken = scheduledProtocols.filter(
-    (protocol) =>
-      latestLogByProtocol.get(protocol.id)?.status === "taken",
-  ).length;
+  const scheduledSupplementDoses = scheduledProtocols.reduce(
+    (total, protocol) =>
+      total + getSupplementDoseSchedules(protocol).length,
+    0,
+  );
+  const supplementsTaken = scheduledProtocols.reduce(
+    (total, protocol) =>
+      total +
+      getSupplementDoseSchedules(protocol).filter(
+        ({ slot }) =>
+          latestLogByProtocolSlot.get(
+            getSupplementLogKey(protocol.id, slot),
+          )?.status === "taken",
+      ).length,
+    0,
+  );
 
   const caloriePercent =
     goals.calorie_target > 0
@@ -269,12 +287,12 @@ export default function DashboardScreen() {
               {supplementsTaken}
               <Text style={styles.primaryUnit}>
                 {" "}
-                / {scheduledProtocols.length} taken
+                / {scheduledSupplementDoses} taken
               </Text>
             </Text>
 
             <Text style={styles.details}>
-              Scheduled protocols due today
+              Scheduled doses due today
             </Text>
           </Pressable>
         </Link>
