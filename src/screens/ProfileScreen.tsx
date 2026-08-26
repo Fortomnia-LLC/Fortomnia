@@ -417,6 +417,23 @@ function handleDeleteAccount() {
           )}
         </Pressable>
          <Pressable
+            accessibilityHint="Configure workout, nutrition, supplement, and daily reminders"
+            accessibilityLabel="Notification and reminder settings"
+            accessibilityRole="button"
+            onPress={() => router.push("/notification-settings")}
+            style={styles.legalButton}
+          >
+            <View style={styles.legalButtonContent}>
+              <Text style={styles.legalButtonTitle}>Reminders</Text>
+              <Text style={styles.legalButtonDescription}>
+                Choose times, quiet hours, and what Fortomnia can notify you about
+              </Text>
+            </View>
+            <Text accessibilityElementsHidden style={styles.legalButtonArrow}>
+              ›
+            </Text>
+          </Pressable>
+         <Pressable
             accessibilityHint="Opens Fortomnia policies and support information"
             accessibilityLabel="Privacy, terms, and support"
             accessibilityRole="button"

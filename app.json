@@ -43,7 +43,8 @@
           "cameraPermission": "Allow Fortomnia to use your camera to scan food barcodes.",
           "recordAudioAndroid": false
         }
-      ]
+      ],
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true

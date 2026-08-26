@@ -55,6 +55,7 @@ Add configurable reminders for:
 
 Notification design must include permission handling, time-zone behavior, quiet hours, per-category controls, and clear opt-out settings.
 
+- Notification foundation implemented: local permission handling, per-category controls, device-local scheduling, quiet hours, and full opt-out.
 - Explore iOS Live Activities for active workouts and rest timers, and define an intentional Android equivalent.
 
 ## Health integrations

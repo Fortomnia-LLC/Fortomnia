@@ -2,10 +2,14 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
+import { configureNotificationHandler } from '../src/lib/notificationService';
+
 import {
   AuthProvider,
   useAuth,
 } from '../src/providers/AuthProvider';
+
+configureNotificationHandler();
 
 function RootNavigator() {
   const { isLoading, session } = useAuth();
