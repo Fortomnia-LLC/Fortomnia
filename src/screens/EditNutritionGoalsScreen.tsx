@@ -179,7 +179,6 @@ export default function EditNutritionGoalsScreen() {
     initialFiber,
     initialMealCount,
     initialProtein,
-    initialWaterGoalMl,
     initialWeekdayCalories.join(","),
   ]);
 
@@ -940,12 +939,6 @@ const styles = StyleSheet.create({
     color: "#D1D5DB",
     fontSize: 12,
     marginTop: 12,
-  },
-  fieldHint: {
-    color: "#9CA3AF",
-    fontSize: 12,
-    marginBottom: 14,
-    marginTop: -8,
   },
   row: {
     flexDirection: "row",
