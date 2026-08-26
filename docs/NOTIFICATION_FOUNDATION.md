@@ -19,3 +19,14 @@ routine.
 Daily schedules use the device's current local time zone. Remote push, server-side
 delivery, calendar-aware workout days, supplement-specific times, and notification
 deep links remain later increments.
+
+## Protocol-specific supplement reminders
+
+When the Supplements reminder category is enabled, Fortomnia now replaces the
+generic reminder with protocol-specific alerts whenever active protocols have
+scheduled times. Twice-daily protocols receive distinct morning and evening
+alerts. Daily and weekly patterns repeat in device-local time; bounded and
+every-other-week protocols use a rolling set of one-off notifications that is
+refreshed whenever the Supplements screen loads. Quiet hours remain authoritative,
+and the generic supplement reminder remains the fallback when no protocol has a
+usable scheduled time.

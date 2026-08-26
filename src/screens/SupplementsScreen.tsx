@@ -1,5 +1,5 @@
 import { Link, useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -19,6 +19,7 @@ import {
   useSupplements,
 } from "../hooks/useSupplements";
 import { getLocalDateKey } from "../lib/dates";
+import { syncSupplementProtocolReminders } from "../lib/notificationService";
 import {
   formatScheduledDays,
   getSupplementDoseSchedules,
@@ -200,6 +201,15 @@ export default function SupplementsScreen() {
     refreshSupplements,
   } = useSupplements(selectedDate);
   const isToday = selectedDate === today;
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    void syncSupplementProtocolReminders(protocols).catch(() => {
+      // Reminder errors remain visible in the dedicated reminder settings.
+    });
+  }, [isLoading, protocols]);
+
   const activeProtocols = protocols.filter((protocol) => protocol.is_active);
   const scheduledProtocols = activeProtocols.filter((protocol) =>
     isProtocolDue(protocol, selectedDate),

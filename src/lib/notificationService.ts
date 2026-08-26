@@ -2,14 +2,20 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 
+import type { SupplementProtocol } from "../hooks/useSupplements";
 import {
   buildReminderRequests,
   DEFAULT_REMINDER_PREFERENCES,
   type ReminderPreferences,
 } from "./reminders";
+import {
+  buildSupplementNotificationRequests,
+  type SupplementNotificationRequest,
+} from "./supplementReminders";
 
 const PREFERENCES_KEY = "fortomnia.reminder-preferences.v1";
 const IDENTIFIERS_KEY = "fortomnia.reminder-identifiers.v1";
+const SUPPLEMENT_PROTOCOLS_KEY = "fortomnia.supplement-reminder-protocols.v1";
 const CHANNEL_ID = "fortomnia-reminders";
 
 export type NotificationPermissionState =
@@ -140,41 +146,98 @@ export async function loadReminderPreferences(): Promise<ReminderPreferences> {
   }
 }
 
-export async function saveAndScheduleReminders(
-  preferences: ReminderPreferences,
-): Promise<NotificationPermissionState> {
-  const requests = buildReminderRequests(preferences);
+async function loadStoredSupplementProtocols(): Promise<SupplementProtocol[]> {
+  const stored = await AsyncStorage.getItem(SUPPLEMENT_PROTOCOLS_KEY);
+  if (!stored) return [];
 
-  if (requests.length === 0) {
-    await cancelStoredReminders();
-    await AsyncStorage.setItem(PREFERENCES_KEY, JSON.stringify(preferences));
-    return getNotificationPermissionState();
+  try {
+    const parsed: unknown = JSON.parse(stored);
+    return Array.isArray(parsed) ? (parsed as SupplementProtocol[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function supplementTrigger(
+  request: SupplementNotificationRequest,
+): Notifications.NotificationTriggerInput {
+  const channelId = Platform.OS === "android" ? CHANNEL_ID : undefined;
+
+  if (request.trigger.type === "daily") {
+    return {
+      channelId,
+      hour: request.trigger.hour,
+      minute: request.trigger.minute,
+      type: Notifications.SchedulableTriggerInputTypes.DAILY,
+    };
   }
 
-  const granted = await requestNotificationPermission();
+  if (request.trigger.type === "weekly") {
+    return {
+      channelId,
+      hour: request.trigger.hour,
+      minute: request.trigger.minute,
+      type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+      weekday: request.trigger.weekday,
+    };
+  }
 
-  if (!granted) return getNotificationPermissionState();
+  return {
+    channelId,
+    date: request.trigger.date,
+    type: Notifications.SchedulableTriggerInputTypes.DATE,
+  };
+}
+
+async function replaceScheduledReminders(
+  preferences: ReminderPreferences,
+  protocols: SupplementProtocol[],
+) {
+  const protocolRequests = preferences.reminders.supplements.enabled
+    ? buildSupplementNotificationRequests(protocols, preferences.quietHours)
+    : [];
+  const generalRequests = buildReminderRequests(preferences).filter(
+    (request) =>
+      request.category !== "supplements" || protocolRequests.length === 0,
+  );
 
   await cancelStoredReminders();
   const identifiers: string[] = [];
 
   try {
-    for (const request of requests) {
-      const identifier = await Notifications.scheduleNotificationAsync({
-        content: {
-          body: request.body,
-          data: { category: request.category },
-          title: request.title,
-        },
-        trigger: {
-          channelId: Platform.OS === "android" ? CHANNEL_ID : undefined,
-          hour: request.hour,
-          minute: request.minute,
-          type: Notifications.SchedulableTriggerInputTypes.DAILY,
-        },
-      });
+    for (const request of generalRequests) {
+      identifiers.push(
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            body: request.body,
+            data: { category: request.category },
+            title: request.title,
+          },
+          trigger: {
+            channelId: Platform.OS === "android" ? CHANNEL_ID : undefined,
+            hour: request.hour,
+            minute: request.minute,
+            type: Notifications.SchedulableTriggerInputTypes.DAILY,
+          },
+        }),
+      );
+    }
 
-      identifiers.push(identifier);
+    for (const request of protocolRequests) {
+      identifiers.push(
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            body: request.body,
+            data: {
+              category: "supplements",
+              protocolId: request.protocolId,
+              slot: request.slot,
+            },
+            title: request.title,
+          },
+          trigger: supplementTrigger(request),
+        }),
+      );
     }
   } catch (error) {
     await Promise.all(
@@ -185,10 +248,46 @@ export async function saveAndScheduleReminders(
     throw error;
   }
 
-  await AsyncStorage.multiSet([
-    [PREFERENCES_KEY, JSON.stringify(preferences)],
-    [IDENTIFIERS_KEY, JSON.stringify(identifiers)],
-  ]);
+  await AsyncStorage.setItem(IDENTIFIERS_KEY, JSON.stringify(identifiers));
+}
 
+export async function saveAndScheduleReminders(
+  preferences: ReminderPreferences,
+): Promise<NotificationPermissionState> {
+  const protocols = await loadStoredSupplementProtocols();
+  const hasEnabledReminder = Object.values(preferences.reminders).some(
+    (reminder) => reminder.enabled,
+  );
+
+  if (!hasEnabledReminder) {
+    await cancelStoredReminders();
+    await AsyncStorage.setItem(PREFERENCES_KEY, JSON.stringify(preferences));
+    return getNotificationPermissionState();
+  }
+
+  const granted = await requestNotificationPermission();
+  if (!granted) return getNotificationPermissionState();
+
+  await replaceScheduledReminders(preferences, protocols);
+  await AsyncStorage.setItem(PREFERENCES_KEY, JSON.stringify(preferences));
   return "granted";
+}
+
+export async function syncSupplementProtocolReminders(
+  protocols: SupplementProtocol[],
+) {
+  await AsyncStorage.setItem(
+    SUPPLEMENT_PROTOCOLS_KEY,
+    JSON.stringify(protocols),
+  );
+
+  if (Platform.OS === "web") return;
+
+  const preferences = await loadReminderPreferences();
+  if (!preferences.reminders.supplements.enabled) return;
+
+  const permission = await getNotificationPermissionState();
+  if (permission !== "granted") return;
+
+  await replaceScheduledReminders(preferences, protocols);
 }
