@@ -1,6 +1,6 @@
 import type { SupplementProtocol } from "../hooks/useSupplements";
-import { isTimeInQuietHours, parseReminderTime } from "./reminders";
-import { isProtocolDue } from "./supplementSchedule";
+import { isTimeInQuietHours, parseReminderTime } from "./reminders.ts";
+import { isProtocolDue } from "./supplementSchedule.ts";
 
 export type SupplementNotificationTrigger =
   | { hour: number; minute: number; type: "daily" }
