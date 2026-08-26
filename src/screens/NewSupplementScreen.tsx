@@ -74,6 +74,7 @@ export default function NewSupplementScreen() {
     category: categoryParam,
     doseAmount: doseAmountParam,
     doseUnit: doseUnitParam,
+    dosesPerDay: dosesPerDayParam,
     frequency: frequencyParam,
     name: nameParam,
     notes: notesParam,
@@ -81,12 +82,14 @@ export default function NewSupplementScreen() {
     route: routeParam,
     scheduledDays: scheduledDaysParam,
     scheduledTime: scheduledTimeParam,
+    secondScheduledTime: secondScheduledTimeParam,
     endDate: endDateParam,
 startDate: startDateParam,
   } = useLocalSearchParams<{
     category?: string;
     doseAmount?: string;
     doseUnit?: string;
+    dosesPerDay?: string;
     frequency?: string;
     name?: string;
     notes?: string;
@@ -94,6 +97,7 @@ startDate: startDateParam,
     route?: string;
     scheduledDays?: string;
     scheduledTime?: string;
+    secondScheduledTime?: string;
     endDate?: string;
     startDate?: string;
   }>();
@@ -105,6 +109,8 @@ startDate: startDateParam,
     | undefined;
   const initialDoseAmount = firstParam(doseAmountParam);
   const initialDoseUnit = firstParam(doseUnitParam);
+  const initialDosesPerDay =
+    firstParam(dosesPerDayParam) === "2" ? 2 : 1;
   const initialRoute = firstParam(routeParam) as
     | SupplementRoute
     | undefined;
@@ -116,6 +122,7 @@ startDate: startDateParam,
     .map(Number)
     .filter((day) => Number.isInteger(day) && day >= 0 && day <= 6) ?? [];
   const initialScheduledTime = firstParam(scheduledTimeParam);
+  const initialSecondScheduledTime = firstParam(secondScheduledTimeParam);
   const initialStartDate = firstParam(startDateParam);
   const initialEndDate = firstParam(endDateParam);
   const initialNotes = firstParam(notesParam);
@@ -129,6 +136,9 @@ startDate: startDateParam,
     initialDoseAmount ?? "",
   );
   const [doseUnit, setDoseUnit] = useState(initialDoseUnit ?? "");
+  const [dosesPerDay, setDosesPerDay] = useState<1 | 2>(
+    initialDosesPerDay,
+  );
   const [route, setRoute] = useState<SupplementRoute>(
     initialRoute ?? "oral",
   );
@@ -141,6 +151,9 @@ startDate: startDateParam,
   );
   const [scheduledTime, setScheduledTime] = useState(
     initialScheduledTime ?? "",
+  );
+  const [secondScheduledTime, setSecondScheduledTime] = useState(
+    initialSecondScheduledTime ?? "",
   );
     const [startDate, setStartDate] = useState(
     initialStartDate ?? getLocalDateKey(),
@@ -155,12 +168,14 @@ startDate: startDateParam,
     setCategory(initialCategory ?? "other");
     setDoseAmount(initialDoseAmount ?? "");
     setDoseUnit(initialDoseUnit ?? "");
+    setDosesPerDay(initialDosesPerDay);
     setRoute(initialRoute ?? "oral");
     setFrequency(initialFrequency ?? "daily");
     setStartDate(initialStartDate ?? getLocalDateKey());
     setEndDate(initialEndDate ?? "");
     setScheduledDays(initialScheduledDays);
     setScheduledTime(initialScheduledTime ?? "");
+    setSecondScheduledTime(initialSecondScheduledTime ?? "");
     setNotes(initialNotes ?? "");
     setErrorMessage(null);
   }, [
@@ -168,6 +183,7 @@ startDate: startDateParam,
     initialCategory,
     initialDoseAmount,
     initialDoseUnit,
+    initialDosesPerDay,
     initialFrequency,
     initialName,
     initialNotes,
@@ -176,6 +192,7 @@ startDate: startDateParam,
     initialStartDate,
     initialScheduledDays.join(","),
     initialScheduledTime,
+    initialSecondScheduledTime,
   ]);
 
   async function handleSave() {
@@ -184,6 +201,7 @@ startDate: startDateParam,
     const trimmedEndDate = endDate.trim();
     const trimmedUnit = doseUnit.trim();
     const trimmedTime = scheduledTime.trim();
+    const trimmedSecondTime = secondScheduledTime.trim();
     const parsedDose = Number(doseAmount);
 
     if (!session?.user.id) {
@@ -212,12 +230,30 @@ startDate: startDateParam,
       return;
     }
 
-    if (
-      trimmedTime &&
-      !/^([01]\d|2[0-3]):[0-5]\d$/.test(trimmedTime)
-    ) {
+    const timePattern = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+    if (trimmedTime && !timePattern.test(trimmedTime)) {
       setErrorMessage("Scheduled time must use 24-hour HH:MM format.");
       return;
+    }
+
+    if (dosesPerDay === 2) {
+      if (!trimmedTime || !trimmedSecondTime) {
+        setErrorMessage("Morning and evening times are required for twice-daily protocols.");
+        return;
+      }
+      if (!timePattern.test(trimmedSecondTime)) {
+        setErrorMessage("Evening time must use 24-hour HH:MM format.");
+        return;
+      }
+      if (trimmedSecondTime <= trimmedTime) {
+        setErrorMessage("Evening time must be later than morning time.");
+        return;
+      }
+      if (frequency === "as_needed") {
+        setErrorMessage("As-needed protocols can only use one dose slot.");
+        return;
+      }
     }
       if (!isValidDateKey(trimmedStartDate)) {
   setErrorMessage("Start date must use YYYY-MM-DD format.");
@@ -249,6 +285,7 @@ if (frequency === "selected_days" && scheduledDays.length === 0) {
           category,
           dose_amount: parsedDose,
           dose_unit: trimmedUnit,
+          doses_per_day: dosesPerDay,
           frequency,
           name: trimmedName,
           notes: notes.trim() || null,
@@ -257,6 +294,8 @@ if (frequency === "selected_days" && scheduledDays.length === 0) {
           end_date: trimmedEndDate || null,
           start_date: trimmedStartDate,
           scheduled_time: trimmedTime || null,
+          second_scheduled_time:
+            dosesPerDay === 2 ? trimmedSecondTime : null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", editingProtocolId)
@@ -514,15 +553,62 @@ if (frequency === "selected_days" && scheduledDays.length === 0) {
             style={styles.input}
             value={endDate}
           />
-        <Text style={styles.label}>Scheduled time (optional)</Text>
+        <Text style={styles.label}>Doses per scheduled day</Text>
+        <View style={styles.optionRow}>
+          {([1, 2] as const).map((count) => {
+            const selected = dosesPerDay === count;
+
+            return (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                key={count}
+                onPress={() => setDosesPerDay(count)}
+                style={[
+                  styles.optionButton,
+                  selected && styles.optionButtonSelected,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.optionText,
+                    selected && styles.optionTextSelected,
+                  ]}
+                >
+                  {count === 1 ? "Once daily" : "Morning & evening"}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        <Text style={styles.label}>
+          {dosesPerDay === 2 ? "Morning time" : "Scheduled time (optional)"}
+        </Text>
         <TextInput
           keyboardType="numbers-and-punctuation"
+          maxLength={5}
           onChangeText={setScheduledTime}
           placeholder="08:00"
           placeholderTextColor="#727885"
           style={styles.input}
           value={scheduledTime}
         />
+
+        {dosesPerDay === 2 ? (
+          <>
+            <Text style={styles.label}>Evening time</Text>
+            <TextInput
+              keyboardType="numbers-and-punctuation"
+              maxLength={5}
+              onChangeText={setSecondScheduledTime}
+              placeholder="20:00"
+              placeholderTextColor="#727885"
+              style={styles.input}
+              value={secondScheduledTime}
+            />
+          </>
+        ) : null}
 
         <Text style={styles.label}>Notes (optional)</Text>
         <TextInput

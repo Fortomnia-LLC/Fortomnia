@@ -28,10 +28,13 @@ export type SupplementFrequency =
   | "selected_days"
   | "as_needed";
 
+export type SupplementDoseSlot = "single" | "morning" | "evening";
+
 export type SupplementProtocol = {
   category: SupplementCategory;
   dose_amount: number;
   dose_unit: string;
+  doses_per_day: 1 | 2;
   end_date: string | null;
   frequency: SupplementFrequency;
   id: string;
@@ -41,12 +44,14 @@ export type SupplementProtocol = {
   route: SupplementRoute;
   scheduled_days: number[];
   scheduled_time: string | null;
+  second_scheduled_time: string | null;
   start_date: string;
 };
 
 export type SupplementLog = {
   completed_at: string;
   dose_amount: number;
+  dose_slot: SupplementDoseSlot;
   dose_unit: string;
   id: string;
   log_date: string;
@@ -55,19 +60,20 @@ export type SupplementLog = {
   status: "taken" | "skipped";
 };
 
-type SupplementProtocolRow = Omit<
-  SupplementProtocol,
-  "dose_amount"
-> & {
+type SupplementProtocolRow = Omit<SupplementProtocol, "dose_amount"> & {
   dose_amount: number | string;
 };
 
-type SupplementLogRow = Omit<
-  SupplementLog,
-  "dose_amount"
-> & {
+type SupplementLogRow = Omit<SupplementLog, "dose_amount"> & {
   dose_amount: number | string;
 };
+
+export function getSupplementLogKey(
+  protocolId: string,
+  doseSlot: SupplementDoseSlot,
+) {
+  return `${protocolId}:${doseSlot}`;
+}
 
 export function useSupplements(logDate: string) {
   const [protocols, setProtocols] = useState<SupplementProtocol[]>([]);
@@ -93,6 +99,8 @@ export function useSupplements(logDate: string) {
             frequency,
             scheduled_days,
             scheduled_time,
+            second_scheduled_time,
+            doses_per_day,
             start_date,
             end_date,
             is_active,
@@ -101,7 +109,6 @@ export function useSupplements(logDate: string) {
         )
         .order("is_active", { ascending: false })
         .order("name"),
-
       supabase
         .from("supplement_logs")
         .select(
@@ -110,6 +117,7 @@ export function useSupplements(logDate: string) {
             protocol_id,
             log_date,
             status,
+            dose_slot,
             completed_at,
             dose_amount,
             dose_unit,
@@ -120,38 +128,30 @@ export function useSupplements(logDate: string) {
         .order("completed_at"),
     ]);
 
-    if (protocolsResult.error) {
+    if (protocolsResult.error || logsResult.error) {
       setProtocols([]);
       setLogs([]);
-      setErrorMessage(protocolsResult.error.message);
+      setErrorMessage(
+        protocolsResult.error?.message ??
+          logsResult.error?.message ??
+          "Supplement data could not load.",
+      );
       setIsLoading(false);
       return;
     }
 
-    if (logsResult.error) {
-      setProtocols([]);
-      setLogs([]);
-      setErrorMessage(logsResult.error.message);
-      setIsLoading(false);
-      return;
-    }
-
-    const normalizedProtocols = (
-      protocolsResult.data as SupplementProtocolRow[]
-    ).map((protocol) => ({
-      ...protocol,
-      dose_amount: Number(protocol.dose_amount),
-    }));
-
-    const normalizedLogs = (
-      logsResult.data as SupplementLogRow[]
-    ).map((log) => ({
-      ...log,
-      dose_amount: Number(log.dose_amount),
-    }));
-
-    setProtocols(normalizedProtocols);
-    setLogs(normalizedLogs);
+    setProtocols(
+      (protocolsResult.data as SupplementProtocolRow[]).map((protocol) => ({
+        ...protocol,
+        dose_amount: Number(protocol.dose_amount),
+      })),
+    );
+    setLogs(
+      (logsResult.data as SupplementLogRow[]).map((log) => ({
+        ...log,
+        dose_amount: Number(log.dose_amount),
+      })),
+    );
     setIsLoading(false);
   }, [logDate]);
 
@@ -161,11 +161,14 @@ export function useSupplements(logDate: string) {
     }, [loadSupplements]),
   );
 
-  const latestLogByProtocol = useMemo(() => {
+  const latestLogByProtocolSlot = useMemo(() => {
     const latestLogs = new Map<string, SupplementLog>();
 
     for (const log of logs) {
-      latestLogs.set(log.protocol_id, log);
+      latestLogs.set(
+        getSupplementLogKey(log.protocol_id, log.dose_slot),
+        log,
+      );
     }
 
     return latestLogs;
@@ -174,7 +177,7 @@ export function useSupplements(logDate: string) {
   return {
     errorMessage,
     isLoading,
-    latestLogByProtocol,
+    latestLogByProtocolSlot,
     logs,
     protocols,
     refreshSupplements: loadSupplements,

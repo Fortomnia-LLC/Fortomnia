@@ -34,7 +34,7 @@ This document captures product objectives and backlog ideas for Fortomnia. Items
 - Add barcode scanning for supplements.
 - Clear the supplement form after successful submission.
 - Support selecting multiple supplement schedule days and recurring patterns, including examples such as Monday/Wednesday/Friday.
-- Support twice-daily supplement schedules with distinct morning and evening logging.
+- Support twice-daily supplement schedules with distinct morning and evening logging. **Implemented in Milestone 14.**
 - Define what **biweekly** means in scheduling before implementation: twice per week or every two weeks.
 
 ## Forms and workflow quality
