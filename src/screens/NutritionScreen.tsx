@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 
@@ -22,6 +23,8 @@ import {
 import { getLocalDateKey } from "../lib/dates";
 import { buildMealProgress } from "../lib/mealProgress";
 import { getPerMealTargets } from "../lib/mealTargets";
+import { flOzToMl, mlToFlOz } from "../lib/measurementUnits";
+import { useProfile } from "../hooks/useProfile";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
 type NutritionEntryCardProps = {
@@ -120,15 +123,39 @@ export default function NutritionScreen() {
   const { session } = useAuth();
   const today = getLocalDateKey();
   const [selectedDate, setSelectedDate] = useState(today);
+  const [customWaterAmount, setCustomWaterAmount] = useState("");
+  const [waterErrorMessage, setWaterErrorMessage] = useState<string | null>(
+    null,
+  );
   const isToday = selectedDate === today;
   const {
+    addWater,
+    deleteWater,
     entries,
     errorMessage,
     goals,
     isLoading,
+    isSavingWater,
     refreshNutrition,
     totals,
+    waterEntries,
+    waterTotalMl,
   } = useDailyNutrition(selectedDate);
+  const { profile } = useProfile();
+  const usesFluidOunces = profile?.preferred_weight_unit !== "kg";
+  const waterUnit = usesFluidOunces ? "fl oz" : "mL";
+  const quickWaterAmounts = usesFluidOunces
+    ? [8, 12, 16]
+    : [250, 500, 750];
+  const waterTotal = usesFluidOunces
+    ? mlToFlOz(waterTotalMl)
+    : waterTotalMl;
+  const waterGoal =
+    goals.water_target_ml === null
+      ? null
+      : usesFluidOunces
+        ? mlToFlOz(goals.water_target_ml)
+        : goals.water_target_ml;
   const effectiveCalorieTarget = getCalorieTargetForDate(
     goals.calorie_target,
     goals.weekday_calorie_targets,
@@ -143,6 +170,50 @@ export default function NutritionScreen() {
     goals.meal_count,
   );
   const mealProgress = buildMealProgress(entries, goals.meal_count);
+  async function handleAddWater(displayAmount: number) {
+    const amountMl = usesFluidOunces
+      ? flOzToMl(displayAmount)
+      : Math.round(displayAmount);
+    const saveError = await addWater(amountMl);
+
+    if (saveError) {
+      setWaterErrorMessage(saveError);
+      return;
+    }
+
+    setCustomWaterAmount("");
+    setWaterErrorMessage(null);
+  }
+
+  function handleAddCustomWater() {
+    const parsedAmount = Number(customWaterAmount);
+
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      setWaterErrorMessage(`Enter a water amount greater than 0 ${waterUnit}.`);
+      return;
+    }
+
+    void handleAddWater(parsedAmount);
+  }
+
+  function handleDeleteWater(entryId: string, amountMl: number) {
+    const amount = usesFluidOunces
+      ? `${mlToFlOz(amountMl)} fl oz`
+      : `${amountMl} mL`;
+
+    Alert.alert("Delete water entry?", `${amount} will be removed.`, [
+      { style: "cancel", text: "Cancel" },
+      {
+        style: "destructive",
+        text: "Delete",
+        onPress: async () => {
+          const deleteError = await deleteWater(entryId);
+          setWaterErrorMessage(deleteError);
+        },
+      },
+    ]);
+  }
+
   function handleEditEntry(entry: NutritionEntry) {
     router.push({
       pathname: "/new-nutrition-entry",
@@ -306,6 +377,10 @@ export default function NutritionScreen() {
                   fiber: String(goals.fiber_target_g),
                   mealCount: String(goals.meal_count),
                   protein: String(goals.protein_target_g),
+                  waterGoalMl:
+                    goals.water_target_ml === null
+                      ? ""
+                      : String(goals.water_target_ml),
                   weekdayCalories: goals.weekday_calorie_targets.join(","),
                 },
               }}
@@ -375,6 +450,95 @@ export default function NutritionScreen() {
               Fiber: {Math.round(totals.fiber_g)}g of{" "}
               {Math.round(goals.fiber_target_g)}g
             </Text>
+
+            <View style={styles.waterCard}>
+              <Text style={styles.waterEyebrow}>WATER</Text>
+              <Text style={styles.waterValue}>
+                {waterTotal} {waterUnit}
+              </Text>
+              <Text style={styles.waterGoal}>
+                {waterGoal === null
+                  ? "Set a personal goal in Nutrition goals"
+                  : `of ${waterGoal} ${waterUnit}`}
+              </Text>
+
+              <View style={styles.waterQuickActions}>
+                {quickWaterAmounts.map((amount) => (
+                  <Pressable
+                    accessibilityLabel={`Add ${amount} ${waterUnit} of water`}
+                    accessibilityRole="button"
+                    disabled={isSavingWater}
+                    key={amount}
+                    onPress={() => void handleAddWater(amount)}
+                    style={[
+                      styles.waterQuickButton,
+                      isSavingWater && styles.waterButtonDisabled,
+                    ]}
+                  >
+                    <Text style={styles.waterQuickText}>
+                      +{amount} {waterUnit}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              <View style={styles.waterCustomRow}>
+                <TextInput
+                  accessibilityLabel={`Custom water amount in ${waterUnit}`}
+                  inputMode="decimal"
+                  onChangeText={setCustomWaterAmount}
+                  placeholder={usesFluidOunces ? "Custom fl oz" : "Custom mL"}
+                  placeholderTextColor="#727885"
+                  style={styles.waterInput}
+                  value={customWaterAmount}
+                />
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={isSavingWater}
+                  onPress={handleAddCustomWater}
+                  style={[
+                    styles.waterAddButton,
+                    isSavingWater && styles.waterButtonDisabled,
+                  ]}
+                >
+                  <Text style={styles.waterAddText}>Add water</Text>
+                </Pressable>
+              </View>
+
+              {waterErrorMessage ? (
+                <Text
+                  accessibilityLiveRegion="polite"
+                  accessibilityRole="alert"
+                  style={styles.waterError}
+                >
+                  {waterErrorMessage}
+                </Text>
+              ) : null}
+
+              {waterEntries.length > 0 ? (
+                <View style={styles.waterEntryList}>
+                  {waterEntries.map((entry) => (
+                    <View key={entry.id} style={styles.waterEntry}>
+                      <Text style={styles.waterEntryText}>
+                        {usesFluidOunces
+                          ? `${mlToFlOz(entry.amount_ml)} fl oz`
+                          : `${entry.amount_ml} mL`}
+                      </Text>
+                      <Pressable
+                        accessibilityLabel="Delete water entry"
+                        accessibilityRole="button"
+                        disabled={isSavingWater}
+                        onPress={() =>
+                          handleDeleteWater(entry.id, entry.amount_ml)
+                        }
+                      >
+                        <Text style={styles.waterDeleteText}>Delete</Text>
+                      </Pressable>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+            </View>
 
             <View style={styles.perMealCard}>
               <Text style={styles.perMealTitle}>
@@ -618,6 +782,106 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginBottom: 28,
     marginTop: 12,
+  },
+  waterCard: {
+    backgroundColor: "#111827",
+    borderColor: "#2563EB",
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: 24,
+    padding: 18,
+  },
+  waterEyebrow: {
+    color: "#60A5FA",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1.5,
+  },
+  waterValue: {
+    color: "#FFFFFF",
+    fontSize: 30,
+    fontWeight: "800",
+    marginTop: 7,
+  },
+  waterGoal: {
+    color: "#9CA3AF",
+    fontSize: 13,
+    marginTop: 3,
+  },
+  waterQuickActions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 16,
+  },
+  waterQuickButton: {
+    borderColor: "#2563EB",
+    borderRadius: 9,
+    borderWidth: 1,
+    paddingHorizontal: 11,
+    paddingVertical: 9,
+  },
+  waterQuickText: {
+    color: "#60A5FA",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  waterCustomRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 12,
+  },
+  waterInput: {
+    backgroundColor: "#171717",
+    borderColor: "#374151",
+    borderRadius: 9,
+    borderWidth: 1,
+    color: "#FFFFFF",
+    flex: 1,
+    minHeight: 44,
+    paddingHorizontal: 12,
+  },
+  waterAddButton: {
+    alignItems: "center",
+    backgroundColor: "#2563EB",
+    borderRadius: 9,
+    justifyContent: "center",
+    paddingHorizontal: 14,
+  },
+  waterAddText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  waterButtonDisabled: {
+    opacity: 0.5,
+  },
+  waterError: {
+    color: "#F87171",
+    fontSize: 12,
+    marginTop: 10,
+  },
+  waterEntryList: {
+    gap: 7,
+    marginTop: 14,
+  },
+  waterEntry: {
+    alignItems: "center",
+    backgroundColor: "#171717",
+    borderRadius: 8,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 11,
+    paddingVertical: 9,
+  },
+  waterEntryText: {
+    color: "#D1D5DB",
+    fontSize: 13,
+  },
+  waterDeleteText: {
+    color: "#F87171",
+    fontSize: 12,
+    fontWeight: "700",
   },
   perMealCard: {
     backgroundColor: "#171717",

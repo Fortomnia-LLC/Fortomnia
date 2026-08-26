@@ -13,18 +13,17 @@ This document defines a release-safe first increment for water tracking. It is a
 
 ## Proposed data model
 
-### nutrition_water_goals
+### nutrition_goals extension
 
-- `user_id uuid primary key`
-- `daily_goal_ml integer not null`
-- `created_at timestamptz not null default now()`
-- `updated_at timestamptz not null default now()`
+- Add nullable `water_target_ml integer`.
+- Keep the goal optional so Fortomnia does not imply a medical recommendation.
 
 ### water_entries
 
 - `id uuid primary key default gen_random_uuid()`
 - `user_id uuid not null`
 - `amount_ml integer not null check (amount_ml > 0)`
+- `entry_date date not null default current_date`
 - `logged_at timestamptz not null default now()`
 - `created_at timestamptz not null default now()`
 
@@ -32,11 +31,11 @@ Store canonical values in milliliters and convert only for display. Both tables 
 
 ## Delivery sequence
 
-1. Add the migration, row-level-security policies, and generated database types.
-2. Add pure conversion and daily-total helpers with unit tests.
-3. Add the Nutrition-screen progress card and quick-add controls.
-4. Add custom-entry, edit, and delete workflows.
-5. Test date boundaries, time zones, imperial/metric conversion, offline errors, and large text sizes.
+1. Add the migration and row-level-security policies.
+2. Add tested imperial/metric conversion helpers.
+3. Add the Nutrition-screen daily total, quick-add, custom-entry, and delete controls.
+4. Add an optional user-defined goal to Nutrition goals.
+5. Test date boundaries, time zones, imperial/metric conversion, network errors, and large text sizes.
 
 ## Acceptance criteria
 

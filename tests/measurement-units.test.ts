@@ -4,8 +4,10 @@ import test from "node:test";
 import {
   cmToFeetInches,
   feetInchesToCm,
+  flOzToMl,
   kgToLb,
   lbToKg,
+  mlToFlOz,
 } from "../src/lib/measurementUnits.ts";
 
 test("converts body weight between kilograms and pounds", () => {
@@ -21,4 +23,11 @@ test("converts height between centimeters and feet/inches", () => {
 test("handles height rounding across the next foot", () => {
   assert.deepEqual(cmToFeetInches(182.8), { feet: 6, inches: 0 });
   assert.ok(Number.isNaN(feetInchesToCm(-1, 10)));
+});
+
+test("converts water volume between milliliters and fluid ounces", () => {
+  assert.equal(mlToFlOz(500), 16.9);
+  assert.equal(flOzToMl(16.9), 500);
+  assert.ok(Number.isNaN(mlToFlOz(-1)));
+  assert.ok(Number.isNaN(flOzToMl(Number.POSITIVE_INFINITY)));
 });

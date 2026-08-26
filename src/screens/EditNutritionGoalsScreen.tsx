@@ -32,8 +32,10 @@ import { supabase } from "../lib/supabase";
 import {
   cmToFeetInches,
   feetInchesToCm,
+  flOzToMl,
   kgToLb,
   lbToKg,
+  mlToFlOz,
   type MeasurementSystem,
 } from "../lib/measurementUnits";
 import { useAuth } from "../providers/AuthProvider";
@@ -51,6 +53,7 @@ export default function EditNutritionGoalsScreen() {
     fiber: fiberParam,
     mealCount: mealCountParam,
     protein: proteinParam,
+    waterGoalMl: waterGoalMlParam,
     weekdayCalories: weekdayCaloriesParam,
   } = useLocalSearchParams<{
     calories?: string;
@@ -59,6 +62,7 @@ export default function EditNutritionGoalsScreen() {
     fiber?: string;
     mealCount?: string;
     protein?: string;
+    waterGoalMl?: string;
     weekdayCalories?: string;
   }>();
 
@@ -71,6 +75,7 @@ export default function EditNutritionGoalsScreen() {
     ?.split(",")
     .filter(Boolean) ?? [];
   const initialMealCount = firstParam(mealCountParam) ?? "3";
+  const initialWaterGoalMl = firstParam(waterGoalMlParam) ?? "";
 
   const { session } = useAuth();
   const { profile } = useProfile();
@@ -95,6 +100,11 @@ export default function EditNutritionGoalsScreen() {
   const [fat, setFat] = useState(initialFat);
   const [fiber, setFiber] = useState(initialFiber);
   const [mealCount, setMealCount] = useState(initialMealCount);
+  const [waterGoal, setWaterGoal] = useState(
+    initialWaterGoalMl
+      ? String(mlToFlOz(Number(initialWaterGoalMl)))
+      : "",
+  );
   const [customizeWeekdays, setCustomizeWeekdays] = useState(
     initialWeekdayCalories.length === 7,
   );
@@ -136,8 +146,17 @@ export default function EditNutritionGoalsScreen() {
       setEquationSex(profile.equation_sex ?? "male");
       setActivityLevel(profile.activity_level);
       setCalorieDirection(profile.calorie_direction);
+      setWaterGoal(
+        initialWaterGoalMl
+          ? String(
+              system === "imperial"
+                ? mlToFlOz(Number(initialWaterGoalMl))
+                : Number(initialWaterGoalMl),
+            )
+          : "",
+      );
     }
-  }, [profile]);
+  }, [initialWaterGoalMl, profile]);
 
   useEffect(() => {
     setCalories(initialCalories);
@@ -160,6 +179,7 @@ export default function EditNutritionGoalsScreen() {
     initialFiber,
     initialMealCount,
     initialProtein,
+    initialWaterGoalMl,
     initialWeekdayCalories.join(","),
   ]);
 
@@ -174,6 +194,18 @@ export default function EditNutritionGoalsScreen() {
           next === "imperial"
             ? kgToLb(parsedWeight)
             : lbToKg(parsedWeight),
+        ),
+      );
+    }
+
+    const parsedWaterGoal = Number(waterGoal);
+
+    if (Number.isFinite(parsedWaterGoal) && parsedWaterGoal > 0) {
+      setWaterGoal(
+        String(
+          next === "imperial"
+            ? mlToFlOz(parsedWaterGoal)
+            : flOzToMl(parsedWaterGoal),
         ),
       );
     }
@@ -246,6 +278,13 @@ export default function EditNutritionGoalsScreen() {
     const parsedFat = Number(fat);
     const parsedFiber = Number(fiber);
     const parsedMealCount = Number(mealCount);
+    const parsedWaterGoal = waterGoal.trim() === "" ? null : Number(waterGoal);
+    const waterTargetMl =
+      parsedWaterGoal === null
+        ? null
+        : measurementSystem === "imperial"
+          ? flOzToMl(parsedWaterGoal)
+          : Math.round(parsedWaterGoal);
     const parsedWeekdayCalories = weekdayCalories.map(Number);
 
     if (!session?.user.id) {
@@ -270,6 +309,20 @@ export default function EditNutritionGoalsScreen() {
       parsedMealCount > 8
     ) {
       setErrorMessage("Meals per day must be a whole number from 1 to 8.");
+      return;
+    }
+
+    if (
+      waterTargetMl !== null &&
+      (!Number.isFinite(waterTargetMl) ||
+        waterTargetMl < 250 ||
+        waterTargetMl > 20000)
+    ) {
+      setErrorMessage(
+        `Water goal must be from ${
+          measurementSystem === "imperial" ? "8.5 to 676 fl oz" : "250 to 20,000 mL"
+        }.`,
+      );
       return;
     }
 
@@ -317,6 +370,7 @@ export default function EditNutritionGoalsScreen() {
           fiber_target_g: parsedFiber,
           meal_count: parsedMealCount,
           protein_target_g: parsedProtein,
+          water_target_ml: waterTargetMl,
           updated_at: new Date().toISOString(),
           user_id: session.user.id,
           weekday_calorie_targets: customizeWeekdays
@@ -577,6 +631,22 @@ export default function EditNutritionGoalsScreen() {
           style={styles.input}
           value={mealCount}
         />
+
+        <Text style={styles.label}>
+          Water goal ({measurementSystem === "imperial" ? "fl oz" : "mL"})
+        </Text>
+        <TextInput
+          inputMode="decimal"
+          onChangeText={setWaterGoal}
+          placeholder="Optional"
+          placeholderTextColor="#727885"
+          selectTextOnFocus
+          style={styles.input}
+          value={waterGoal}
+        />
+        <Text style={styles.fieldHint}>
+          Set your own daily target or leave this blank.
+        </Text>
 
         <Text style={styles.label}>Calories</Text>
         <TextInput
@@ -870,6 +940,12 @@ const styles = StyleSheet.create({
     color: "#D1D5DB",
     fontSize: 12,
     marginTop: 12,
+  },
+  fieldHint: {
+    color: "#9CA3AF",
+    fontSize: 12,
+    marginBottom: 14,
+    marginTop: -8,
   },
   row: {
     flexDirection: "row",

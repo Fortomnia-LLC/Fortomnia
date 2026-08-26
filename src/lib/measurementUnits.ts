@@ -2,6 +2,7 @@ export type MeasurementSystem = "imperial" | "metric";
 
 const POUNDS_PER_KILOGRAM = 2.2046226218;
 const CENTIMETERS_PER_INCH = 2.54;
+const MILLILITERS_PER_FLUID_OUNCE = 29.5735295625;
 
 function round(value: number, decimals = 1): number {
   const factor = 10 ** decimals;
@@ -47,4 +48,20 @@ export function feetInchesToCm(feet: number, inches: number): number {
   }
 
   return round((feet * 12 + inches) * CENTIMETERS_PER_INCH);
+}
+
+export function mlToFlOz(milliliters: number): number {
+  if (!Number.isFinite(milliliters) || milliliters < 0) {
+    return Number.NaN;
+  }
+
+  return round(milliliters / MILLILITERS_PER_FLUID_OUNCE);
+}
+
+export function flOzToMl(fluidOunces: number): number {
+  if (!Number.isFinite(fluidOunces) || fluidOunces < 0) {
+    return Number.NaN;
+  }
+
+  return Math.round(fluidOunces * MILLILITERS_PER_FLUID_OUNCE);
 }
