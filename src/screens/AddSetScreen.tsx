@@ -377,7 +377,10 @@ export default function AddSetScreen() {
 
     router.replace({
       pathname: "/workout/[id]",
-      params: { id: workoutId },
+      params: {
+        id: workoutId,
+        restStartedAt: String(Date.now()),
+      },
     });
   }
 

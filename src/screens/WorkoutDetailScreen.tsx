@@ -223,10 +223,14 @@ function PlannedExerciseCard({
 
 export default function WorkoutDetailScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, restStartedAt } = useLocalSearchParams<{
+    id: string;
+    restStartedAt?: string;
+  }>();
   const workoutId = Array.isArray(id) ? id[0] : id;
   const { session } = useAuth();
   const [isCompleting, setIsCompleting] = useState(false);
+  const [isRestPreferenceLoaded, setIsRestPreferenceLoaded] = useState(false);
   const [restDurationSeconds, setRestDurationSeconds] = useState(
     DEFAULT_REST_DURATION_SECONDS,
   );
@@ -236,6 +240,7 @@ export default function WorkoutDetailScreen() {
   );
   const knownSetIdsRef = useRef<Set<string> | null>(null);
   const completedRestEndRef = useRef<number | null>(null);
+  const handledRestTriggerRef = useRef<string | null>(null);
   const {
     errorMessage,
     isLoading,
@@ -311,12 +316,57 @@ export default function WorkoutDetailScreen() {
           "Unable to restore rest timer duration:",
           error instanceof Error ? error.message : "Unknown error",
         );
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsRestPreferenceLoaded(true);
+        }
       });
 
     return () => {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    const trigger = Array.isArray(restStartedAt)
+      ? restStartedAt[0]
+      : restStartedAt;
+
+    if (
+      !isRestPreferenceLoaded ||
+      !trigger ||
+      handledRestTriggerRef.current === trigger
+    ) {
+      return;
+    }
+
+    handledRestTriggerRef.current = trigger;
+    const startedAt = Number(trigger);
+
+    if (!Number.isFinite(startedAt)) {
+      return;
+    }
+
+    const elapsedSeconds = Math.max(
+      0,
+      Math.floor((Date.now() - startedAt) / 1000),
+    );
+    const remainingSeconds = Math.max(
+      0,
+      restDurationSeconds - elapsedSeconds,
+    );
+
+    if (remainingSeconds > 0) {
+      startRestTimer(remainingSeconds);
+    } else {
+      setRestRemainingSeconds(0);
+    }
+  }, [
+    isRestPreferenceLoaded,
+    restDurationSeconds,
+    restStartedAt,
+  ]);
 
   useEffect(() => {
     const timerEndsAt = restEndsAt;
