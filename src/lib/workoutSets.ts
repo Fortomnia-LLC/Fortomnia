@@ -118,6 +118,39 @@ export function getNextWorkoutSet(
         set.exercise_id === exercise.exercise_id &&
         set.set_variant === "standard",
     ).length;
+  const buildNextSet = (exercise: PlannedExercise): NextWorkoutSet => {
+    const exerciseSets = sets
+      .filter(
+        (set) =>
+          set.exercise_id === exercise.exercise_id &&
+          set.set_variant === "standard",
+      )
+      .sort((left, right) => left.set_number - right.set_number);
+
+    return {
+      completedSets: exerciseSets.length,
+      exercise,
+      lastSet: exerciseSets.at(-1) ?? null,
+      setNumber: exerciseSets.length + 1,
+    };
+  };
+  const mostRecentStandardSet = [...sets]
+    .reverse()
+    .find((set) => set.set_variant === "standard");
+  const mostRecentExercise = mostRecentStandardSet
+    ? orderedExercises.find(
+        (exercise) =>
+          exercise.exercise_id === mostRecentStandardSet.exercise_id,
+      )
+    : undefined;
+
+  if (
+    mostRecentExercise &&
+    !mostRecentExercise.superset_group &&
+    completedCount(mostRecentExercise) < mostRecentExercise.target_sets
+  ) {
+    return buildNextSet(mostRecentExercise);
+  }
 
   for (const exercise of orderedExercises) {
     const block = exercise.superset_group
@@ -145,20 +178,7 @@ export function getNextWorkoutSet(
       continue;
     }
 
-    const exerciseSets = sets
-      .filter(
-        (set) =>
-          set.exercise_id === nextExercise.exercise_id &&
-          set.set_variant === "standard",
-      )
-      .sort((left, right) => left.set_number - right.set_number);
-
-    return {
-      completedSets: exerciseSets.length,
-      exercise: nextExercise,
-      lastSet: exerciseSets.at(-1) ?? null,
-      setNumber: exerciseSets.length + 1,
-    };
+    return buildNextSet(nextExercise);
   }
 
   return null;

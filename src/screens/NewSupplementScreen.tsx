@@ -373,7 +373,7 @@ if (frequency === "selected_days" && scheduledDays.length === 0) {
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>Dose</Text>
             <TextInput
-              keyboardType="decimal-pad"
+              inputMode="decimal"
               onChangeText={setDoseAmount}
               placeholder="5"
               placeholderTextColor="#727885"

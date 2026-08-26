@@ -131,7 +131,7 @@ export function useWorkoutSession(workoutId: string | undefined) {
           `,
         )
         .eq("session_id", workoutId)
-        .order("set_number"),
+        .order("performed_at"),
           supabase
         .from("workout_session_exercises")
         .select(

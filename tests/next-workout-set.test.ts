@@ -71,6 +71,24 @@ test("selects the first unfinished exercise in plan order", () => {
   assert.equal(result.lastSet?.id, "bench-2");
 });
 
+test("continues the most recently logged unfinished exercise after a skip", () => {
+  const result = getNextWorkoutSet(
+    [
+      logged("bench-1", "bench", 1),
+      logged("row-1", "row", 1),
+    ],
+    [
+      planned("bench", "Bench", 1, 3),
+      planned("row", "Row", 2, 3),
+    ],
+  );
+
+  assert.ok(result);
+  assert.equal(result.exercise.exercise_id, "row");
+  assert.equal(result.setNumber, 2);
+  assert.equal(result.lastSet?.id, "row-1");
+});
+
 test("advances to the next exercise after the target is complete", () => {
   const result = getNextWorkoutSet(
     [

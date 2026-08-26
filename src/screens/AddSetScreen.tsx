@@ -568,7 +568,7 @@ export default function AddSetScreen() {
           Weight ({profile?.preferred_weight_unit ?? "lb"})
         </Text>
         <TextInput
-          keyboardType="decimal-pad"
+          inputMode="decimal"
           onChangeText={setWeight}
           selectTextOnFocus
           style={styles.input}
@@ -579,7 +579,7 @@ export default function AddSetScreen() {
           <>
             <Text style={styles.label}>Reps</Text>
             <TextInput
-              keyboardType="number-pad"
+              inputMode="numeric"
               onChangeText={setReps}
               placeholder="8"
               placeholderTextColor="#727885"
@@ -591,7 +591,7 @@ export default function AddSetScreen() {
           <>
             <Text style={styles.label}>Duration (seconds)</Text>
             <TextInput
-              keyboardType="number-pad"
+              inputMode="numeric"
               onChangeText={setDurationSeconds}
               placeholder="30"
               placeholderTextColor="#727885"
@@ -611,7 +611,7 @@ export default function AddSetScreen() {
                   : "Rounds"}
             </Text>
             <TextInput
-              keyboardType="decimal-pad"
+              inputMode="decimal"
               onChangeText={setMetricValue}
               placeholder={performanceType === "distance" ? "500" : "5"}
               placeholderTextColor="#727885"
@@ -648,7 +648,7 @@ export default function AddSetScreen() {
           <>
             <Text style={styles.label}>Reps in reserve</Text>
             <TextInput
-              keyboardType="number-pad"
+              inputMode="numeric"
               onChangeText={setRir}
               placeholder="2"
               placeholderTextColor="#727885"

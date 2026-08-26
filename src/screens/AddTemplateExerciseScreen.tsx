@@ -445,7 +445,7 @@ export default function AddTemplateExerciseScreen() {
 
         <Text style={styles.label}>Target sets</Text>
         <TextInput
-          keyboardType="number-pad"
+          inputMode="numeric"
           onChangeText={setTargetSets}
           selectTextOnFocus
           style={styles.input}
@@ -457,7 +457,7 @@ export default function AddTemplateExerciseScreen() {
             <Text style={styles.label}>Rep range</Text>
             <View style={styles.rangeRow}>
               <TextInput
-                keyboardType="number-pad"
+                inputMode="numeric"
                 onChangeText={setRepMin}
                 selectTextOnFocus
                 style={[styles.input, styles.rangeInput]}
@@ -465,7 +465,7 @@ export default function AddTemplateExerciseScreen() {
               />
               <Text style={styles.rangeSeparator}>to</Text>
               <TextInput
-                keyboardType="number-pad"
+                inputMode="numeric"
                 onChangeText={setRepMax}
                 selectTextOnFocus
                 style={[styles.input, styles.rangeInput]}
@@ -477,7 +477,7 @@ export default function AddTemplateExerciseScreen() {
           <>
             <Text style={styles.label}>Target duration (seconds)</Text>
             <TextInput
-              keyboardType="number-pad"
+              inputMode="numeric"
               onChangeText={setTargetDurationSeconds}
               selectTextOnFocus
               style={styles.input}
@@ -496,7 +496,7 @@ export default function AddTemplateExerciseScreen() {
                   : "Target rounds"}
             </Text>
             <TextInput
-              keyboardType="decimal-pad"
+              inputMode="decimal"
               onChangeText={setTargetMetricValue}
               placeholder={performanceType === "distance" ? "500" : "5"}
               placeholderTextColor="#727885"
@@ -533,7 +533,7 @@ export default function AddTemplateExerciseScreen() {
           <>
             <Text style={styles.label}>Target RIR</Text>
             <TextInput
-              keyboardType="number-pad"
+              inputMode="numeric"
               onChangeText={setTargetRir}
               selectTextOnFocus
               style={styles.input}

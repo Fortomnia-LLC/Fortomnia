@@ -420,7 +420,7 @@ export default function EditNutritionGoalsScreen() {
 
           <Text style={styles.label}>Age</Text>
           <TextInput
-            keyboardType="number-pad"
+            inputMode="numeric"
             onChangeText={setAge}
             placeholder="35"
             placeholderTextColor="#727885"
@@ -434,7 +434,7 @@ export default function EditNutritionGoalsScreen() {
               <View style={styles.row}>
                 <View style={styles.inputGroup}>
                   <TextInput
-                    keyboardType="number-pad"
+                    inputMode="numeric"
                     onChangeText={setHeightFeet}
                     placeholder="5 ft"
                     placeholderTextColor="#727885"
@@ -444,7 +444,7 @@ export default function EditNutritionGoalsScreen() {
                 </View>
                 <View style={styles.inputGroup}>
                   <TextInput
-                    keyboardType="decimal-pad"
+                    inputMode="decimal"
                     onChangeText={setHeightInches}
                     placeholder="10 in"
                     placeholderTextColor="#727885"
@@ -458,7 +458,7 @@ export default function EditNutritionGoalsScreen() {
             <>
               <Text style={styles.label}>Height (cm)</Text>
               <TextInput
-                keyboardType="decimal-pad"
+                inputMode="decimal"
                 onChangeText={setHeightCm}
                 placeholder="175"
                 placeholderTextColor="#727885"
@@ -472,7 +472,7 @@ export default function EditNutritionGoalsScreen() {
             Body weight ({measurementSystem === "imperial" ? "lb" : "kg"})
           </Text>
           <TextInput
-            keyboardType="decimal-pad"
+            inputMode="decimal"
             onChangeText={setWeightValue}
             placeholder={measurementSystem === "imperial" ? "175" : "80"}
             placeholderTextColor="#727885"
@@ -571,7 +571,7 @@ export default function EditNutritionGoalsScreen() {
 
         <Text style={styles.label}>Meals per day</Text>
         <TextInput
-          keyboardType="number-pad"
+          inputMode="numeric"
           onChangeText={setMealCount}
           selectTextOnFocus
           style={styles.input}
@@ -580,7 +580,7 @@ export default function EditNutritionGoalsScreen() {
 
         <Text style={styles.label}>Calories</Text>
         <TextInput
-          keyboardType="number-pad"
+          inputMode="numeric"
           onChangeText={setCalories}
           selectTextOnFocus
           style={styles.input}
@@ -617,7 +617,7 @@ export default function EditNutritionGoalsScreen() {
               <View key={label} style={styles.weekdayTargetRow}>
                 <Text style={styles.weekdayTargetLabel}>{label}</Text>
                 <TextInput
-                  keyboardType="number-pad"
+                  inputMode="numeric"
                   onChangeText={(value) =>
                     setWeekdayCalories((current) =>
                       current.map((target, targetIndex) =>
@@ -638,7 +638,7 @@ export default function EditNutritionGoalsScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Protein (g)</Text>
             <TextInput
-              keyboardType="decimal-pad"
+              inputMode="decimal"
               onChangeText={setProtein}
               selectTextOnFocus
               style={styles.input}
@@ -649,7 +649,7 @@ export default function EditNutritionGoalsScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Carbs (g)</Text>
             <TextInput
-              keyboardType="decimal-pad"
+              inputMode="decimal"
               onChangeText={setCarbs}
               selectTextOnFocus
               style={styles.input}
@@ -662,7 +662,7 @@ export default function EditNutritionGoalsScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Fat (g)</Text>
             <TextInput
-              keyboardType="decimal-pad"
+              inputMode="decimal"
               onChangeText={setFat}
               selectTextOnFocus
               style={styles.input}
@@ -673,7 +673,7 @@ export default function EditNutritionGoalsScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Fiber (g)</Text>
             <TextInput
-              keyboardType="decimal-pad"
+              inputMode="decimal"
               onChangeText={setFiber}
               selectTextOnFocus
               style={styles.input}

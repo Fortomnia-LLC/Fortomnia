@@ -435,7 +435,7 @@ export default function AddNutritionEntryScreen() {
 
         <Text style={styles.label}>Calories</Text>
         <TextInput
-          keyboardType="number-pad"
+          inputMode="numeric"
           onChangeText={setCalories}
           placeholder="0"
           placeholderTextColor="#727885"
@@ -447,7 +447,7 @@ export default function AddNutritionEntryScreen() {
           <View style={styles.macroInputGroup}>
             <Text style={styles.label}>Protein (g)</Text>
             <TextInput
-              keyboardType="decimal-pad"
+              inputMode="decimal"
               onChangeText={setProtein}
               placeholder="0"
               placeholderTextColor="#727885"
@@ -459,7 +459,7 @@ export default function AddNutritionEntryScreen() {
           <View style={styles.macroInputGroup}>
             <Text style={styles.label}>Carbs (g)</Text>
             <TextInput
-              keyboardType="decimal-pad"
+              inputMode="decimal"
               onChangeText={setCarbs}
               placeholder="0"
               placeholderTextColor="#727885"
@@ -473,7 +473,7 @@ export default function AddNutritionEntryScreen() {
           <View style={styles.macroInputGroup}>
             <Text style={styles.label}>Fat (g)</Text>
             <TextInput
-              keyboardType="decimal-pad"
+              inputMode="decimal"
               onChangeText={setFat}
               placeholder="0"
               placeholderTextColor="#727885"
@@ -485,7 +485,7 @@ export default function AddNutritionEntryScreen() {
           <View style={styles.macroInputGroup}>
             <Text style={styles.label}>Fiber (g)</Text>
             <TextInput
-              keyboardType="decimal-pad"
+              inputMode="decimal"
               onChangeText={setFiber}
               placeholder="0"
               placeholderTextColor="#727885"

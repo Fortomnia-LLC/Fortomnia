@@ -226,7 +226,7 @@ export default function RecoveryCheckInScreen() {
           <Text style={styles.label}>Sleep duration</Text>
           <TextInput
             accessibilityLabel="Sleep duration in hours"
-            keyboardType="decimal-pad"
+            inputMode="decimal"
             onChangeText={setSleepHours}
             placeholder="Hours, for example 7.5"
             placeholderTextColor="#727885"
@@ -279,7 +279,7 @@ export default function RecoveryCheckInScreen() {
           </Text>
           <TextInput
             accessibilityLabel={`Body weight in ${preferredWeightUnit}`}
-            keyboardType="decimal-pad"
+            inputMode="decimal"
             onChangeText={setBodyWeight}
             placeholder={`Weight in ${preferredWeightUnit}`}
             placeholderTextColor="#727885"
