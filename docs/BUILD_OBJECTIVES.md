@@ -15,6 +15,9 @@ This document captures product objectives and backlog ideas for Fortomnia. Items
   - Drop sets
   - Supersets
 - Add a clear **Next set** action from the exercise workflow.
+- When a planned exercise is skipped, make **Log next set** continue from the most recently logged exercise instead of the skipped exercise.
+- Allow users to adjust an active workout or its template mid-session without changing already completed sets.
+- Add optional active-rest selections for rest periods, with movements filtered for the current workout and user capabilities.
 - Group sets for the same exercise together within a workout.
 - Define and explore an anabolic/catabolic feature. Possible interpretations must be evaluated before implementation, such as an educational recovery indicator, nutrition state, or training-readiness concept. It must not present unsupported medical claims.
 
@@ -24,12 +27,14 @@ This document captures product objectives and backlog ideas for Fortomnia. Items
 - Allocate daily nutrition targets across the selected number of meals instead of assuming breakfast, lunch, and dinner.
 - Support calorie goals that vary by day.
 - Add barcode scanning for foods.
+- Add water intake logging with a clear daily total and goal.
 
 ## Supplements
 
 - Add barcode scanning for supplements.
 - Clear the supplement form after successful submission.
 - Support selecting multiple supplement schedule days and recurring patterns, including examples such as Monday/Wednesday/Friday.
+- Support twice-daily supplement schedules with distinct morning and evening logging.
 - Define what **biweekly** means in scheduling before implementation: twice per week or every two weeks.
 
 ## Forms and workflow quality
@@ -37,6 +42,7 @@ This document captures product objectives and backlog ideas for Fortomnia. Items
 - Fix the custom-exercise form so it clears after successful submission.
 - Verify that failed submissions retain the user's entered values.
 - Keep exercise and supplement form behavior consistent.
+- Use numerical keypads for numerical fields such as weight, repetitions, duration, macros, water, and supplement amounts.
 
 ## Notifications
 
@@ -48,6 +54,8 @@ Add configurable reminders for:
 - End-of-day review/check-in
 
 Notification design must include permission handling, time-zone behavior, quiet hours, per-category controls, and clear opt-out settings.
+
+- Explore iOS Live Activities for active workouts and rest timers, and define an intentional Android equivalent.
 
 ## Health integrations
 
@@ -76,14 +84,18 @@ Notification design must include permission handling, time-zone behavior, quiet 
 ### Near-term product quality
 
 - Clear custom-exercise and supplement forms after successful submission
-- Multi-day supplement scheduling
+- Multi-day and twice-daily supplement scheduling
 - Meal-count-based nutrition targets
+- Water logging
+- Numerical keyboard consistency
+- Active-workout template editing and skipped-exercise next-set behavior
 - Variable calorie goals
 - Notification foundations
 
 ### Platform and expansion work
 
 - Food and supplement barcode scanning
+- iOS Live Activities and an Android equivalent
 - HealthKit and Android health integration
 - Exercise-library expansion
 - Gym equipment selection and collaboration features
@@ -101,3 +113,6 @@ Before these objectives become implementation tickets, resolve:
 6. Which HealthKit data should Fortomnia read, write, or both?
 7. What does a “specific gym” collaboration need to provide beyond equipment availability?
 8. What user benefit is intended by “anabolic/catabolic,” and can it be delivered without implying a medical measurement?
+9. Should active-rest options be user-authored, coach-authored, or selected from a safe built-in library?
+10. Should mid-session workout edits update the reusable template, only the current workout, or prompt for either?
+11. Which active-workout and rest-timer states belong in iOS Live Activities, and what is the Android equivalent?
