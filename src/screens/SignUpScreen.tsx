@@ -12,6 +12,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  View,
 } from 'react-native';
 import { supabase } from '../lib/supabase';
 
@@ -73,17 +74,19 @@ export default function SignUpScreen() {
           style={styles.keyboardView}
         >
           <ScrollView
+            contentInsetAdjustmentBehavior="automatic"
             contentContainerStyle={styles.content}
             keyboardDismissMode="interactive"
             keyboardShouldPersistTaps="handled"
           >
-        <Text style={styles.eyebrow}>FORTOMNIA</Text>
-        <Text style={styles.title}>Create account</Text>
-        <Text style={styles.subtitle}>
+          <View style={styles.form}>
+        <Text maxFontSizeMultiplier={1.4} style={styles.eyebrow}>FORTOMNIA</Text>
+        <Text maxFontSizeMultiplier={1.4} style={styles.title}>Create account</Text>
+        <Text maxFontSizeMultiplier={1.4} style={styles.subtitle}>
           Start tracking your training and progress.
         </Text>
 
-        <TextInput
+        <TextInput maxFontSizeMultiplier={1.4}
           accessibilityLabel="Email address"
           autoCapitalize="none"
           autoComplete="email"
@@ -95,7 +98,7 @@ export default function SignUpScreen() {
           value={email}
         />
 
-        <TextInput
+        <TextInput maxFontSizeMultiplier={1.4}
           accessibilityLabel="Password"
           autoCapitalize="none"
           autoComplete="new-password"
@@ -107,7 +110,7 @@ export default function SignUpScreen() {
           value={password}
         />
 
-        <TextInput
+        <TextInput maxFontSizeMultiplier={1.4}
           accessibilityLabel="Confirm password"
           autoCapitalize="none"
           autoComplete="new-password"
@@ -120,7 +123,7 @@ export default function SignUpScreen() {
         />
 
         {errorMessage ? (
-          <Text
+          <Text maxFontSizeMultiplier={1.4}
             accessibilityLiveRegion="polite"
             accessibilityRole="alert"
             style={styles.error}
@@ -143,7 +146,7 @@ export default function SignUpScreen() {
           {isSubmitting ? (
             <ActivityIndicator color="#0B0D10" />
           ) : (
-            <Text style={styles.buttonText}>Create account</Text>
+            <Text maxFontSizeMultiplier={1.4} style={styles.buttonText}>Create account</Text>
           )}
         </Pressable>
 
@@ -151,8 +154,9 @@ export default function SignUpScreen() {
           accessibilityLabel="Already have an account? Sign in"
           accessibilityRole="link"
            onPress={() => router.back()} style={styles.link}>
-          <Text style={styles.linkText}>Already have an account? Sign in</Text>
+          <Text maxFontSizeMultiplier={1.4} style={styles.linkText}>Already have an account? Sign in</Text>
         </Pressable>
+                  </View>
                 </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -168,10 +172,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
+    alignItems: 'center',
     flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: 24,
     paddingVertical: 32,
+  },
+  form: {
+    maxWidth: 560,
+    width: '100%',
   },
   eyebrow: {
     color: '#F59E0B',

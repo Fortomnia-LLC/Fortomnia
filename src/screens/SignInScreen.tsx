@@ -11,6 +11,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  View,
 } from 'react-native';
 
 import { supabase } from '../../src/lib/supabase';
@@ -76,17 +77,19 @@ export default function SignInScreen() {
           style={styles.keyboardView}
         >
           <ScrollView
+            contentInsetAdjustmentBehavior="automatic"
             contentContainerStyle={styles.content}
             keyboardDismissMode="interactive"
             keyboardShouldPersistTaps="handled"
           >
-        <Text style={styles.eyebrow}>FORTOMNIA</Text>
-        <Text style={styles.title}>Welcome back</Text>
-        <Text style={styles.subtitle}>
+          <View style={styles.form}>
+        <Text maxFontSizeMultiplier={1.4} style={styles.eyebrow}>FORTOMNIA</Text>
+        <Text maxFontSizeMultiplier={1.4} style={styles.title}>Welcome back</Text>
+        <Text maxFontSizeMultiplier={1.4} style={styles.subtitle}>
           Strength in Everything.
         </Text>
 
-        <TextInput
+        <TextInput maxFontSizeMultiplier={1.4}
           accessibilityLabel="Email address"
           autoCapitalize="none"
           autoComplete="email"
@@ -98,7 +101,7 @@ export default function SignInScreen() {
           value={email}
         />
 
-        <TextInput
+        <TextInput maxFontSizeMultiplier={1.4}
           accessibilityLabel="Password"
           autoCapitalize="none"
           autoComplete="password"
@@ -117,18 +120,18 @@ export default function SignInScreen() {
             onPress={handleForgotPassword}
             style={styles.resetLink}
           >
-            <Text style={styles.resetLinkText}>
+            <Text maxFontSizeMultiplier={1.4} style={styles.resetLinkText}>
               {isSendingReset ? 'Sending reset email…' : 'Forgot password?'}
             </Text>
           </Pressable>
 
           {resetMessage ? (
-            <Text accessibilityLiveRegion="polite" style={styles.status}>
+            <Text maxFontSizeMultiplier={1.4} accessibilityLiveRegion="polite" style={styles.status}>
               {resetMessage}
             </Text>
           ) : null}
         {errorMessage ? (
-          <Text
+          <Text maxFontSizeMultiplier={1.4}
             accessibilityLiveRegion="polite"
             accessibilityRole="alert"
             style={styles.error}
@@ -151,7 +154,7 @@ export default function SignInScreen() {
           {isSubmitting ? (
             <ActivityIndicator color="#0B0D10" />
           ) : (
-            <Text style={styles.buttonText}>Sign in</Text>
+            <Text maxFontSizeMultiplier={1.4} style={styles.buttonText}>Sign in</Text>
           )}
         </Pressable>
              <Link href="/sign-up" asChild>
@@ -164,7 +167,7 @@ export default function SignInScreen() {
               paddingVertical: 8,
             }}
           >
-            <Text
+            <Text maxFontSizeMultiplier={1.4}
               style={{
                 color: '#F59E0B',
                 fontSize: 15,
@@ -175,6 +178,7 @@ export default function SignInScreen() {
             </Text>
           </Pressable>
         </Link>
+            </View>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -190,10 +194,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
+    alignItems: 'center',
     flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: 24,
     paddingVertical: 32,
+  },
+  form: {
+    maxWidth: 560,
+    width: '100%',
   },
   eyebrow: {
     color: '#F59E0B',
