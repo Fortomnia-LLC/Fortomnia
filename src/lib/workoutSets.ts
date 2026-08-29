@@ -136,7 +136,13 @@ export function getNextWorkoutSet(
   };
   const mostRecentStandardSet = [...sets]
     .reverse()
-    .find((set) => set.set_variant === "standard");
+    .find(
+      (set) =>
+        set.set_variant === "standard" &&
+        orderedExercises.some(
+          (exercise) => exercise.exercise_id === set.exercise_id,
+        ),
+    );
   const mostRecentExercise = mostRecentStandardSet
     ? orderedExercises.find(
         (exercise) =>
@@ -152,7 +158,25 @@ export function getNextWorkoutSet(
     return buildNextSet(mostRecentExercise);
   }
 
-  for (const exercise of orderedExercises) {
+  const currentBlockPosition = mostRecentExercise
+    ? Math.min(
+        ...orderedExercises
+          .filter((exercise) =>
+            mostRecentExercise.superset_group
+              ? exercise.superset_group === mostRecentExercise.superset_group
+              : exercise.exercise_id === mostRecentExercise.exercise_id,
+          )
+          .map((exercise) => exercise.position),
+      )
+    : null;
+  const remainingExercises =
+    currentBlockPosition === null
+      ? orderedExercises
+      : orderedExercises.filter(
+          (exercise) => exercise.position >= currentBlockPosition,
+        );
+
+  for (const exercise of remainingExercises) {
     const block = exercise.superset_group
       ? orderedExercises.filter(
           (item) => item.superset_group === exercise.superset_group,
