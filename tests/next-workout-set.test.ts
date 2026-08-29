@@ -107,6 +107,27 @@ test("advances to the next exercise after the target is complete", () => {
   assert.equal(result.lastSet, null);
 });
 
+test("keeps moving forward after completing a later exercise", () => {
+  const result = getNextWorkoutSet(
+    [
+      logged("bench-1", "bench", 1),
+      logged("curl-1", "curl", 1),
+      logged("curl-2", "curl", 2),
+    ],
+    [
+      planned("bench", "Bench", 1, 3),
+      planned("row", "Row", 2, 3),
+      planned("curl", "Curl", 3, 2),
+      planned("pressdown", "Pressdown", 4, 3),
+    ],
+  );
+
+  assert.ok(result);
+  assert.equal(result.exercise.exercise_id, "pressdown");
+  assert.equal(result.setNumber, 1);
+  assert.equal(result.lastSet, null);
+});
+
 test("returns no action when every planned target is complete", () => {
   const result = getNextWorkoutSet(
     [logged("bench-1", "bench", 1)],
