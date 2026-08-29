@@ -13,8 +13,8 @@ export const SPECIALTY_EQUIPMENT_OPTIONS: SpecialtyEquipmentOption[] = [
   { slug: "kratos_mammoth_bar", label: "Kratos / Mammoth Deadlift Bar", sports: ["strongman"], keywords: ["deadlift", "strongman"] },
   { slug: "farmer_handles", label: "Farmer Handles", sports: ["strongman"], keywords: ["farmer", "carry", "strongman"] },
   { slug: "thumb_blaster_2in", label: "2-inch Thumb Blaster", sports: ["grip_sport"], keywords: ["thumb", "pinch", "grip"] },
-  { slug: "nightmare_hercules_handles_2in", label: "2-inch Nightmare Hercules Handles", sports: ["grip_sport"], keywords: ["hercules", "support grip", "grip"] },
-  { slug: "thick_handle_hammer", label: "Thick Handled Heavy Hammer", sports: ["grip_sport"], keywords: ["hammer", "thick handle", "grip"] },
+  { slug: "nightmare_hercules_2in", label: "2-inch Nightmare Hercules Handles", sports: ["grip_sport"], keywords: ["hercules", "support grip", "grip"] },
+  { slug: "thick_handled_heavy_hammer", label: "Thick Handled Heavy Hammer", sports: ["grip_sport"], keywords: ["hammer", "thick handle", "grip"] },
   { slug: "pinch_block", label: "Pinch Block", sports: ["grip_sport"], keywords: ["pinch", "thumb", "grip"] },
   { slug: "loading_pin", label: "Loading Pin", sports: ["grip_sport"], keywords: ["loading pin", "grip"] },
 ];
