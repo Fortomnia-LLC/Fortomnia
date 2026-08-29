@@ -3,6 +3,7 @@ import { useFocusEffect } from 'expo-router';
 
 import { useAuth } from '../providers/AuthProvider';
 import { supabase } from '../lib/supabase';
+import type { TrainingLocation } from '../lib/coachQuestionnaire';
 import type {
   TrainingGoal,
   TrainingStyle,
@@ -13,6 +14,22 @@ export type Profile = {
   activity_level: "sedentary" | "light" | "moderate" | "very_active";
   age_years: number | null;
   calorie_direction: "lose" | "maintain" | "gain";
+  coach_cardio_focus: string | null;
+  coach_mobility_focus: string | null;
+  coach_nutrition_focus: string | null;
+  coach_preferred_cardio: string[];
+  coach_primary_focus: string | null;
+  coach_priority_metric_current: number | null;
+  coach_priority_metric_name: string | null;
+  coach_priority_metric_target: number | null;
+  coach_priority_metric_unit: string | null;
+  coach_session_minutes: number | null;
+  coach_sports: string[];
+  coach_target_event_date: string | null;
+  coach_target_event_name: string | null;
+  coach_training_location_details: string | null;
+  coach_training_locations: TrainingLocation[];
+  coach_weekly_training_days: number | null;
   equation_sex: "female" | "male" | null;
   favorite_athletes: string[];
   height_cm: number | null;
@@ -43,7 +60,7 @@ export function useProfile() {
     const { data, error } = await supabase
       .from('profiles')
       .select(
-        'id, display_name, preferred_weight_unit, training_goals, training_style, favorite_athletes, age_years, height_cm, weight_kg, equation_sex, activity_level, calorie_direction, available_equipment',
+        'id, display_name, preferred_weight_unit, training_goals, training_style, favorite_athletes, age_years, height_cm, weight_kg, equation_sex, activity_level, calorie_direction, available_equipment, coach_primary_focus, coach_target_event_name, coach_target_event_date, coach_training_locations, coach_training_location_details, coach_weekly_training_days, coach_session_minutes, coach_sports, coach_priority_metric_name, coach_priority_metric_current, coach_priority_metric_target, coach_priority_metric_unit, coach_nutrition_focus, coach_cardio_focus, coach_mobility_focus, coach_preferred_cardio',
       )
       .eq('id', session.user.id)
       .single();
