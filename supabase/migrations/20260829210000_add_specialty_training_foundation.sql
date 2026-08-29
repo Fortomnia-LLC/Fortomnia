@@ -73,14 +73,27 @@ create table public.competition_event_exercise_transfer (
   primary key (event_id, exercise_id)
 );
 
--- Generalized performance fields extend the existing set engine rather than replacing it.
+-- Fortomnia already stores time in duration_seconds and distance in metric_value/metric_unit.
+-- Specialty work adds intent, attempt tracking, and success/failure without duplicating those metrics.
 alter table public.workout_sets
-  add column performance_intent text,
-  add column duration_seconds numeric(8,2) check (duration_seconds is null or duration_seconds >= 0),
-  add column distance numeric(10,2) check (distance is null or distance >= 0),
-  add column distance_unit text check (distance_unit is null or distance_unit in ('ft','m','yd','mi','km')),
-  add column attempt_number integer check (attempt_number is null or attempt_number > 0),
-  add column successful boolean;
+  add column if not exists performance_intent text,
+  add column if not exists attempt_number integer,
+  add column if not exists successful boolean;
+
+alter table public.workout_sets
+  drop constraint if exists workout_sets_attempt_number_check,
+  drop constraint if exists workout_sets_performance_intent_check;
+
+alter table public.workout_sets
+  add constraint workout_sets_attempt_number_check
+    check (attempt_number is null or attempt_number > 0),
+  add constraint workout_sets_performance_intent_check
+    check (
+      performance_intent is null or performance_intent in (
+        'standard_sets', 'hold_for_time', 'timed_reps', 'max_lift',
+        'carry_for_distance', 'series_for_time', 'carry_series_for_time', 'medley'
+      )
+    );
 
 alter table public.performance_qualities enable row level security;
 alter table public.specialty_implements enable row level security;
@@ -145,7 +158,6 @@ insert into public.competition_events (slug, name, sport, objective, measurement
   ('strongman_sandbag_series', 'Sandbag to Shoulder Series', 'strongman', 'completion_then_time', array['weight','reps','time','completion'], 'series_for_time', 75, 1, '{"sequential":true,"down_command":true}'::jsonb),
   ('strongman_stall_mat_stack', 'Stall Mat OCD Stack', 'strongman', 'min_time', array['distance','time','completion'], 'carry_series_for_time', null, 1, '{"mat_count":3,"course_ft":30,"stack_tolerance_in":1}'::jsonb);
 
--- Connect event implements.
 insert into public.competition_event_implements (event_id, implement_id)
 select e.id, i.id from public.competition_events e join public.specialty_implements i on
   (e.slug = 'grip_thumb_blaster_max' and i.slug = 'thumb_blaster_2in') or
@@ -157,7 +169,6 @@ select e.id, i.id from public.competition_events e join public.specialty_impleme
   (e.slug = 'strongman_conans_wheel' and i.slug = 'conans_wheel') or
   (e.slug = 'strongman_sandbag_series' and i.slug = 'sandbag');
 
--- Seed the qualities needed to reason about these real competition examples.
 insert into public.competition_event_qualities (event_id, quality_id, emphasis)
 select e.id, q.id, case when
   (e.slug in ('grip_nightmare_hercules','strongman_hercules_hold') and q.slug in ('grip_endurance','support_grip')) or
