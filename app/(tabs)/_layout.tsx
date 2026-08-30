@@ -19,10 +19,10 @@ export default function TabLayout() {
       <Tabs.Screen name="nutrition" options={{ tabBarIcon: ({ color, focused, size }) => <Ionicons color={color} name={focused ? "restaurant" : "restaurant-outline"} size={size} />, title: "Nutrition" }} />
       <Tabs.Screen name="supplements" options={{ tabBarIcon: ({ color, focused, size }) => <Ionicons color={color} name={focused ? "medical" : "medical-outline"} size={size} />, title: "Supps" }} />
       <Tabs.Screen name="profile" options={{ tabBarIcon: ({ color, focused, size }) => <Ionicons color={color} name={focused ? "person" : "person-outline"} size={size} />, title: "Profile" }} />
+      <Tabs.Screen name="health-recovery" options={{ tabBarIcon: ({ color, focused, size }) => <Ionicons color={color} name={focused ? "heart" : "heart-outline"} size={size} />, title: "Health" }} />
       <Tabs.Screen name="ai-coach" options={{ href: null }} />
       <Tabs.Screen name="coach-questionnaire" options={{ href: null }} />
       <Tabs.Screen name="program-builder" options={{ href: null }} />
-      <Tabs.Screen name="health-recovery" options={{ href: null }} />
       <Tabs.Screen name="new-workout" options={{ href: null }} />
       <Tabs.Screen name="new-template" options={{ href: null }} />
       <Tabs.Screen name="new-nutrition-entry" options={{ href: null }} />
