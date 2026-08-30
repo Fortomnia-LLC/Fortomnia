@@ -1,6 +1,10 @@
 import FortomniaHealth from "../../../modules/fortomnia-health";
 import type { NativeHealthMetric } from "../../../modules/fortomnia-health/src/FortomniaHealth.types";
-import type { FortomniaHealthProvider, HealthQuery } from "./healthProvider";
+import {
+  DEFAULT_HEALTH_READ_METRICS,
+  type FortomniaHealthProvider,
+  type HealthQuery,
+} from "./healthProvider";
 import type { DailyHealthSummary, HealthAuthorization, HealthMetric, HealthSample } from "./healthTypes";
 import { summarizeHealthDay, summarizeHealthRange } from "./healthNormalization";
 
@@ -9,6 +13,14 @@ function dayBoundary(date: string, endOfDay = false): string {
 }
 
 const nativeMetrics = (metrics: HealthMetric[]) => metrics as NativeHealthMetric[];
+
+export async function getAppleHealthAuthorizationRequestStatus() {
+  if (!FortomniaHealth.isAvailable()) return "unavailable" as const;
+  return FortomniaHealth.getAuthorizationRequestStatus(
+    nativeMetrics(DEFAULT_HEALTH_READ_METRICS),
+    [],
+  );
+}
 
 export const appleHealthProvider: FortomniaHealthProvider = {
   provider: "apple_health",
