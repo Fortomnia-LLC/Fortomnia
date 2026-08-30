@@ -11,7 +11,10 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { appleHealthProvider } from "../lib/health/appleHealthProvider";
+import {
+  appleHealthProvider,
+  getAppleHealthAuthorizationRequestStatus,
+} from "../lib/health/appleHealthProvider";
 import { DEFAULT_HEALTH_READ_METRICS } from "../lib/health/healthProvider";
 import {
   clearAppleHealthConnection,
@@ -146,9 +149,10 @@ export default function HealthRecoveryScreen() {
         if (!isAvailable) return;
 
         const stored = await loadAppleHealthConnection();
-        if (!active || !stored) return;
+        const requestStatus = await getAppleHealthAuthorizationRequestStatus();
+        if (!active || requestStatus !== "unnecessary") return;
 
-        setLastSyncedAt(stored.lastSyncedAt);
+        if (stored) setLastSyncedAt(stored.lastSyncedAt);
         setDataMode("apple_health");
         await loadAppleHealth();
       } catch (error) {
