@@ -21,6 +21,7 @@ import {
   loadAppleHealthConnection,
   saveAppleHealthConnection,
 } from "../lib/health/healthConnectionStorage";
+import { shouldRestoreAppleHealth } from "../lib/health/healthConnection";
 import {
   assessRecoveryBaseline,
   RECOVERY_BASELINE_WINDOW_DAYS,
@@ -105,8 +106,10 @@ export default function HealthRecoveryScreen() {
     );
     applySummaries(summaries);
     const syncedAt = new Date().toISOString();
-    await saveAppleHealthConnection(syncedAt);
     setLastSyncedAt(syncedAt);
+    void saveAppleHealthConnection(syncedAt).catch((error) => {
+      console.warn("Unable to save Apple Health sync metadata", error);
+    });
   }, [applySummaries]);
 
   const refresh = useCallback(async () => {
@@ -148,15 +151,20 @@ export default function HealthRecoveryScreen() {
         setAvailable(isAvailable);
         if (!isAvailable) return;
 
-        const stored = await loadAppleHealthConnection();
+        const stored = await loadAppleHealthConnection().catch((error) => {
+          console.warn("Unable to restore Apple Health sync metadata", error);
+          return null;
+        });
         const requestStatus = await getAppleHealthAuthorizationRequestStatus();
-        if (!active || requestStatus !== "unnecessary") return;
+        if (!active || !shouldRestoreAppleHealth(isAvailable, requestStatus)) return;
 
         if (stored) setLastSyncedAt(stored.lastSyncedAt);
         setDataMode("apple_health");
         await loadAppleHealth();
       } catch (error) {
-        await clearAppleHealthConnection();
+        void clearAppleHealthConnection().catch((storageError) => {
+          console.warn("Unable to clear Apple Health sync metadata", storageError);
+        });
         if (active) {
           setDataMode("disconnected");
           setLastSyncedAt(null);

@@ -4,13 +4,17 @@ import test from "node:test";
 import { deduplicateHealthSamples, summarizeHealthDay } from "../src/lib/health/healthNormalization.ts";
 import type { HealthSample } from "../src/lib/health/healthTypes";
 
+function localTimestamp(hour: number, minute = 0) {
+  return new Date(2026, 7, 29, hour, minute).toISOString();
+}
+
 const samples: HealthSample[] = [
-  { id: "1", provider: "apple_health", metric: "steps", startAt: "2026-08-29T08:00:00-05:00", value: 1200, unit: "count", externalId: "steps-1" },
-  { id: "duplicate", provider: "apple_health", metric: "steps", startAt: "2026-08-29T08:00:00-05:00", value: 1200, unit: "count", externalId: "steps-1" },
-  { id: "2", provider: "apple_health", metric: "steps", startAt: "2026-08-29T12:00:00-05:00", value: 800, unit: "count", externalId: "steps-2" },
-  { id: "3", provider: "apple_health", metric: "resting_heart_rate", startAt: "2026-08-29T07:00:00-05:00", value: 58, unit: "bpm" },
-  { id: "4", provider: "apple_health", metric: "heart_rate_variability", startAt: "2026-08-29T07:05:00-05:00", value: 52, unit: "ms" },
-  { id: "5", provider: "apple_health", metric: "sleep", startAt: "2026-08-29T00:00:00-05:00", value: 455, unit: "min" },
+  { id: "1", provider: "apple_health", metric: "steps", startAt: localTimestamp(8), value: 1200, unit: "count", externalId: "steps-1" },
+  { id: "duplicate", provider: "apple_health", metric: "steps", startAt: localTimestamp(8), value: 1200, unit: "count", externalId: "steps-1" },
+  { id: "2", provider: "apple_health", metric: "steps", startAt: localTimestamp(12), value: 800, unit: "count", externalId: "steps-2" },
+  { id: "3", provider: "apple_health", metric: "resting_heart_rate", startAt: localTimestamp(7), value: 58, unit: "bpm" },
+  { id: "4", provider: "apple_health", metric: "heart_rate_variability", startAt: localTimestamp(7, 5), value: 52, unit: "ms" },
+  { id: "5", provider: "apple_health", metric: "sleep", startAt: localTimestamp(0), value: 455, unit: "min" },
 ];
 
 test("deduplicates provider samples using external IDs", () => {
@@ -56,4 +60,17 @@ test("averages multiple HRV readings within a day", () => {
   ];
 
   assert.equal(summarizeHealthDay("2026-08-29", readings).heartRateVariabilityMs, 50);
+});
+
+test("groups UTC HealthKit timestamps by the device-local calendar day", () => {
+  const lateLocalSample: HealthSample = {
+    id: "late-steps",
+    provider: "apple_health",
+    metric: "steps",
+    startAt: localTimestamp(23, 30),
+    value: 250,
+    unit: "count",
+  };
+
+  assert.equal(summarizeHealthDay("2026-08-29", [lateLocalSample]).steps, 250);
 });
