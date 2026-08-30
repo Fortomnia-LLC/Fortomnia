@@ -226,6 +226,18 @@ export default function HealthRecoveryScreen() {
     [summary],
   );
 
+  const hasReadableHealthData = Boolean(
+    summary &&
+      [
+        summary.sleepMinutes,
+        summary.restingHeartRateBpm,
+        summary.heartRateVariabilityMs,
+        summary.steps,
+        summary.activeEnergyKcal,
+        summary.workoutMinutes,
+      ].some((value) => typeof value === "number"),
+  );
+
   const sourceLabel =
     dataMode === "preview"
       ? "Preview data — not your health information"
@@ -292,6 +304,16 @@ export default function HealthRecoveryScreen() {
         </View>
 
         {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
+        {!loading && dataMode === "apple_health" && !hasReadableHealthData ? (
+          <View style={styles.dataNotice}>
+            <Ionicons name="information-circle-outline" size={20} color="#FBBF24" />
+            <Text style={styles.dataNoticeText}>
+              Apple Health is connected, but no recent samples were returned. Apple does
+              not reveal whether read access was declined or data is unavailable. Check
+              Health access in Settings and confirm your watch has synced, then refresh.
+            </Text>
+          </View>
+        ) : null}
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>TODAY&apos;S SIGNALS</Text>
@@ -412,6 +434,8 @@ const styles = StyleSheet.create({
   previewButton: { paddingVertical: 7, alignItems: "center" },
   previewButtonText: { color: "#93C5FD", fontSize: 13, fontWeight: "700" },
   error: { color: "#FDA4AF", backgroundColor: "#2A1218", padding: 12, borderRadius: 10, fontSize: 13, lineHeight: 19 },
+  dataNotice: { alignItems: "flex-start", backgroundColor: "#261F0D", borderColor: "#594513", borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 10, padding: 12 },
+  dataNoticeText: { color: "#FDE68A", flex: 1, fontSize: 13, lineHeight: 19 },
   sectionHeader: { marginTop: 4 },
   sectionTitle: { color: "#D1D5DB", fontSize: 12, fontWeight: "800", letterSpacing: 1 },
   sectionHint: { color: "#6B7280", fontSize: 12, marginTop: 4 },
