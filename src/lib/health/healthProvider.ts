@@ -19,6 +19,7 @@ export interface FortomniaHealthProvider {
   requestAuthorization(read: HealthMetric[], write?: HealthMetric[]): Promise<HealthAuthorization>;
   readSamples(query: HealthQuery): Promise<HealthSample[]>;
   readDailySummary(date: string): Promise<DailyHealthSummary>;
+  readDailySummaries(startDate: string, endDate: string): Promise<DailyHealthSummary[]>;
   writeSamples(samples: HealthSample[]): Promise<void>;
 }
 

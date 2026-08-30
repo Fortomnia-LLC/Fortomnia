@@ -104,7 +104,13 @@ public class FortomniaHealthModule: Module {
        let preferred = preferredUnit(for: metric) {
       value = quantity.quantity.doubleValue(for: preferred.0)
       unit = preferred.1
-    } else if sample is HKCategorySample, metric == "sleep" {
+    } else if let category = sample as? HKCategorySample, metric == "sleep" {
+      // HealthKit may return overlapping in-bed, awake, and asleep-stage
+      // samples. Only asleep categories should contribute to sleep duration.
+      if category.value == HKCategoryValueSleepAnalysis.inBed.rawValue ||
+          category.value == HKCategoryValueSleepAnalysis.awake.rawValue {
+        return nil
+      }
       value = sample.endDate.timeIntervalSince(sample.startDate) / 60
       unit = "min"
     } else if let workout = sample as? HKWorkout, metric == "workout" {

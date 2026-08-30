@@ -54,3 +54,42 @@ export type RecoverySignals = {
   recentWorkoutMinutes?: number | null;
   sourceDays: number;
 };
+
+export type RecoveryBaselineMetric =
+  | "sleepMinutes"
+  | "restingHeartRateBpm"
+  | "heartRateVariabilityMs";
+
+export type RecoverySignalStatus =
+  | "positive"
+  | "within_range"
+  | "caution"
+  | "concern"
+  | "insufficient_data";
+
+export type RecoverySignalComparison = {
+  baseline: number | null;
+  current: number | null;
+  deltaPercentage: number | null;
+  label: string;
+  metric: RecoveryBaselineMetric;
+  observationDays: number;
+  status: RecoverySignalStatus;
+  summary: string;
+  unit: "min" | "bpm" | "ms";
+};
+
+export type RecoveryAssessmentBand =
+  | "building_baseline"
+  | "recover"
+  | "adjust"
+  | "ready";
+
+export type RecoveryAssessment = {
+  baselineDays: number;
+  band: RecoveryAssessmentBand;
+  comparisons: RecoverySignalComparison[];
+  explanation: string;
+  headline: string;
+  recommendation: string;
+};
