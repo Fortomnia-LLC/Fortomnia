@@ -25,8 +25,8 @@ public class FortomniaHealthModule: Module {
 
     AsyncFunction("readSamples") { (metrics: [String], startAt: String, endAt: String) async throws -> [[String: Any?]] in
       guard
-        let start = ISO8601DateFormatter().date(from: startAt),
-        let end = ISO8601DateFormatter().date(from: endAt)
+        let start = self.date(from: startAt),
+        let end = self.date(from: endAt)
       else {
         throw HealthModuleError.invalidDate
       }
@@ -37,6 +37,17 @@ public class FortomniaHealthModule: Module {
       }
       return output
     }
+  }
+
+  private func date(from value: String) -> Date? {
+    let fractionalFormatter = ISO8601DateFormatter()
+    fractionalFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+
+    if let date = fractionalFormatter.date(from: value) {
+      return date
+    }
+
+    return ISO8601DateFormatter().date(from: value)
   }
 
   private func sampleType(for metric: String) -> HKSampleType? {
