@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   navigationText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 16,
     fontWeight: "700",
   },
@@ -261,7 +261,6 @@ const styles = StyleSheet.create({
   subtitle: {
     color: "#9CA3AF",
     fontSize: 15,
-    lineHeight: 22,
     marginBottom: 22,
     marginTop: 8,
   },
@@ -307,12 +306,11 @@ const styles = StyleSheet.create({
   heroRecommendation: {
     color: "#D1D5DB",
     fontSize: 14,
-    lineHeight: 21,
     marginTop: 10,
   },
   primaryButton: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: "#2563EB",
     borderRadius: 10,
     marginTop: 18,
     paddingVertical: 12,
@@ -338,7 +336,6 @@ const styles = StyleSheet.create({
   emptyText: {
     color: "#9CA3AF",
     fontSize: 14,
-    lineHeight: 21,
     marginTop: 7,
   },
   card: {
@@ -357,7 +354,6 @@ const styles = StyleSheet.create({
   sectionDescription: {
     color: "#9CA3AF",
     fontSize: 13,
-    lineHeight: 19,
     marginTop: 5,
   },
   chart: {
@@ -442,13 +438,11 @@ const styles = StyleSheet.create({
   emptyInline: {
     color: "#9CA3AF",
     fontSize: 13,
-    lineHeight: 19,
     marginTop: 14,
   },
   footerNotice: {
     color: "#6B7280",
     fontSize: 11,
-    lineHeight: 17,
     textAlign: "center",
   },
 });

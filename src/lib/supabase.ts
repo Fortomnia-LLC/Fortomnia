@@ -7,6 +7,7 @@ import {
 import * as SecureStore from 'expo-secure-store';
 
 import { supabasePublishableKey, supabaseUrl } from './env';
+import { createJwtClockSkewRetryFetch } from './supabaseFetch';
 
 const secureStorage = {
   getItem: (key: string) => SecureStore.getItemAsync(key),
@@ -25,6 +26,9 @@ export const supabase = createClient(
       persistSession: true,
       detectSessionInUrl: false,
       lock: processLock,
+    },
+    global: {
+      fetch: createJwtClockSkewRetryFetch(fetch),
     },
   },
 );

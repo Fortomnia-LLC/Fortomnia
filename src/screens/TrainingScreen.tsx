@@ -283,7 +283,6 @@ const styles = StyleSheet.create({
   subtitle: {
     color: "#9CA3AF",
     fontSize: 16,
-    lineHeight: 24,
     marginBottom: 24,
     marginTop: 8,
   },
@@ -354,7 +353,7 @@ const styles = StyleSheet.create({
   },
 startButton: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: "#2563EB",
     borderRadius: 12,
     justifyContent: "center",
     marginBottom: 20,
@@ -371,7 +370,7 @@ startButton: {
     justifyContent: "space-between",
   },
   templateCreateButton: {
-    borderColor: "#F97316",
+    borderColor: "#2563EB",
     borderRadius: 8,
     borderWidth: 1,
     marginBottom: 14,

@@ -13,10 +13,16 @@ import { useWeeklyAnalytics } from "../hooks/useWeeklyAnalytics";
 import { useDailyNutrition } from "../hooks/useDailyNutrition";
 import { useProfile } from "../hooks/useProfile";
 import { useRecoveryCheckIns } from "../hooks/useRecoveryCheckIns";
-import { useSupplements } from "../hooks/useSupplements";
+import {
+  getSupplementLogKey,
+  useSupplements,
+} from "../hooks/useSupplements";
 import { useWorkoutSessions } from "../hooks/useWorkoutSessions";
 import { getLocalDateKey } from "../lib/dates";
-import { isProtocolDue } from "../lib/supplementSchedule";
+import {
+  getSupplementDoseSchedules,
+  isProtocolDue,
+} from "../lib/supplementSchedule";
 import { useAuth } from "../providers/AuthProvider";
 
 export default function DashboardScreen() {
@@ -41,7 +47,7 @@ export default function DashboardScreen() {
   const {
     errorMessage: supplementError,
     isLoading: supplementsLoading,
-    latestLogByProtocol,
+    latestLogByProtocolSlot,
     protocols,
     refreshSupplements,
   } = useSupplements(today);
@@ -80,10 +86,22 @@ export default function DashboardScreen() {
     (protocol) =>
       protocol.is_active && isProtocolDue(protocol, today),
   );
-  const supplementsTaken = scheduledProtocols.filter(
-    (protocol) =>
-      latestLogByProtocol.get(protocol.id)?.status === "taken",
-  ).length;
+  const scheduledSupplementDoses = scheduledProtocols.reduce(
+    (total, protocol) =>
+      total + getSupplementDoseSchedules(protocol).length,
+    0,
+  );
+  const supplementsTaken = scheduledProtocols.reduce(
+    (total, protocol) =>
+      total +
+      getSupplementDoseSchedules(protocol).filter(
+        ({ slot }) =>
+          latestLogByProtocolSlot.get(
+            getSupplementLogKey(protocol.id, slot),
+          )?.status === "taken",
+      ).length,
+    0,
+  );
 
   const caloriePercent =
     goals.calorie_target > 0
@@ -269,12 +287,12 @@ export default function DashboardScreen() {
               {supplementsTaken}
               <Text style={styles.primaryUnit}>
                 {" "}
-                / {scheduledProtocols.length} taken
+                / {scheduledSupplementDoses} taken
               </Text>
             </Text>
 
             <Text style={styles.details}>
-              Scheduled protocols due today
+              Scheduled doses due today
             </Text>
           </Pressable>
         </Link>
@@ -503,7 +521,6 @@ const styles = StyleSheet.create({
   },
   error: {
     color: "#F87171",
-    lineHeight: 20,
     marginBottom: 18,
   },
   sectionTitle: {
@@ -562,12 +579,11 @@ const styles = StyleSheet.create({
   details: {
     color: "#9CA3AF",
     fontSize: 14,
-    lineHeight: 20,
     marginTop: 10,
   },
   primaryButton: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: "#2563EB",
     borderRadius: 10,
     marginTop: 16,
     paddingVertical: 12,
@@ -599,7 +615,6 @@ const styles = StyleSheet.create({
   metricLabel: {
     color: "#D1D5DB",
     fontSize: 12,
-    lineHeight: 17,
     marginTop: 5,
   },
   activityStrip: {
@@ -623,7 +638,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "800",
     height: 24,
-    lineHeight: 24,
     overflow: "hidden",
     textAlign: "center",
     width: 24,
@@ -659,7 +673,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     color: "#9CA3AF",
     fontSize: 13,
-    lineHeight: 19,
     marginTop: 14,
     paddingTop: 14,
   },
@@ -669,7 +682,7 @@ const styles = StyleSheet.create({
   },
   quickButton: {
     alignItems: "center",
-    borderColor: "#F97316",
+    borderColor: "#2563EB",
     borderRadius: 10,
     borderWidth: 1,
     flex: 1,
@@ -677,7 +690,7 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
   },
   quickButtonText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 13,
     fontWeight: "700",
   },
@@ -704,7 +717,6 @@ const styles = StyleSheet.create({
   recoveryCardText: {
     color: "#9CA3AF",
     fontSize: 13,
-    lineHeight: 19,
     marginTop: 5,
   },
   recoveryScoreRow: {

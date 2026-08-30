@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 
@@ -15,7 +16,15 @@ import {
   type NutritionEntry,
   useDailyNutrition,
 } from "../hooks/useDailyNutrition";
+import {
+  getCalorieTargetForDate,
+  WEEKDAY_LABELS,
+} from "../lib/calorieTargets";
 import { getLocalDateKey } from "../lib/dates";
+import { buildMealProgress } from "../lib/mealProgress";
+import { getPerMealTargets } from "../lib/mealTargets";
+import { flOzToMl, mlToFlOz } from "../lib/measurementUnits";
+import { useProfile } from "../hooks/useProfile";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
 type NutritionEntryCardProps = {
@@ -35,7 +44,7 @@ function NutritionEntryCard({
         <View style={styles.entryTitleGroup}>
           <Text style={styles.entryName}>{entry.food_name}</Text>
           <Text style={styles.mealType}>
-            {entry.meal_type.toUpperCase()}
+            {entry.meal_number ? `MEAL ${entry.meal_number}` : entry.meal_type.toUpperCase()}
           </Text>
         </View>
 
@@ -114,17 +123,97 @@ export default function NutritionScreen() {
   const { session } = useAuth();
   const today = getLocalDateKey();
   const [selectedDate, setSelectedDate] = useState(today);
+  const [customWaterAmount, setCustomWaterAmount] = useState("");
+  const [waterErrorMessage, setWaterErrorMessage] = useState<string | null>(
+    null,
+  );
   const isToday = selectedDate === today;
   const {
+    addWater,
+    deleteWater,
     entries,
     errorMessage,
     goals,
     isLoading,
+    isSavingWater,
     refreshNutrition,
     totals,
+    waterEntries,
+    waterTotalMl,
   } = useDailyNutrition(selectedDate);
-  const calorieRemaining =
-    goals.calorie_target - totals.calories;
+  const { profile } = useProfile();
+  const usesFluidOunces = profile?.preferred_weight_unit !== "kg";
+  const waterUnit = usesFluidOunces ? "fl oz" : "mL";
+  const quickWaterAmounts = usesFluidOunces
+    ? [8, 12, 16]
+    : [250, 500, 750];
+  const waterTotal = usesFluidOunces
+    ? mlToFlOz(waterTotalMl)
+    : waterTotalMl;
+  const waterGoal =
+    goals.water_target_ml === null
+      ? null
+      : usesFluidOunces
+        ? mlToFlOz(goals.water_target_ml)
+        : goals.water_target_ml;
+  const effectiveCalorieTarget = getCalorieTargetForDate(
+    goals.calorie_target,
+    goals.weekday_calorie_targets,
+    selectedDate,
+  );
+  const selectedWeekday = new Date(
+    `${selectedDate}T00:00:00Z`,
+  ).getUTCDay();
+  const calorieRemaining = effectiveCalorieTarget - totals.calories;
+  const perMealTargets = getPerMealTargets(
+    { ...goals, calorie_target: effectiveCalorieTarget },
+    goals.meal_count,
+  );
+  const mealProgress = buildMealProgress(entries, goals.meal_count);
+  async function handleAddWater(displayAmount: number) {
+    const amountMl = usesFluidOunces
+      ? flOzToMl(displayAmount)
+      : Math.round(displayAmount);
+    const saveError = await addWater(amountMl);
+
+    if (saveError) {
+      setWaterErrorMessage(saveError);
+      return;
+    }
+
+    setCustomWaterAmount("");
+    setWaterErrorMessage(null);
+  }
+
+  function handleAddCustomWater() {
+    const parsedAmount = Number(customWaterAmount);
+
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      setWaterErrorMessage(`Enter a water amount greater than 0 ${waterUnit}.`);
+      return;
+    }
+
+    void handleAddWater(parsedAmount);
+  }
+
+  function handleDeleteWater(entryId: string, amountMl: number) {
+    const amount = usesFluidOunces
+      ? `${mlToFlOz(amountMl)} fl oz`
+      : `${amountMl} mL`;
+
+    Alert.alert("Delete water entry?", `${amount} will be removed.`, [
+      { style: "cancel", text: "Cancel" },
+      {
+        style: "destructive",
+        text: "Delete",
+        onPress: async () => {
+          const deleteError = await deleteWater(entryId);
+          setWaterErrorMessage(deleteError);
+        },
+      },
+    ]);
+  }
+
   function handleEditEntry(entry: NutritionEntry) {
     router.push({
       pathname: "/new-nutrition-entry",
@@ -136,7 +225,8 @@ export default function NutritionScreen() {
         fat: String(entry.fat_g),
         fiber: String(entry.fiber_g),
         foodName: entry.food_name,
-        mealType: entry.meal_type,
+        mealCount: String(goals.meal_count),
+        mealNumber: String(entry.meal_number ?? 1),
         protein: String(entry.protein_g),
         serving: entry.serving_description ?? "",
       },
@@ -266,7 +356,10 @@ export default function NutritionScreen() {
                          <Link
               href={{
                 pathname: "/new-nutrition-entry",
-                params: { date: selectedDate },
+                params: {
+                  date: selectedDate,
+                  mealCount: String(goals.meal_count),
+                },
               }}
               asChild
             >
@@ -282,7 +375,13 @@ export default function NutritionScreen() {
                   carbs: String(goals.carbs_target_g),
                   fat: String(goals.fat_target_g),
                   fiber: String(goals.fiber_target_g),
+                  mealCount: String(goals.meal_count),
                   protein: String(goals.protein_target_g),
+                  waterGoalMl:
+                    goals.water_target_ml === null
+                      ? ""
+                      : String(goals.water_target_ml),
+                  weekdayCalories: goals.weekday_calorie_targets.join(","),
                 },
               }}
               asChild
@@ -312,7 +411,10 @@ export default function NutritionScreen() {
                 {totals.calories}
               </Text>
               <Text style={styles.calorieTarget}>
-                of {goals.calorie_target} calories
+                of {effectiveCalorieTarget} calories
+                {goals.weekday_calorie_targets.length === 7
+                  ? ` • ${WEEKDAY_LABELS[selectedWeekday]} target`
+                  : ""}
               </Text>
               <Text
                 style={[
@@ -348,6 +450,147 @@ export default function NutritionScreen() {
               Fiber: {Math.round(totals.fiber_g)}g of{" "}
               {Math.round(goals.fiber_target_g)}g
             </Text>
+
+            <View style={styles.waterCard}>
+              <Text style={styles.waterEyebrow}>WATER</Text>
+              <Text style={styles.waterValue}>
+                {waterTotal} {waterUnit}
+              </Text>
+              <Text style={styles.waterGoal}>
+                {waterGoal === null
+                  ? "Set a personal goal in Nutrition goals"
+                  : `of ${waterGoal} ${waterUnit}`}
+              </Text>
+
+              <View style={styles.waterQuickActions}>
+                {quickWaterAmounts.map((amount) => (
+                  <Pressable
+                    accessibilityLabel={`Add ${amount} ${waterUnit} of water`}
+                    accessibilityRole="button"
+                    disabled={isSavingWater}
+                    key={amount}
+                    onPress={() => void handleAddWater(amount)}
+                    style={[
+                      styles.waterQuickButton,
+                      isSavingWater && styles.waterButtonDisabled,
+                    ]}
+                  >
+                    <Text style={styles.waterQuickText}>
+                      +{amount} {waterUnit}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              <View style={styles.waterCustomRow}>
+                <TextInput
+                  accessibilityLabel={`Custom water amount in ${waterUnit}`}
+                  inputMode="decimal"
+                  onChangeText={setCustomWaterAmount}
+                  placeholder={usesFluidOunces ? "Custom fl oz" : "Custom mL"}
+                  placeholderTextColor="#727885"
+                  style={styles.waterInput}
+                  value={customWaterAmount}
+                />
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={isSavingWater}
+                  onPress={handleAddCustomWater}
+                  style={[
+                    styles.waterAddButton,
+                    isSavingWater && styles.waterButtonDisabled,
+                  ]}
+                >
+                  <Text style={styles.waterAddText}>Add water</Text>
+                </Pressable>
+              </View>
+
+              {waterErrorMessage ? (
+                <Text
+                  accessibilityLiveRegion="polite"
+                  accessibilityRole="alert"
+                  style={styles.waterError}
+                >
+                  {waterErrorMessage}
+                </Text>
+              ) : null}
+
+              {waterEntries.length > 0 ? (
+                <View style={styles.waterEntryList}>
+                  {waterEntries.map((entry) => (
+                    <View key={entry.id} style={styles.waterEntry}>
+                      <Text style={styles.waterEntryText}>
+                        {usesFluidOunces
+                          ? `${mlToFlOz(entry.amount_ml)} fl oz`
+                          : `${entry.amount_ml} mL`}
+                      </Text>
+                      <Pressable
+                        accessibilityLabel="Delete water entry"
+                        accessibilityRole="button"
+                        disabled={isSavingWater}
+                        onPress={() =>
+                          handleDeleteWater(entry.id, entry.amount_ml)
+                        }
+                      >
+                        <Text style={styles.waterDeleteText}>Delete</Text>
+                      </Pressable>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+            </View>
+
+            <View style={styles.perMealCard}>
+              <Text style={styles.perMealTitle}>
+                PER-MEAL TARGET • {goals.meal_count} MEALS
+              </Text>
+              <Text style={styles.perMealCalories}>
+                About {perMealTargets.calories} calories per meal
+              </Text>
+              <Text style={styles.perMealMacros}>
+                P {perMealTargets.proteinGrams}g • C {perMealTargets.carbsGrams}g
+                {" • "}F {perMealTargets.fatGrams}g • Fiber{" "}
+                {perMealTargets.fiberGrams}g
+              </Text>
+            </View>
+
+            <Text style={styles.mealProgressHeading}>Meal progress</Text>
+            <View style={styles.mealProgressList}>
+              {mealProgress.map((meal) => {
+                const caloriesRemaining =
+                  perMealTargets.calories - meal.calories;
+
+                return (
+                  <View key={meal.mealNumber} style={styles.mealProgressCard}>
+                    <View style={styles.mealProgressHeader}>
+                      <Text style={styles.mealProgressTitle}>
+                        Meal {meal.mealNumber}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.mealProgressRemaining,
+                          caloriesRemaining < 0 && styles.overTarget,
+                        ]}
+                      >
+                        {caloriesRemaining >= 0
+                          ? `${caloriesRemaining} cal left`
+                          : `${Math.abs(caloriesRemaining)} cal over`}
+                      </Text>
+                    </View>
+                    <Text style={styles.mealProgressCalories}>
+                      {meal.calories} / {perMealTargets.calories} calories
+                    </Text>
+                    <Text style={styles.mealProgressMacros}>
+                      P {Math.round(meal.proteinGrams)}g /{" "}
+                      {perMealTargets.proteinGrams}g • C{" "}
+                      {Math.round(meal.carbsGrams)}g /{" "}
+                      {perMealTargets.carbsGrams}g • F{" "}
+                      {Math.round(meal.fatGrams)}g / {perMealTargets.fatGrams}g
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
 
             <Text style={styles.sectionTitle}>
   {isToday ? "Today's food" : "Food log"}
@@ -430,7 +673,7 @@ const styles = StyleSheet.create({
   },
   todayButton: {
     alignItems: "center",
-    borderColor: "#F97316",
+    borderColor: "#2563EB",
     borderRadius: 10,
     borderWidth: 1,
     justifyContent: "center",
@@ -438,7 +681,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   todayButtonText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 13,
     fontWeight: "800",
   },
@@ -447,7 +690,7 @@ const styles = StyleSheet.create({
   },
   logButton: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: "#2563EB",
     borderRadius: 12,
     justifyContent: "center",
     marginBottom: 12,
@@ -455,7 +698,7 @@ const styles = StyleSheet.create({
   },
   goalsButton: {
     alignItems: "center",
-    borderColor: "#F97316",
+    borderColor: "#2563EB",
     borderRadius: 12,
     borderWidth: 1,
     justifyContent: "center",
@@ -463,7 +706,7 @@ const styles = StyleSheet.create({
     minHeight: 52,
   },
   goalsButtonText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 16,
     fontWeight: "800",
   },
@@ -540,6 +783,173 @@ const styles = StyleSheet.create({
     marginBottom: 28,
     marginTop: 12,
   },
+  waterCard: {
+    backgroundColor: "#111827",
+    borderColor: "#2563EB",
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: 24,
+    padding: 18,
+  },
+  waterEyebrow: {
+    color: "#60A5FA",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1.5,
+  },
+  waterValue: {
+    color: "#FFFFFF",
+    fontSize: 30,
+    fontWeight: "800",
+    marginTop: 7,
+  },
+  waterGoal: {
+    color: "#9CA3AF",
+    fontSize: 13,
+    marginTop: 3,
+  },
+  waterQuickActions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 16,
+  },
+  waterQuickButton: {
+    borderColor: "#2563EB",
+    borderRadius: 9,
+    borderWidth: 1,
+    paddingHorizontal: 11,
+    paddingVertical: 9,
+  },
+  waterQuickText: {
+    color: "#60A5FA",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  waterCustomRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 12,
+  },
+  waterInput: {
+    backgroundColor: "#171717",
+    borderColor: "#374151",
+    borderRadius: 9,
+    borderWidth: 1,
+    color: "#FFFFFF",
+    flex: 1,
+    minHeight: 44,
+    paddingHorizontal: 12,
+  },
+  waterAddButton: {
+    alignItems: "center",
+    backgroundColor: "#2563EB",
+    borderRadius: 9,
+    justifyContent: "center",
+    paddingHorizontal: 14,
+  },
+  waterAddText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  waterButtonDisabled: {
+    opacity: 0.5,
+  },
+  waterError: {
+    color: "#F87171",
+    fontSize: 12,
+    marginTop: 10,
+  },
+  waterEntryList: {
+    gap: 7,
+    marginTop: 14,
+  },
+  waterEntry: {
+    alignItems: "center",
+    backgroundColor: "#171717",
+    borderRadius: 8,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 11,
+    paddingVertical: 9,
+  },
+  waterEntryText: {
+    color: "#D1D5DB",
+    fontSize: 13,
+  },
+  waterDeleteText: {
+    color: "#F87171",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  perMealCard: {
+    backgroundColor: "#171717",
+    borderColor: "#292929",
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 24,
+    padding: 14,
+  },
+  perMealTitle: {
+    color: "#2563EB",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1,
+  },
+  perMealCalories: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+    marginTop: 8,
+  },
+  perMealMacros: {
+    color: "#9CA3AF",
+    fontSize: 13,
+    marginTop: 5,
+  },
+  mealProgressHeading: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 10,
+  },
+  mealProgressList: {
+    gap: 8,
+    marginBottom: 24,
+  },
+  mealProgressCard: {
+    backgroundColor: "#171717",
+    borderColor: "#292929",
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 13,
+  },
+  mealProgressHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  mealProgressTitle: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  mealProgressRemaining: {
+    color: "#34D399",
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  mealProgressCalories: {
+    color: "#D1D5DB",
+    fontSize: 13,
+    marginTop: 7,
+  },
+  mealProgressMacros: {
+    color: "#9CA3AF",
+    fontSize: 12,
+    marginTop: 4,
+  },
   sectionTitle: {
     color: "#FFFFFF",
     fontSize: 20,
@@ -596,14 +1006,14 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   editButton: {
-    borderColor: "#F97316",
+    borderColor: "#2563EB",
     borderRadius: 8,
     borderWidth: 1,
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
   editButtonText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 13,
     fontWeight: "700",
   },
@@ -634,7 +1044,6 @@ const styles = StyleSheet.create({
   emptyText: {
     color: "#9CA3AF",
     fontSize: 14,
-    lineHeight: 21,
     marginTop: 8,
   },
 });

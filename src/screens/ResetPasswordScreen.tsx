@@ -11,6 +11,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  View,
 } from "react-native";
 
 import { supabase } from "../lib/supabase";
@@ -135,13 +136,15 @@ export default function ResetPasswordScreen() {
         style={styles.keyboardView}
       >
         <ScrollView
+          contentInsetAdjustmentBehavior="automatic"
           contentContainerStyle={styles.content}
           keyboardDismissMode="interactive"
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.eyebrow}>FORTOMNIA</Text>
-          <Text style={styles.title}>Reset password</Text>
-          <Text style={styles.subtitle}>
+          <View style={styles.form}>
+          <Text maxFontSizeMultiplier={1.4} style={styles.eyebrow}>FORTOMNIA</Text>
+          <Text maxFontSizeMultiplier={1.4} style={styles.title}>Reset password</Text>
+          <Text maxFontSizeMultiplier={1.4} style={styles.subtitle}>
             Choose a new password with at least eight characters.
           </Text>
 
@@ -151,7 +154,7 @@ export default function ResetPasswordScreen() {
 
           {isRecoveryReady ? (
             <>
-              <TextInput
+              <TextInput maxFontSizeMultiplier={1.4}
                 accessibilityLabel="New password"
                 autoCapitalize="none"
                 autoComplete="new-password"
@@ -163,7 +166,7 @@ export default function ResetPasswordScreen() {
                 value={password}
               />
 
-              <TextInput
+              <TextInput maxFontSizeMultiplier={1.4}
                 accessibilityLabel="Confirm new password"
                 autoCapitalize="none"
                 autoComplete="new-password"
@@ -189,14 +192,14 @@ export default function ResetPasswordScreen() {
                 {isSaving ? (
                   <ActivityIndicator color="#0B0D10" />
                 ) : (
-                  <Text style={styles.buttonText}>Update password</Text>
+                  <Text maxFontSizeMultiplier={1.4} style={styles.buttonText}>Update password</Text>
                 )}
               </Pressable>
             </>
           ) : null}
 
           {errorMessage ? (
-            <Text
+            <Text maxFontSizeMultiplier={1.4}
               accessibilityLiveRegion="polite"
               accessibilityRole="alert"
               style={styles.error}
@@ -211,9 +214,10 @@ export default function ResetPasswordScreen() {
               onPress={() => router.replace("/")}
               style={styles.backButton}
             >
-              <Text style={styles.backButtonText}>Return to sign in</Text>
+              <Text maxFontSizeMultiplier={1.4} style={styles.backButtonText}>Return to sign in</Text>
             </Pressable>
           ) : null}
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -229,10 +233,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
+    alignItems: 'center',
     flexGrow: 1,
     justifyContent: "center",
     paddingHorizontal: 24,
     paddingVertical: 32,
+  },
+  form: {
+    maxWidth: 560,
+    width: '100%',
   },
   eyebrow: {
     color: "#F59E0B",
@@ -249,7 +258,6 @@ const styles = StyleSheet.create({
   subtitle: {
     color: "#9CA3AF",
     fontSize: 16,
-    lineHeight: 24,
     marginBottom: 28,
     marginTop: 10,
   },
@@ -266,7 +274,7 @@ const styles = StyleSheet.create({
   },
   button: {
     alignItems: "center",
-    backgroundColor: "#F59E0B",
+    backgroundColor: "#2563EB",
     borderRadius: 12,
     justifyContent: "center",
     minHeight: 52,
@@ -290,7 +298,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   backButtonText: {
-    color: "#F59E0B",
+    color: "#2563EB",
     fontSize: 15,
     fontWeight: "600",
   },

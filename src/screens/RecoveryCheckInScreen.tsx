@@ -226,7 +226,7 @@ export default function RecoveryCheckInScreen() {
           <Text style={styles.label}>Sleep duration</Text>
           <TextInput
             accessibilityLabel="Sleep duration in hours"
-            keyboardType="decimal-pad"
+            inputMode="decimal"
             onChangeText={setSleepHours}
             placeholder="Hours, for example 7.5"
             placeholderTextColor="#727885"
@@ -279,7 +279,7 @@ export default function RecoveryCheckInScreen() {
           </Text>
           <TextInput
             accessibilityLabel={`Body weight in ${preferredWeightUnit}`}
-            keyboardType="decimal-pad"
+            inputMode="decimal"
             onChangeText={setBodyWeight}
             placeholder={`Weight in ${preferredWeightUnit}`}
             placeholderTextColor="#727885"
@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   navigationText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 16,
     fontWeight: "700",
   },
@@ -377,7 +377,6 @@ const styles = StyleSheet.create({
   subtitle: {
     color: "#9CA3AF",
     fontSize: 15,
-    lineHeight: 22,
     marginBottom: 20,
     marginTop: 8,
   },
@@ -438,8 +437,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   ratingButtonSelected: {
-    backgroundColor: "#F97316",
-    borderColor: "#F97316",
+    backgroundColor: "#2563EB",
+    borderColor: "#2563EB",
   },
   ratingButtonText: {
     color: "#D1D5DB",
@@ -464,7 +463,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: "#2563EB",
     borderRadius: 12,
     justifyContent: "center",
     minHeight: 52,

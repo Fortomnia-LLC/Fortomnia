@@ -1,6 +1,6 @@
 # Fortomnia Release Readiness
 
-Last updated: August 12, 2026
+Last updated: August 30, 2026
 
 ## Automated validation
 
@@ -83,14 +83,16 @@ The remaining npm audit findings are inherited through Expo and Metro build tool
 - [x] Replace the support email placeholder in every policy.
 - [x] Enter legal-owner and App Review details directly in App Store Connect; keep private review credentials out of the repository.
 - [ ] Obtain appropriate legal review of public policies.
-- [ ] Publish privacy, terms, support, and deletion pages.
+- [x] Publish privacy, terms, support, and deletion pages.
+- [x] Update the public privacy policy for camera-based barcode scanning and Open Food Facts product lookup.
+- [x] Remove the operational-draft notice from the public Terms page.
 - [x] Create final App Store screenshots.
 - [x] Complete Apple App Privacy answers.
-- [ ] Add the App Store support and privacy URLs.
+- [x] Add the App Store support and privacy URLs.
 - [x] Prepare and verify the App Review account.
 - [x] Upload the release candidate to TestFlight.
 - [ ] Complete external TestFlight testing.
-- [ ] Submit the approved build for App Review.
+- [x] Submit production iOS build 3 for App Review (Waiting for Review).
 
 ## Brand and website
 
@@ -99,10 +101,34 @@ The remaining npm audit findings are inherited through Expo and Metro build tool
 - [ ] Complete trademark review and filing.
 - [x] Create the Fortomnia website.
 - [x] Connect fortomnia.com and validate HTTPS.
-- [ ] Publish public legal and support pages.
+- [x] Publish public legal and support pages.
 - [x] Configure a monitored support email address.
 - [x] Configure domain email authentication and delivery.
-- [ ] Add website and policy URLs to App Store Connect.
+- [x] Add website and policy URLs to App Store Connect.
+
+## Milestone 14 release-candidate verification
+
+The checked iPhone items above describe the frozen Milestone 13 App Store submission and are historical context only. PR #3 now uses application-code baseline `c405c65e9aee5e24995827c8c4be2e81a52cd984`, which adds the equipment-aware specialty program pipeline after the previously tested native builds.
+
+### Confirmed automated evidence
+
+- [x] The GitHub quality workflow passed on application-code baseline `c405c65e9aee5e24995827c8c4be2e81a52cd984`.
+- [x] Multi-metric progression, feedback, repeated-low-readiness holds, specialty selection, equipment discovery, and specialty program integration have automated coverage.
+- [x] Android preview and production build profiles are explicit.
+- [x] The Supabase foreign-key index migration was applied and its missing-index advisor warning was cleared.
+
+### Required final-head evidence
+
+- [ ] Confirm GitHub quality checks pass on the post-documentation PR head.
+- [ ] Create iOS and Android candidate builds from that same final head and record both EAS build IDs.
+- [ ] Complete scenarios 1–7 in `docs/MILESTONE_14_DEVICE_TEST_MATRIX.md` on a physical iPhone and physical Android phone.
+- [ ] Record the three external Android tester reports with device, OS, tester, date, and defects.
+- [ ] Natively confirm calorie and round feedback and low-readiness holds; these were previously automated only.
+- [ ] Natively confirm specialty selection, saved specialty equipment, unavailable-equipment substitution, program creation, and template reopening on both platforms.
+- [ ] Resolve every critical/high defect and rerun affected scenarios on replacement builds.
+- [ ] Record the final approved commit and release decision.
+
+PR #3 remains draft until every required final-head item is complete on both platforms.
 
 ## Release approval
 

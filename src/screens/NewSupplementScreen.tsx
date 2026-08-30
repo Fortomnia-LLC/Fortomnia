@@ -2,6 +2,8 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -11,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { getLocalDateKey } from "../lib/dates";
+import { WEEKDAY_OPTIONS } from "../lib/supplementSchedule";
 import {
   type SupplementCategory,
   type SupplementFrequency,
@@ -42,11 +45,13 @@ const routes: SupplementRoute[] = [
 const frequencies: SupplementFrequency[] = [
   "daily",
   "weekly",
+  "every_other_week",
+  "selected_days",
   "as_needed",
 ];
 
 function formatOption(value: string) {
-  return value.replace("_", " ");
+  return value.replaceAll("_", " ");
 }
 function firstParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
@@ -69,24 +74,30 @@ export default function NewSupplementScreen() {
     category: categoryParam,
     doseAmount: doseAmountParam,
     doseUnit: doseUnitParam,
+    dosesPerDay: dosesPerDayParam,
     frequency: frequencyParam,
     name: nameParam,
     notes: notesParam,
     protocolId: protocolIdParam,
     route: routeParam,
+    scheduledDays: scheduledDaysParam,
     scheduledTime: scheduledTimeParam,
+    secondScheduledTime: secondScheduledTimeParam,
     endDate: endDateParam,
 startDate: startDateParam,
   } = useLocalSearchParams<{
     category?: string;
     doseAmount?: string;
     doseUnit?: string;
+    dosesPerDay?: string;
     frequency?: string;
     name?: string;
     notes?: string;
     protocolId?: string;
     route?: string;
+    scheduledDays?: string;
     scheduledTime?: string;
+    secondScheduledTime?: string;
     endDate?: string;
     startDate?: string;
   }>();
@@ -98,13 +109,20 @@ startDate: startDateParam,
     | undefined;
   const initialDoseAmount = firstParam(doseAmountParam);
   const initialDoseUnit = firstParam(doseUnitParam);
+  const initialDosesPerDay =
+    firstParam(dosesPerDayParam) === "2" ? 2 : 1;
   const initialRoute = firstParam(routeParam) as
     | SupplementRoute
     | undefined;
   const initialFrequency = firstParam(frequencyParam) as
     | SupplementFrequency
     | undefined;
-    const initialScheduledTime = firstParam(scheduledTimeParam);
+  const initialScheduledDays = firstParam(scheduledDaysParam)
+    ?.split(",")
+    .map(Number)
+    .filter((day) => Number.isInteger(day) && day >= 0 && day <= 6) ?? [];
+  const initialScheduledTime = firstParam(scheduledTimeParam);
+  const initialSecondScheduledTime = firstParam(secondScheduledTimeParam);
   const initialStartDate = firstParam(startDateParam);
   const initialEndDate = firstParam(endDateParam);
   const initialNotes = firstParam(notesParam);
@@ -118,6 +136,9 @@ startDate: startDateParam,
     initialDoseAmount ?? "",
   );
   const [doseUnit, setDoseUnit] = useState(initialDoseUnit ?? "");
+  const [dosesPerDay, setDosesPerDay] = useState<1 | 2>(
+    initialDosesPerDay,
+  );
   const [route, setRoute] = useState<SupplementRoute>(
     initialRoute ?? "oral",
   );
@@ -125,8 +146,14 @@ startDate: startDateParam,
     useState<SupplementFrequency>(
       initialFrequency ?? "daily",
     );
+  const [scheduledDays, setScheduledDays] = useState<number[]>(
+    initialScheduledDays,
+  );
   const [scheduledTime, setScheduledTime] = useState(
     initialScheduledTime ?? "",
+  );
+  const [secondScheduledTime, setSecondScheduledTime] = useState(
+    initialSecondScheduledTime ?? "",
   );
     const [startDate, setStartDate] = useState(
     initialStartDate ?? getLocalDateKey(),
@@ -141,11 +168,14 @@ startDate: startDateParam,
     setCategory(initialCategory ?? "other");
     setDoseAmount(initialDoseAmount ?? "");
     setDoseUnit(initialDoseUnit ?? "");
+    setDosesPerDay(initialDosesPerDay);
     setRoute(initialRoute ?? "oral");
     setFrequency(initialFrequency ?? "daily");
     setStartDate(initialStartDate ?? getLocalDateKey());
     setEndDate(initialEndDate ?? "");
+    setScheduledDays(initialScheduledDays);
     setScheduledTime(initialScheduledTime ?? "");
+    setSecondScheduledTime(initialSecondScheduledTime ?? "");
     setNotes(initialNotes ?? "");
     setErrorMessage(null);
   }, [
@@ -153,13 +183,16 @@ startDate: startDateParam,
     initialCategory,
     initialDoseAmount,
     initialDoseUnit,
+    initialDosesPerDay,
     initialFrequency,
     initialName,
     initialNotes,
     initialRoute,
     initialEndDate,
     initialStartDate,
+    initialScheduledDays.join(","),
     initialScheduledTime,
+    initialSecondScheduledTime,
   ]);
 
   async function handleSave() {
@@ -168,6 +201,7 @@ startDate: startDateParam,
     const trimmedEndDate = endDate.trim();
     const trimmedUnit = doseUnit.trim();
     const trimmedTime = scheduledTime.trim();
+    const trimmedSecondTime = secondScheduledTime.trim();
     const parsedDose = Number(doseAmount);
 
     if (!session?.user.id) {
@@ -196,12 +230,30 @@ startDate: startDateParam,
       return;
     }
 
-    if (
-      trimmedTime &&
-      !/^([01]\d|2[0-3]):[0-5]\d$/.test(trimmedTime)
-    ) {
+    const timePattern = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+    if (trimmedTime && !timePattern.test(trimmedTime)) {
       setErrorMessage("Scheduled time must use 24-hour HH:MM format.");
       return;
+    }
+
+    if (dosesPerDay === 2) {
+      if (!trimmedTime || !trimmedSecondTime) {
+        setErrorMessage("Morning and evening times are required for twice-daily protocols.");
+        return;
+      }
+      if (!timePattern.test(trimmedSecondTime)) {
+        setErrorMessage("Evening time must use 24-hour HH:MM format.");
+        return;
+      }
+      if (trimmedSecondTime <= trimmedTime) {
+        setErrorMessage("Evening time must be later than morning time.");
+        return;
+      }
+      if (frequency === "as_needed") {
+        setErrorMessage("As-needed protocols can only use one dose slot.");
+        return;
+      }
     }
       if (!isValidDateKey(trimmedStartDate)) {
   setErrorMessage("Start date must use YYYY-MM-DD format.");
@@ -218,6 +270,11 @@ if (trimmedEndDate && trimmedEndDate < trimmedStartDate) {
   return;
 }
 
+if (frequency === "selected_days" && scheduledDays.length === 0) {
+  setErrorMessage("Choose at least one scheduled day.");
+  return;
+}
+
     setIsSaving(true);
     setErrorMessage(null);
 
@@ -228,13 +285,17 @@ if (trimmedEndDate && trimmedEndDate < trimmedStartDate) {
           category,
           dose_amount: parsedDose,
           dose_unit: trimmedUnit,
+          doses_per_day: dosesPerDay,
           frequency,
           name: trimmedName,
           notes: notes.trim() || null,
           route,
+          scheduled_days: frequency === "selected_days" ? scheduledDays : [],
           end_date: trimmedEndDate || null,
           start_date: trimmedStartDate,
           scheduled_time: trimmedTime || null,
+          second_scheduled_time:
+            dosesPerDay === 2 ? trimmedSecondTime : null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", editingProtocolId)
@@ -264,6 +325,7 @@ if (trimmedEndDate && trimmedEndDate < trimmedStartDate) {
         name: trimmedName,
         notes: notes.trim() || null,
         route,
+        scheduled_days: frequency === "selected_days" ? scheduledDays : [],
         scheduled_time: trimmedTime || null,
         end_date: trimmedEndDate || null,
         start_date: trimmedStartDate,
@@ -282,6 +344,10 @@ if (trimmedEndDate && trimmedEndDate < trimmedStartDate) {
 
   return (
     <SafeAreaView style={styles.screen}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
       <ScrollView
         automaticallyAdjustKeyboardInsets
         contentContainerStyle={styles.content}
@@ -346,7 +412,7 @@ if (trimmedEndDate && trimmedEndDate < trimmedStartDate) {
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>Dose</Text>
             <TextInput
-              keyboardType="decimal-pad"
+              inputMode="decimal"
               onChangeText={setDoseAmount}
               placeholder="5"
               placeholderTextColor="#727885"
@@ -421,9 +487,51 @@ if (trimmedEndDate && trimmedEndDate < trimmedStartDate) {
             );
           })}
         </View>
+        {frequency === "selected_days" ? (
+          <>
+            <Text style={styles.label}>Scheduled days</Text>
+            <View style={styles.optionRow}>
+              {WEEKDAY_OPTIONS.map((day) => {
+                const selected = scheduledDays.includes(day.value);
+
+                return (
+                  <Pressable
+                    key={day.value}
+                    onPress={() =>
+                      setScheduledDays((current) =>
+                        selected
+                          ? current.filter((value) => value !== day.value)
+                          : [...current, day.value].sort(),
+                      )
+                    }
+                    style={[
+                      styles.optionButton,
+                      selected && styles.optionButtonSelected,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.optionText,
+                        selected && styles.optionTextSelected,
+                      ]}
+                    >
+                      {day.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </>
+        ) : null}
           <Text style={styles.label}>
 
-           Start date {frequency === "weekly" ? "(weekly anchor)" : ""}
+           Start date {
+             frequency === "weekly"
+               ? "(weekly anchor)"
+               : frequency === "every_other_week"
+                 ? "(14-day anchor)"
+                 : ""
+           }
           </Text>
           <TextInput
             autoCapitalize="none"
@@ -445,15 +553,62 @@ if (trimmedEndDate && trimmedEndDate < trimmedStartDate) {
             style={styles.input}
             value={endDate}
           />
-        <Text style={styles.label}>Scheduled time (optional)</Text>
+        <Text style={styles.label}>Doses per scheduled day</Text>
+        <View style={styles.optionRow}>
+          {([1, 2] as const).map((count) => {
+            const selected = dosesPerDay === count;
+
+            return (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                key={count}
+                onPress={() => setDosesPerDay(count)}
+                style={[
+                  styles.optionButton,
+                  selected && styles.optionButtonSelected,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.optionText,
+                    selected && styles.optionTextSelected,
+                  ]}
+                >
+                  {count === 1 ? "Once daily" : "Morning & evening"}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        <Text style={styles.label}>
+          {dosesPerDay === 2 ? "Morning time" : "Scheduled time (optional)"}
+        </Text>
         <TextInput
           keyboardType="numbers-and-punctuation"
+          maxLength={5}
           onChangeText={setScheduledTime}
           placeholder="08:00"
           placeholderTextColor="#727885"
           style={styles.input}
           value={scheduledTime}
         />
+
+        {dosesPerDay === 2 ? (
+          <>
+            <Text style={styles.label}>Evening time</Text>
+            <TextInput
+              keyboardType="numbers-and-punctuation"
+              maxLength={5}
+              onChangeText={setSecondScheduledTime}
+              placeholder="20:00"
+              placeholderTextColor="#727885"
+              style={styles.input}
+              value={secondScheduledTime}
+            />
+          </>
+        ) : null}
 
         <Text style={styles.label}>Notes (optional)</Text>
         <TextInput
@@ -484,6 +639,7 @@ if (trimmedEndDate && trimmedEndDate < trimmedStartDate) {
           )}
         </Pressable>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -503,7 +659,7 @@ const styles = StyleSheet.create({
     paddingTop: 18,
   },
   navigationText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 16,
     fontWeight: "700",
   },
@@ -522,7 +678,6 @@ const styles = StyleSheet.create({
   subtitle: {
     color: "#9CA3AF",
     fontSize: 16,
-    lineHeight: 24,
     marginBottom: 28,
     marginTop: 8,
   },
@@ -561,7 +716,7 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
   },
   optionButtonSelected: {
-    borderColor: "#F97316",
+    borderColor: "#2563EB",
   },
   optionText: {
     color: "#9CA3AF",
@@ -570,7 +725,7 @@ const styles = StyleSheet.create({
     textTransform: "capitalize",
   },
   optionTextSelected: {
-    color: "#F97316",
+    color: "#2563EB",
   },
   fieldRow: {
     flexDirection: "row",
@@ -585,7 +740,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: "#2563EB",
     borderRadius: 12,
     justifyContent: "center",
     minHeight: 52,

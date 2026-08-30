@@ -1,7 +1,14 @@
+import {
+  type BarcodeScanningResult,
+  CameraView,
+  useCameraPermissions,
+} from "expo-camera";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -11,17 +18,11 @@ import {
   View,
 } from "react-native";
 
-import { type MealType } from "../hooks/useDailyNutrition";
 import { getLocalDateKey } from "../lib/dates";
+import { lookupFoodBarcode } from "../lib/foodBarcode";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
 
-const mealTypes: MealType[] = [
-  "breakfast",
-  "lunch",
-  "dinner",
-  "snack",
-];
 function firstParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
@@ -35,7 +36,8 @@ export default function AddNutritionEntryScreen() {
     fat: fatParam,
     fiber: fiberParam,
     foodName: foodNameParam,
-    mealType: mealTypeParam,
+    mealCount: mealCountParam,
+    mealNumber: mealNumberParam,
     protein: proteinParam,
     serving: servingParam,
   } = useLocalSearchParams<{
@@ -46,16 +48,22 @@ export default function AddNutritionEntryScreen() {
     fat?: string;
     fiber?: string;
     foodName?: string;
-    mealType?: string;
+    mealCount?: string;
+    mealNumber?: string;
     protein?: string;
     serving?: string;
   }>();
 
   const entryDate = firstParam(dateParam) ?? getLocalDateKey();
   const editingEntryId = firstParam(entryIdParam);
-  const initialMealType = firstParam(mealTypeParam) as
-    | MealType
-    | undefined;
+  const mealCount = Math.min(
+    8,
+    Math.max(1, Number(firstParam(mealCountParam)) || 3),
+  );
+  const initialMealNumber = Math.min(
+    mealCount,
+    Math.max(1, Number(firstParam(mealNumberParam)) || 1),
+  );
   const initialFoodName = firstParam(foodNameParam);
   const initialServing = firstParam(servingParam);
   const initialCalories = firstParam(caloriesParam);
@@ -66,9 +74,9 @@ export default function AddNutritionEntryScreen() {
   const isEditing = Boolean(editingEntryId);
 
   const { session } = useAuth();
-  const [mealType, setMealType] = useState<MealType>(
-    initialMealType ?? "breakfast",
-  );
+  const [cameraPermission, requestCameraPermission] =
+    useCameraPermissions();
+  const [mealNumber, setMealNumber] = useState(initialMealNumber);
   const [foodName, setFoodName] = useState(initialFoodName ?? "");
   const [serving, setServing] = useState(initialServing ?? "");
   const [calories, setCalories] = useState(initialCalories ?? "");
@@ -77,10 +85,14 @@ export default function AddNutritionEntryScreen() {
   const [fat, setFat] = useState(initialFat ?? "");
   const [fiber, setFiber] = useState(initialFiber ?? "");
   const [isSaving, setIsSaving] = useState(false);
+  const [isLookingUpBarcode, setIsLookingUpBarcode] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [scanLocked, setScanLocked] = useState(false);
+  const [scanMessage, setScanMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    setMealType(initialMealType ?? "breakfast");
+    setMealNumber(initialMealNumber);
     setFoodName(initialFoodName ?? "");
     setServing(initialServing ?? "");
     setCalories(initialCalories ?? "");
@@ -96,7 +108,7 @@ export default function AddNutritionEntryScreen() {
     initialFat,
     initialFiber,
     initialFoodName,
-    initialMealType,
+    initialMealNumber,
     initialProtein,
     initialServing,
   ]);
@@ -115,6 +127,68 @@ export default function AddNutritionEntryScreen() {
       setErrorMessage(null);
     }, [isEditing]),
   );
+
+  async function handleOpenScanner() {
+    setErrorMessage(null);
+    setScanMessage(null);
+
+    const permission =
+      cameraPermission?.granted
+        ? cameraPermission
+        : await requestCameraPermission();
+
+    if (!permission.granted) {
+      setErrorMessage(
+        "Camera access is required to scan a food barcode. You can still enter the food manually.",
+      );
+      return;
+    }
+
+    setScanLocked(false);
+    setScannerOpen(true);
+  }
+
+  async function handleBarcodeScanned(result: BarcodeScanningResult) {
+    if (scanLocked || isLookingUpBarcode) return;
+
+    setScanLocked(true);
+    setIsLookingUpBarcode(true);
+    setErrorMessage(null);
+
+    try {
+      const food = await lookupFoodBarcode(result.data);
+
+      if (!food) {
+        setScanMessage(
+          "That barcode was not found. You can enter the food manually or scan another product.",
+        );
+        setScannerOpen(false);
+        return;
+      }
+
+      setFoodName(food.name);
+      setServing(food.serving);
+      setCalories(String(food.calories));
+      setProtein(String(food.proteinGrams));
+      setCarbs(String(food.carbsGrams));
+      setFat(String(food.fatGrams));
+      setFiber(String(food.fiberGrams));
+      setScanMessage(
+        "Food found. Review the serving and nutrition values before saving.",
+      );
+      setScannerOpen(false);
+    } catch (error) {
+      setScanMessage(
+        error instanceof Error
+          ? error.message
+          : "The barcode could not be looked up.",
+      );
+      setScannerOpen(false);
+    } finally {
+      setIsLookingUpBarcode(false);
+      setScanLocked(false);
+    }
+  }
 
   async function handleSave() {
     const trimmedName = foodName.trim();
@@ -178,7 +252,8 @@ export default function AddNutritionEntryScreen() {
           fat_g: parsedFat,
           fiber_g: parsedFiber,
           food_name: trimmedName,
-          meal_type: mealType,
+          meal_number: mealNumber,
+          meal_type: "snack",
           protein_g: parsedProtein,
           serving_description: serving.trim() || null,
           updated_at: new Date().toISOString(),
@@ -210,7 +285,8 @@ export default function AddNutritionEntryScreen() {
         fat_g: parsedFat,
         fiber_g: parsedFiber,
         food_name: trimmedName,
-        meal_type: mealType,
+        meal_number: mealNumber,
+        meal_type: "snack",
         protein_g: parsedProtein,
         serving_description: serving.trim() || null,
         user_id: session.user.id,
@@ -236,6 +312,10 @@ export default function AddNutritionEntryScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
       <ScrollView
         automaticallyAdjustKeyboardInsets
         contentContainerStyle={styles.content}
@@ -261,30 +341,78 @@ export default function AddNutritionEntryScreen() {
 
         <Text style={styles.label}>Meal</Text>
         <View style={styles.mealRow}>
-          {mealTypes.map((option) => {
-            const selected = mealType === option;
+          {Array.from({ length: mealCount }, (_, index) => index + 1).map(
+            (option) => {
+              const selected = mealNumber === option;
 
-            return (
-              <Pressable
-                key={option}
-                onPress={() => setMealType(option)}
-                style={[
-                  styles.mealButton,
-                  selected && styles.mealButtonSelected,
-                ]}
-              >
-                <Text
+              return (
+                <Pressable
+                  key={option}
+                  onPress={() => setMealNumber(option)}
                   style={[
-                    styles.mealText,
-                    selected && styles.mealTextSelected,
+                    styles.mealButton,
+                    selected && styles.mealButtonSelected,
                   ]}
                 >
-                  {option}
-                </Text>
-              </Pressable>
-            );
-          })}
+                  <Text
+                    style={[
+                      styles.mealText,
+                      selected && styles.mealTextSelected,
+                    ]}
+                  >
+                    Meal {option}
+                  </Text>
+                </Pressable>
+              );
+            },
+          )}
         </View>
+
+        {!isEditing ? (
+          <>
+            <Pressable
+              disabled={isLookingUpBarcode}
+              onPress={() =>
+                scannerOpen
+                  ? setScannerOpen(false)
+                  : void handleOpenScanner()
+              }
+              style={[
+                styles.scanButton,
+                isLookingUpBarcode && styles.disabled,
+              ]}
+            >
+              {isLookingUpBarcode ? (
+                <ActivityIndicator color="#2563EB" />
+              ) : (
+                <Text style={styles.scanButtonText}>
+                  {scannerOpen ? "Close scanner" : "Scan food barcode"}
+                </Text>
+              )}
+            </Pressable>
+
+            {scannerOpen ? (
+              <View style={styles.cameraFrame}>
+                <CameraView
+                  barcodeScannerSettings={{
+                    barcodeTypes: ["ean13", "ean8", "upc_a", "upc_e"],
+                  }}
+                  onBarcodeScanned={
+                    scanLocked ? undefined : handleBarcodeScanned
+                  }
+                  style={styles.camera}
+                />
+                <Text style={styles.cameraHint}>
+                  Center the UPC or EAN barcode in the camera.
+                </Text>
+              </View>
+            ) : null}
+
+            {scanMessage ? (
+              <Text style={styles.scanMessage}>{scanMessage}</Text>
+            ) : null}
+          </>
+        ) : null}
 
         <Text style={styles.label}>Food name</Text>
         <TextInput
@@ -307,7 +435,7 @@ export default function AddNutritionEntryScreen() {
 
         <Text style={styles.label}>Calories</Text>
         <TextInput
-          keyboardType="number-pad"
+          inputMode="numeric"
           onChangeText={setCalories}
           placeholder="0"
           placeholderTextColor="#727885"
@@ -319,7 +447,7 @@ export default function AddNutritionEntryScreen() {
           <View style={styles.macroInputGroup}>
             <Text style={styles.label}>Protein (g)</Text>
             <TextInput
-              keyboardType="decimal-pad"
+              inputMode="decimal"
               onChangeText={setProtein}
               placeholder="0"
               placeholderTextColor="#727885"
@@ -331,7 +459,7 @@ export default function AddNutritionEntryScreen() {
           <View style={styles.macroInputGroup}>
             <Text style={styles.label}>Carbs (g)</Text>
             <TextInput
-              keyboardType="decimal-pad"
+              inputMode="decimal"
               onChangeText={setCarbs}
               placeholder="0"
               placeholderTextColor="#727885"
@@ -345,7 +473,7 @@ export default function AddNutritionEntryScreen() {
           <View style={styles.macroInputGroup}>
             <Text style={styles.label}>Fat (g)</Text>
             <TextInput
-              keyboardType="decimal-pad"
+              inputMode="decimal"
               onChangeText={setFat}
               placeholder="0"
               placeholderTextColor="#727885"
@@ -357,7 +485,7 @@ export default function AddNutritionEntryScreen() {
           <View style={styles.macroInputGroup}>
             <Text style={styles.label}>Fiber (g)</Text>
             <TextInput
-              keyboardType="decimal-pad"
+              inputMode="decimal"
               onChangeText={setFiber}
               placeholder="0"
               placeholderTextColor="#727885"
@@ -385,6 +513,7 @@ export default function AddNutritionEntryScreen() {
           )}
         </Pressable>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -404,7 +533,7 @@ const styles = StyleSheet.create({
     paddingTop: 18,
   },
   navigationText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 16,
     fontWeight: "700",
   },
@@ -423,7 +552,6 @@ const styles = StyleSheet.create({
   subtitle: {
     color: "#9CA3AF",
     fontSize: 16,
-    lineHeight: 24,
     marginBottom: 28,
     marginTop: 8,
   },
@@ -448,7 +576,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   mealButtonSelected: {
-    borderColor: "#F97316",
+    borderColor: "#2563EB",
   },
   mealText: {
     color: "#9CA3AF",
@@ -457,7 +585,44 @@ const styles = StyleSheet.create({
     textTransform: "capitalize",
   },
   mealTextSelected: {
-    color: "#F97316",
+    color: "#2563EB",
+  },
+  scanButton: {
+    alignItems: "center",
+    borderColor: "#2563EB",
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: "center",
+    marginBottom: 20,
+    minHeight: 50,
+  },
+  scanButtonText: {
+    color: "#2563EB",
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  cameraFrame: {
+    backgroundColor: "#171717",
+    borderColor: "#333333",
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 20,
+    overflow: "hidden",
+  },
+  camera: {
+    height: 260,
+    width: "100%",
+  },
+  cameraHint: {
+    color: "#D1D5DB",
+    fontSize: 13,
+    padding: 12,
+    textAlign: "center",
+  },
+  scanMessage: {
+    color: "#9CA3AF",
+    fontSize: 13,
+    marginBottom: 18,
   },
   input: {
     backgroundColor: "#171717",
@@ -483,7 +648,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: "#2563EB",
     borderRadius: 12,
     justifyContent: "center",
     minHeight: 52,

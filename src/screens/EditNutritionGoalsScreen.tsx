@@ -2,6 +2,8 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -11,7 +13,31 @@ import {
   View,
 } from "react-native";
 
+import { useProfile } from "../hooks/useProfile";
+import {
+  validateWeekdayCalorieTargets,
+  WEEKDAY_LABELS,
+} from "../lib/calorieTargets";
+import {
+  ACTIVITY_LABELS,
+  ACTIVITY_LEVELS,
+  CALORIE_DIRECTION_LABELS,
+  CALORIE_DIRECTIONS,
+  getMacroRecommendation,
+  type ActivityLevel,
+  type CalorieDirection,
+  type EquationSex,
+} from "../lib/macroRecommendation";
 import { supabase } from "../lib/supabase";
+import {
+  cmToFeetInches,
+  feetInchesToCm,
+  flOzToMl,
+  kgToLb,
+  lbToKg,
+  mlToFlOz,
+  type MeasurementSystem,
+} from "../lib/measurementUnits";
 import { useAuth } from "../providers/AuthProvider";
 
 function firstParam(value: string | string[] | undefined) {
@@ -25,13 +51,19 @@ export default function EditNutritionGoalsScreen() {
     carbs: carbsParam,
     fat: fatParam,
     fiber: fiberParam,
+    mealCount: mealCountParam,
     protein: proteinParam,
+    waterGoalMl: waterGoalMlParam,
+    weekdayCalories: weekdayCaloriesParam,
   } = useLocalSearchParams<{
     calories?: string;
     carbs?: string;
     fat?: string;
     fiber?: string;
+    mealCount?: string;
     protein?: string;
+    waterGoalMl?: string;
+    weekdayCalories?: string;
   }>();
 
   const initialCalories = firstParam(caloriesParam) ?? "2000";
@@ -39,15 +71,92 @@ export default function EditNutritionGoalsScreen() {
   const initialCarbs = firstParam(carbsParam) ?? "200";
   const initialFat = firstParam(fatParam) ?? "70";
   const initialFiber = firstParam(fiberParam) ?? "25";
+  const initialWeekdayCalories = firstParam(weekdayCaloriesParam)
+    ?.split(",")
+    .filter(Boolean) ?? [];
+  const initialMealCount = firstParam(mealCountParam) ?? "3";
+  const initialWaterGoalMl = firstParam(waterGoalMlParam) ?? "";
 
   const { session } = useAuth();
+  const { profile } = useProfile();
+  const [age, setAge] = useState("");
+  const [measurementSystem, setMeasurementSystem] =
+    useState<MeasurementSystem>("imperial");
+  const [heightCm, setHeightCm] = useState("");
+  const [heightFeet, setHeightFeet] = useState("");
+  const [heightInches, setHeightInches] = useState("");
+  const [weightValue, setWeightValue] = useState("");
+  const [equationSex, setEquationSex] =
+    useState<EquationSex>("male");
+  const [activityLevel, setActivityLevel] =
+    useState<ActivityLevel>("moderate");
+  const [calorieDirection, setCalorieDirection] =
+    useState<CalorieDirection>("maintain");
+  const [recommendationExplanation, setRecommendationExplanation] =
+    useState<string | null>(null);
   const [calories, setCalories] = useState(initialCalories);
   const [protein, setProtein] = useState(initialProtein);
   const [carbs, setCarbs] = useState(initialCarbs);
   const [fat, setFat] = useState(initialFat);
   const [fiber, setFiber] = useState(initialFiber);
+  const [mealCount, setMealCount] = useState(initialMealCount);
+  const [waterGoal, setWaterGoal] = useState(
+    initialWaterGoalMl
+      ? String(mlToFlOz(Number(initialWaterGoalMl)))
+      : "",
+  );
+  const [customizeWeekdays, setCustomizeWeekdays] = useState(
+    initialWeekdayCalories.length === 7,
+  );
+  const [weekdayCalories, setWeekdayCalories] = useState<string[]>(
+    initialWeekdayCalories.length === 7
+      ? initialWeekdayCalories
+      : Array(7).fill(initialCalories),
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (profile) {
+      setAge(profile.age_years === null ? "" : String(profile.age_years));
+      const system =
+        profile.preferred_weight_unit === "kg" ? "metric" : "imperial";
+      setMeasurementSystem(system);
+
+      if (profile.height_cm === null) {
+        setHeightCm("");
+        setHeightFeet("");
+        setHeightInches("");
+      } else {
+        const imperialHeight = cmToFeetInches(profile.height_cm);
+        setHeightCm(String(profile.height_cm));
+        setHeightFeet(String(imperialHeight.feet));
+        setHeightInches(String(imperialHeight.inches));
+      }
+
+      setWeightValue(
+        profile.weight_kg === null
+          ? ""
+          : String(
+              system === "imperial"
+                ? kgToLb(profile.weight_kg)
+                : profile.weight_kg,
+            ),
+      );
+      setEquationSex(profile.equation_sex ?? "male");
+      setActivityLevel(profile.activity_level);
+      setCalorieDirection(profile.calorie_direction);
+      setWaterGoal(
+        initialWaterGoalMl
+          ? String(
+              system === "imperial"
+                ? mlToFlOz(Number(initialWaterGoalMl))
+                : Number(initialWaterGoalMl),
+            )
+          : "",
+      );
+    }
+  }, [initialWaterGoalMl, profile]);
 
   useEffect(() => {
     setCalories(initialCalories);
@@ -55,21 +164,127 @@ export default function EditNutritionGoalsScreen() {
     setCarbs(initialCarbs);
     setFat(initialFat);
     setFiber(initialFiber);
+    setMealCount(initialMealCount);
+    setCustomizeWeekdays(initialWeekdayCalories.length === 7);
+    setWeekdayCalories(
+      initialWeekdayCalories.length === 7
+        ? initialWeekdayCalories
+        : Array(7).fill(initialCalories),
+    );
     setErrorMessage(null);
   }, [
     initialCalories,
     initialCarbs,
     initialFat,
     initialFiber,
+    initialMealCount,
     initialProtein,
+    initialWeekdayCalories.join(","),
   ]);
 
+  function handleMeasurementSystemChange(next: MeasurementSystem) {
+    if (next === measurementSystem) return;
+
+    const parsedWeight = Number(weightValue);
+
+    if (Number.isFinite(parsedWeight) && parsedWeight > 0) {
+      setWeightValue(
+        String(
+          next === "imperial"
+            ? kgToLb(parsedWeight)
+            : lbToKg(parsedWeight),
+        ),
+      );
+    }
+
+    const parsedWaterGoal = Number(waterGoal);
+
+    if (Number.isFinite(parsedWaterGoal) && parsedWaterGoal > 0) {
+      setWaterGoal(
+        String(
+          next === "imperial"
+            ? mlToFlOz(parsedWaterGoal)
+            : flOzToMl(parsedWaterGoal),
+        ),
+      );
+    }
+
+    if (next === "imperial") {
+      const imperialHeight = cmToFeetInches(Number(heightCm));
+      setHeightFeet(String(imperialHeight.feet));
+      setHeightInches(String(imperialHeight.inches));
+    } else {
+      setHeightCm(
+        String(feetInchesToCm(Number(heightFeet), Number(heightInches))),
+      );
+    }
+
+    setMeasurementSystem(next);
+  }
+
+  function handleCalculateRecommendation() {
+    if (!profile) {
+      setErrorMessage("Your coaching profile is still loading.");
+      return;
+    }
+
+    try {
+      const recommendation = getMacroRecommendation({
+        activityLevel,
+        age: Number(age),
+        calorieDirection,
+        equationSex,
+        heightCm:
+          measurementSystem === "imperial"
+            ? feetInchesToCm(Number(heightFeet), Number(heightInches))
+            : Number(heightCm),
+        trainingGoals: profile.training_goals,
+        weightKg:
+          measurementSystem === "imperial"
+            ? lbToKg(Number(weightValue))
+            : Number(weightValue),
+      });
+
+      setCalories(String(recommendation.calories));
+      setProtein(String(recommendation.proteinGrams));
+      setCarbs(String(recommendation.carbsGrams));
+      setFat(String(recommendation.fatGrams));
+      setFiber(String(recommendation.fiberGrams));
+      setRecommendationExplanation(recommendation.explanation);
+      setErrorMessage(null);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to calculate a recommendation.",
+      );
+    }
+  }
+
   async function handleSave() {
+    const parsedAge = Number(age);
+    const parsedHeight =
+      measurementSystem === "imperial"
+        ? feetInchesToCm(Number(heightFeet), Number(heightInches))
+        : Number(heightCm);
+    const parsedWeight =
+      measurementSystem === "imperial"
+        ? lbToKg(Number(weightValue))
+        : Number(weightValue);
     const parsedCalories = Number(calories);
     const parsedProtein = Number(protein);
     const parsedCarbs = Number(carbs);
     const parsedFat = Number(fat);
     const parsedFiber = Number(fiber);
+    const parsedMealCount = Number(mealCount);
+    const parsedWaterGoal = waterGoal.trim() === "" ? null : Number(waterGoal);
+    const waterTargetMl =
+      parsedWaterGoal === null
+        ? null
+        : measurementSystem === "imperial"
+          ? flOzToMl(parsedWaterGoal)
+          : Math.round(parsedWaterGoal);
+    const parsedWeekdayCalories = weekdayCalories.map(Number);
 
     if (!session?.user.id) {
       setErrorMessage("No authenticated user was found.");
@@ -83,6 +298,39 @@ export default function EditNutritionGoalsScreen() {
     ) {
       setErrorMessage(
         "Calories must be a whole number from 500 to 10,000.",
+      );
+      return;
+    }
+
+    if (
+      !Number.isInteger(parsedMealCount) ||
+      parsedMealCount < 1 ||
+      parsedMealCount > 8
+    ) {
+      setErrorMessage("Meals per day must be a whole number from 1 to 8.");
+      return;
+    }
+
+    if (
+      waterTargetMl !== null &&
+      (!Number.isFinite(waterTargetMl) ||
+        waterTargetMl < 250 ||
+        waterTargetMl > 20000)
+    ) {
+      setErrorMessage(
+        `Water goal must be from ${
+          measurementSystem === "imperial" ? "8.5 to 676 fl oz" : "250 to 20,000 mL"
+        }.`,
+      );
+      return;
+    }
+
+    if (
+      customizeWeekdays &&
+      !validateWeekdayCalorieTargets(parsedWeekdayCalories)
+    ) {
+      setErrorMessage(
+        "Every weekday calorie target must be a whole number from 500 to 10,000.",
       );
       return;
     }
@@ -119,9 +367,14 @@ export default function EditNutritionGoalsScreen() {
           carbs_target_g: parsedCarbs,
           fat_target_g: parsedFat,
           fiber_target_g: parsedFiber,
+          meal_count: parsedMealCount,
           protein_target_g: parsedProtein,
+          water_target_ml: waterTargetMl,
           updated_at: new Date().toISOString(),
           user_id: session.user.id,
+          weekday_calorie_targets: customizeWeekdays
+            ? parsedWeekdayCalories
+            : [],
         },
         {
           onConflict: "user_id",
@@ -139,11 +392,30 @@ export default function EditNutritionGoalsScreen() {
       return;
     }
 
+    await supabase
+      .from("profiles")
+      .update({
+        activity_level: activityLevel,
+        age_years: Number.isFinite(parsedAge) ? parsedAge : null,
+        calorie_direction: calorieDirection,
+        equation_sex: equationSex,
+        height_cm: Number.isFinite(parsedHeight) ? parsedHeight : null,
+        preferred_weight_unit:
+          measurementSystem === "imperial" ? "lb" : "kg",
+        weight_kg: Number.isFinite(parsedWeight) ? parsedWeight : null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", session.user.id);
+
     router.replace("/nutrition");
   }
 
   return (
     <SafeAreaView style={styles.screen}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
       <ScrollView
         automaticallyAdjustKeyboardInsets
         contentContainerStyle={styles.content}
@@ -163,20 +435,279 @@ export default function EditNutritionGoalsScreen() {
           Set your daily calorie and macro targets.
         </Text>
 
+        <View style={styles.recommendationCard}>
+          <Text style={styles.recommendationEyebrow}>COACH ESTIMATE</Text>
+          <Text style={styles.recommendationTitle}>
+            Calculate a starting point
+          </Text>
+          <Text style={styles.recommendationDescription}>
+            For adults 18+. These estimates can be wrong for individuals and
+            should be adjusted using your real weight, recovery, and performance
+            trends.
+          </Text>
+
+          <Text style={styles.label}>Measurement system</Text>
+          <View style={styles.choiceRow}>
+            {(["imperial", "metric"] as MeasurementSystem[]).map((option) => (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ selected: measurementSystem === option }}
+                key={option}
+                onPress={() => handleMeasurementSystemChange(option)}
+                style={[
+                  styles.choiceButton,
+                  measurementSystem === option && styles.choiceButtonSelected,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.choiceText,
+                    measurementSystem === option && styles.choiceTextSelected,
+                  ]}
+                >
+                  {option === "imperial" ? "Imperial (lb, ft)" : "Metric (kg, cm)"}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <Text style={styles.label}>Age</Text>
+          <TextInput
+            inputMode="numeric"
+            onChangeText={setAge}
+            placeholder="35"
+            placeholderTextColor="#727885"
+            style={styles.input}
+            value={age}
+          />
+
+          {measurementSystem === "imperial" ? (
+            <>
+              <Text style={styles.label}>Height</Text>
+              <View style={styles.row}>
+                <View style={styles.inputGroup}>
+                  <TextInput
+                    inputMode="numeric"
+                    onChangeText={setHeightFeet}
+                    placeholder="5 ft"
+                    placeholderTextColor="#727885"
+                    style={styles.input}
+                    value={heightFeet}
+                  />
+                </View>
+                <View style={styles.inputGroup}>
+                  <TextInput
+                    inputMode="decimal"
+                    onChangeText={setHeightInches}
+                    placeholder="10 in"
+                    placeholderTextColor="#727885"
+                    style={styles.input}
+                    value={heightInches}
+                  />
+                </View>
+              </View>
+            </>
+          ) : (
+            <>
+              <Text style={styles.label}>Height (cm)</Text>
+              <TextInput
+                inputMode="decimal"
+                onChangeText={setHeightCm}
+                placeholder="175"
+                placeholderTextColor="#727885"
+                style={styles.input}
+                value={heightCm}
+              />
+            </>
+          )}
+
+          <Text style={styles.label}>
+            Body weight ({measurementSystem === "imperial" ? "lb" : "kg"})
+          </Text>
+          <TextInput
+            inputMode="decimal"
+            onChangeText={setWeightValue}
+            placeholder={measurementSystem === "imperial" ? "175" : "80"}
+            placeholderTextColor="#727885"
+            style={styles.input}
+            value={weightValue}
+          />
+
+          <Text style={styles.label}>Equation sex</Text>
+          <Text style={styles.fieldHint}>
+            The Mifflin–St Jeor equation uses different constants for male and
+            female physiology.
+          </Text>
+          <View style={styles.choiceRow}>
+            {(["female", "male"] as EquationSex[]).map((option) => (
+              <Pressable
+                key={option}
+                onPress={() => setEquationSex(option)}
+                style={[
+                  styles.choiceButton,
+                  equationSex === option && styles.choiceButtonSelected,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.choiceText,
+                    equationSex === option && styles.choiceTextSelected,
+                  ]}
+                >
+                  {option === "female" ? "Female" : "Male"}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <Text style={styles.label}>Daily activity</Text>
+          <View style={styles.choiceWrap}>
+            {ACTIVITY_LEVELS.map((option) => (
+              <Pressable
+                key={option}
+                onPress={() => setActivityLevel(option)}
+                style={[
+                  styles.choiceButton,
+                  activityLevel === option && styles.choiceButtonSelected,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.choiceText,
+                    activityLevel === option && styles.choiceTextSelected,
+                  ]}
+                >
+                  {ACTIVITY_LABELS[option]}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <Text style={styles.label}>Calorie direction</Text>
+          <View style={styles.choiceWrap}>
+            {CALORIE_DIRECTIONS.map((option) => (
+              <Pressable
+                key={option}
+                onPress={() => setCalorieDirection(option)}
+                style={[
+                  styles.choiceButton,
+                  calorieDirection === option && styles.choiceButtonSelected,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.choiceText,
+                    calorieDirection === option && styles.choiceTextSelected,
+                  ]}
+                >
+                  {CALORIE_DIRECTION_LABELS[option]}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <Pressable
+            onPress={handleCalculateRecommendation}
+            style={styles.calculateButton}
+          >
+            <Text style={styles.calculateButtonText}>
+              Calculate recommendation
+            </Text>
+          </Pressable>
+
+          {recommendationExplanation ? (
+            <Text style={styles.recommendationExplanation}>
+              {recommendationExplanation}
+            </Text>
+          ) : null}
+        </View>
+
+        <Text style={styles.label}>Meals per day</Text>
+        <TextInput
+          inputMode="numeric"
+          onChangeText={setMealCount}
+          selectTextOnFocus
+          style={styles.input}
+          value={mealCount}
+        />
+
+        <Text style={styles.label}>
+          Water goal ({measurementSystem === "imperial" ? "fl oz" : "mL"})
+        </Text>
+        <TextInput
+          inputMode="decimal"
+          onChangeText={setWaterGoal}
+          placeholder="Optional"
+          placeholderTextColor="#727885"
+          selectTextOnFocus
+          style={styles.input}
+          value={waterGoal}
+        />
+        <Text style={styles.fieldHint}>
+          Set your own daily target or leave this blank.
+        </Text>
+
         <Text style={styles.label}>Calories</Text>
         <TextInput
-          keyboardType="number-pad"
+          inputMode="numeric"
           onChangeText={setCalories}
           selectTextOnFocus
           style={styles.input}
           value={calories}
         />
 
+        <Pressable
+          onPress={() => {
+            setCustomizeWeekdays((current) => !current);
+            if (!customizeWeekdays) {
+              setWeekdayCalories(Array(7).fill(calories));
+            }
+          }}
+          style={[
+            styles.weekdayToggle,
+            customizeWeekdays && styles.weekdayToggleSelected,
+          ]}
+        >
+          <Text
+            style={[
+              styles.weekdayToggleText,
+              customizeWeekdays && styles.weekdayToggleTextSelected,
+            ]}
+          >
+            {customizeWeekdays
+              ? "Use one daily calorie target"
+              : "Customize calories by weekday"}
+          </Text>
+        </Pressable>
+
+        {customizeWeekdays ? (
+          <View style={styles.weekdayTargets}>
+            {WEEKDAY_LABELS.map((label, index) => (
+              <View key={label} style={styles.weekdayTargetRow}>
+                <Text style={styles.weekdayTargetLabel}>{label}</Text>
+                <TextInput
+                  inputMode="numeric"
+                  onChangeText={(value) =>
+                    setWeekdayCalories((current) =>
+                      current.map((target, targetIndex) =>
+                        targetIndex === index ? value : target,
+                      ),
+                    )
+                  }
+                  selectTextOnFocus
+                  style={[styles.input, styles.weekdayTargetInput]}
+                  value={weekdayCalories[index]}
+                />
+              </View>
+            ))}
+          </View>
+        ) : null}
+
         <View style={styles.row}>
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Protein (g)</Text>
             <TextInput
-              keyboardType="decimal-pad"
+              inputMode="decimal"
               onChangeText={setProtein}
               selectTextOnFocus
               style={styles.input}
@@ -187,7 +718,7 @@ export default function EditNutritionGoalsScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Carbs (g)</Text>
             <TextInput
-              keyboardType="decimal-pad"
+              inputMode="decimal"
               onChangeText={setCarbs}
               selectTextOnFocus
               style={styles.input}
@@ -200,7 +731,7 @@ export default function EditNutritionGoalsScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Fat (g)</Text>
             <TextInput
-              keyboardType="decimal-pad"
+              inputMode="decimal"
               onChangeText={setFat}
               selectTextOnFocus
               style={styles.input}
@@ -211,7 +742,7 @@ export default function EditNutritionGoalsScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Fiber (g)</Text>
             <TextInput
-              keyboardType="decimal-pad"
+              inputMode="decimal"
               onChangeText={setFiber}
               selectTextOnFocus
               style={styles.input}
@@ -236,6 +767,7 @@ export default function EditNutritionGoalsScreen() {
           )}
         </Pressable>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -255,7 +787,7 @@ const styles = StyleSheet.create({
     paddingTop: 18,
   },
   navigationText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 16,
     fontWeight: "700",
   },
@@ -274,7 +806,6 @@ const styles = StyleSheet.create({
   subtitle: {
     color: "#9CA3AF",
     fontSize: 16,
-    lineHeight: 24,
     marginBottom: 28,
     marginTop: 8,
   },
@@ -283,6 +814,41 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     marginBottom: 8,
+  },
+  weekdayToggle: {
+    alignItems: "center",
+    borderColor: "#2563EB",
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 20,
+    padding: 12,
+  },
+  weekdayToggleSelected: {
+    backgroundColor: "#172554",
+  },
+  weekdayToggleText: {
+    color: "#2563EB",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  weekdayToggleTextSelected: {
+    color: "#93C5FD",
+  },
+  weekdayTargets: {
+    marginBottom: 8,
+  },
+  weekdayTargetRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12,
+  },
+  weekdayTargetLabel: {
+    color: "#D1D5DB",
+    flex: 1,
+    fontSize: 14,
+  },
+  weekdayTargetInput: {
+    flex: 1,
   },
   input: {
     backgroundColor: "#171717",
@@ -294,6 +860,85 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingHorizontal: 16,
     paddingVertical: 14,
+  },
+  recommendationCard: {
+    backgroundColor: "#15120F",
+    borderColor: "#4A2D12",
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: 24,
+    padding: 16,
+  },
+  recommendationEyebrow: {
+    color: "#F97316",
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 1.4,
+  },
+  recommendationTitle: {
+    color: "#FFFFFF",
+    fontSize: 20,
+    fontWeight: "800",
+    marginTop: 6,
+  },
+  recommendationDescription: {
+    color: "#9CA3AF",
+    fontSize: 13,
+    marginBottom: 18,
+    marginTop: 6,
+  },
+  fieldHint: {
+    color: "#727885",
+    fontSize: 12,
+    marginBottom: 10,
+    marginTop: -4,
+  },
+  choiceRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 18,
+  },
+  choiceWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 18,
+  },
+  choiceButton: {
+    borderColor: "#333333",
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  choiceButtonSelected: {
+    backgroundColor: "#2563EB",
+    borderColor: "#2563EB",
+  },
+  choiceText: {
+    color: "#D1D5DB",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  choiceTextSelected: {
+    color: "#0B0B0B",
+  },
+  calculateButton: {
+    alignItems: "center",
+    borderColor: "#2563EB",
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingVertical: 11,
+  },
+  calculateButtonText: {
+    color: "#2563EB",
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  recommendationExplanation: {
+    color: "#D1D5DB",
+    fontSize: 12,
+    marginTop: 12,
   },
   row: {
     flexDirection: "row",
@@ -308,7 +953,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: "#2563EB",
     borderRadius: 12,
     justifyContent: "center",
     minHeight: 52,

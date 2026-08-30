@@ -2,6 +2,8 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -240,6 +242,10 @@ if (isLoadingExercise) {
   }
 return (
     <SafeAreaView style={styles.screen}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
       <ScrollView
         automaticallyAdjustKeyboardInsets
         contentContainerStyle={styles.content}
@@ -407,6 +413,7 @@ return (
           )}
         </Pressable>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -432,7 +439,7 @@ loadingScreen: {
     marginBottom: 28,
   },
   navigationText: {
-    color: "#F97316",
+    color: "#2563EB",
     fontSize: 16,
     fontWeight: "700",
   },
@@ -451,7 +458,6 @@ loadingScreen: {
   subtitle: {
     color: "#9CA3AF",
     fontSize: 15,
-    lineHeight: 22,
     marginBottom: 12,
     marginTop: 8,
   },
@@ -493,8 +499,8 @@ loadingScreen: {
     paddingVertical: 8,
   },
   optionButtonSelected: {
-    backgroundColor: "#F97316",
-    borderColor: "#F97316",
+    backgroundColor: "#2563EB",
+    borderColor: "#2563EB",
   },
   optionText: {
     color: "#D1D5DB",
@@ -514,7 +520,7 @@ loadingScreen: {
   },
   toggleButtonSelected: {
     backgroundColor: "#2A180B",
-    borderColor: "#F97316",
+    borderColor: "#2563EB",
   },
   toggleText: {
     color: "#D1D5DB",
@@ -526,12 +532,11 @@ loadingScreen: {
   },
   error: {
     color: "#F87171",
-    lineHeight: 20,
     marginTop: 18,
   },
   saveButton: {
     alignItems: "center",
-    backgroundColor: "#F97316",
+    backgroundColor: "#2563EB",
     borderRadius: 10,
     marginTop: 24,
     paddingVertical: 14,
