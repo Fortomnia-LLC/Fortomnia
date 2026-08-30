@@ -64,6 +64,11 @@ function assessmentColor(assessment: RecoveryAssessment) {
   return "#A78BFA";
 }
 
+function healthErrorMessage(error: unknown) {
+  if (error instanceof Error && error.message) return error.message;
+  return "Apple Health returned an unknown error.";
+}
+
 export default function HealthRecoveryScreen() {
   const [available, setAvailable] = useState<boolean | null>(null);
   const [dataMode, setDataMode] = useState<DataMode>("disconnected");
@@ -103,7 +108,7 @@ export default function HealthRecoveryScreen() {
       setAvailable(isAvailable);
       if (isAvailable && dataMode === "apple_health") await loadAppleHealth();
     } catch (error) {
-      setErrorMessage("Fortomnia could not refresh health data. Try again after checking Apple Health permissions.");
+      setErrorMessage(`Apple Health refresh failed: ${healthErrorMessage(error)}`);
       console.warn("Unable to refresh Apple Health", error);
     } finally {
       setLoading(false);
@@ -129,11 +134,10 @@ export default function HealthRecoveryScreen() {
       setDataMode("apple_health");
       await loadAppleHealth();
     } catch (error) {
-      Alert.alert(
-        "Apple Health",
-        "Fortomnia could not connect to Apple Health. You can try again after checking Health permissions in Settings.",
-      );
-      console.warn(error);
+      const message = healthErrorMessage(error);
+      setErrorMessage(`Apple Health connection failed: ${message}`);
+      Alert.alert("Apple Health", `Connection failed: ${message}`);
+      console.warn("Unable to connect Apple Health", error);
     } finally {
       setLoading(false);
     }
