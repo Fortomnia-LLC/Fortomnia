@@ -23,6 +23,40 @@ public class FortomniaHealthModule: Module {
       return true
     }
 
+    AsyncFunction("getAuthorizationRequestStatus") { (read: [String], write: [String]) async throws -> String in
+      guard HKHealthStore.isHealthDataAvailable() else { return "unavailable" }
+
+      let readTypes = Set<HKObjectType>(
+        read.compactMap { self.sampleType(for: $0) }.map { $0 as HKObjectType }
+      )
+      let writeTypes = Set<HKSampleType>(write.compactMap { self.writableSampleType(for: $0) })
+
+      let status = try await withCheckedThrowingContinuation {
+        (continuation: CheckedContinuation<HKAuthorizationRequestStatus, Error>) in
+        self.healthStore.getRequestStatusForAuthorization(
+          toShare: writeTypes,
+          read: readTypes
+        ) { status, error in
+          if let error {
+            continuation.resume(throwing: error)
+          } else {
+            continuation.resume(returning: status)
+          }
+        }
+      }
+
+      switch status {
+      case .shouldRequest:
+        return "should_request"
+      case .unnecessary:
+        return "unnecessary"
+      case .unknown:
+        return "unknown"
+      @unknown default:
+        return "unknown"
+      }
+    }
+
     AsyncFunction("readSamples") { (metrics: [String], startAt: String, endAt: String) async throws -> [[String: Any?]] in
       guard
         let start = self.date(from: startAt),
