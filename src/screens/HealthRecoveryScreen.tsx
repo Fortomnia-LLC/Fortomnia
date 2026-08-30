@@ -1,4 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -84,6 +85,7 @@ function healthErrorMessage(error: unknown) {
 }
 
 export default function HealthRecoveryScreen() {
+  const router = useRouter();
   const [available, setAvailable] = useState<boolean | null>(null);
   const [dataMode, setDataMode] = useState<DataMode>("disconnected");
   const [loading, setLoading] = useState(true);
@@ -234,6 +236,14 @@ export default function HealthRecoveryScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.content}>
+        <Pressable
+          accessibilityLabel="Back to recovery"
+          accessibilityRole="button"
+          onPress={() => router.back()}
+          style={styles.navigation}
+        >
+          <Text style={styles.navigationText}>‹ Recovery</Text>
+        </Pressable>
         <View style={styles.header}>
           <View>
             <Text style={styles.eyebrow}>HEALTH & WEARABLES</Text>
@@ -382,6 +392,8 @@ export default function HealthRecoveryScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#0B0B0B" },
   content: { padding: 20, paddingBottom: 44, gap: 16 },
+  navigation: { alignSelf: "flex-start" },
+  navigationText: { color: "#60A5FA", fontSize: 16, fontWeight: "700" },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   eyebrow: { color: "#60A5FA", fontSize: 12, fontWeight: "800", letterSpacing: 1.2 },
   title: { color: "#F9FAFB", fontSize: 32, fontWeight: "800", marginTop: 2 },

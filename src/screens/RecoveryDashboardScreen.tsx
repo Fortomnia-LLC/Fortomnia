@@ -71,6 +71,26 @@ export default function RecoveryDashboardScreen() {
           It is not medical advice.
         </Text>
 
+        <Link href="/health-recovery" asChild>
+          <Pressable
+            accessibilityHint="Opens Apple Health recovery trends and wearable signals"
+            accessibilityLabel="Apple Health and wearable recovery"
+            accessibilityRole="button"
+            style={styles.healthCard}
+          >
+            <View style={styles.healthCardContent}>
+              <Text style={styles.healthCardEyebrow}>APPLE HEALTH & WEARABLES</Text>
+              <Text style={styles.healthCardTitle}>Personal recovery trends</Text>
+              <Text style={styles.healthCardDescription}>
+                Compare sleep, resting heart rate, and HRV with your rolling baseline.
+              </Text>
+            </View>
+            <Text accessibilityElementsHidden style={styles.healthCardArrow}>
+              ›
+            </Text>
+          </Pressable>
+        </Link>
+
         {errorMessage ? (
           <Text
             accessibilityLiveRegion="polite"
@@ -267,6 +287,43 @@ const styles = StyleSheet.create({
   error: {
     color: "#F87171",
     marginBottom: 14,
+  },
+  healthCard: {
+    alignItems: "center",
+    backgroundColor: "#111827",
+    borderColor: "#1D4ED8",
+    borderRadius: 16,
+    borderWidth: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 16,
+    padding: 18,
+  },
+  healthCardContent: {
+    flex: 1,
+  },
+  healthCardEyebrow: {
+    color: "#60A5FA",
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 1.2,
+  },
+  healthCardTitle: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "800",
+    marginTop: 6,
+  },
+  healthCardDescription: {
+    color: "#9CA3AF",
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 6,
+  },
+  healthCardArrow: {
+    color: "#60A5FA",
+    fontSize: 30,
+    marginLeft: 12,
   },
   heroCard: {
     backgroundColor: "#21170D",
