@@ -14,6 +14,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { appleHealthProvider } from "../lib/health/appleHealthProvider";
 import { DEFAULT_HEALTH_READ_METRICS } from "../lib/health/healthProvider";
 import {
+  clearAppleHealthConnection,
+  loadAppleHealthConnection,
+  saveAppleHealthConnection,
+} from "../lib/health/healthConnectionStorage";
+import {
   assessRecoveryBaseline,
   RECOVERY_BASELINE_WINDOW_DAYS,
 } from "../lib/health/recoveryBaseline";
@@ -64,6 +69,11 @@ function assessmentColor(assessment: RecoveryAssessment) {
   return "#A78BFA";
 }
 
+function lastSyncLabel(value: string | null) {
+  if (!value) return "Connected";
+  return `Last synced ${new Date(value).toLocaleString()}`;
+}
+
 function healthErrorMessage(error: unknown) {
   if (error instanceof Error && error.message) return error.message;
   return "Apple Health returned an unknown error.";
@@ -76,6 +86,7 @@ export default function HealthRecoveryScreen() {
   const [summary, setSummary] = useState<DailyHealthSummary | null>(null);
   const [assessment, setAssessment] = useState<RecoveryAssessment | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
 
   const applySummaries = useCallback((summaries: DailyHealthSummary[]) => {
     const today = summaries.at(-1) ?? null;
@@ -90,6 +101,9 @@ export default function HealthRecoveryScreen() {
       today,
     );
     applySummaries(summaries);
+    const syncedAt = new Date().toISOString();
+    await saveAppleHealthConnection(syncedAt);
+    setLastSyncedAt(syncedAt);
   }, [applySummaries]);
 
   const refresh = useCallback(async () => {
@@ -116,8 +130,44 @@ export default function HealthRecoveryScreen() {
   }, [applySummaries, dataMode, loadAppleHealth]);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    let active = true;
+
+    async function restoreConnection() {
+      setLoading(true);
+      try {
+        if (Platform.OS !== "ios") {
+          if (active) setAvailable(false);
+          return;
+        }
+
+        const isAvailable = await appleHealthProvider.isAvailable();
+        if (!active) return;
+        setAvailable(isAvailable);
+        if (!isAvailable) return;
+
+        const stored = await loadAppleHealthConnection();
+        if (!active || !stored) return;
+
+        setLastSyncedAt(stored.lastSyncedAt);
+        setDataMode("apple_health");
+        await loadAppleHealth();
+      } catch (error) {
+        await clearAppleHealthConnection();
+        if (active) {
+          setDataMode("disconnected");
+          setLastSyncedAt(null);
+          setErrorMessage(`Apple Health reconnect failed: ${healthErrorMessage(error)}`);
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    void restoreConnection();
+    return () => {
+      active = false;
+    };
+  }, [loadAppleHealth]);
 
   async function connect() {
     setLoading(true);
@@ -131,8 +181,8 @@ export default function HealthRecoveryScreen() {
         setAvailable(false);
         return;
       }
-      setDataMode("apple_health");
       await loadAppleHealth();
+      setDataMode("apple_health");
     } catch (error) {
       const message = healthErrorMessage(error);
       setErrorMessage(`Apple Health connection failed: ${message}`);
@@ -193,7 +243,7 @@ export default function HealthRecoveryScreen() {
               <Text style={styles.cardTitle}>Apple Health</Text>
               <Text style={styles.muted}>
                 {dataMode === "apple_health"
-                  ? "Connected for this session"
+                  ? lastSyncLabel(lastSyncedAt)
                   : available === false
                     ? "Not available on this device"
                     : "Connect to import recovery signals"}
