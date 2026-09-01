@@ -28,7 +28,8 @@ function valuesForMetric(
   metric: HealthSample["metric"],
 ): number[] {
   return samples
-    .filter((sample) => sample.metric === metric && usableValue(sample))
+    .filter((sample) => sample.metric === metric)
+    .filter(usableValue)
     .map((sample) => sample.value);
 }
 
