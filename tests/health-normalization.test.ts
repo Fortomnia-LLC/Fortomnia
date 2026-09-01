@@ -74,3 +74,32 @@ test("groups UTC HealthKit timestamps by the device-local calendar day", () => {
 
   assert.equal(summarizeHealthDay("2026-08-29", [lateLocalSample]).steps, 250);
 });
+
+test("rejects negative and non-finite values from health summaries", () => {
+  const invalidSamples: HealthSample[] = [
+    { id: "negative-steps", provider: "apple_health", metric: "steps", startAt: localTimestamp(9), value: -500, unit: "count" },
+    { id: "nan-steps", provider: "apple_health", metric: "steps", startAt: localTimestamp(10), value: Number.NaN, unit: "count" },
+    { id: "infinite-workout", provider: "apple_health", metric: "workout", startAt: localTimestamp(11), value: Number.POSITIVE_INFINITY, unit: "min" },
+    { id: "valid-steps", provider: "apple_health", metric: "steps", startAt: localTimestamp(12), value: 750, unit: "count" },
+  ];
+
+  const summary = summarizeHealthDay("2026-08-29", invalidSamples);
+  assert.equal(summary.steps, 750);
+  assert.equal(summary.workoutMinutes, null);
+});
+
+test("keeps valid zero values instead of treating them as missing", () => {
+  const zeroSample: HealthSample = {
+    id: "zero-active-energy",
+    provider: "apple_health",
+    metric: "active_energy",
+    startAt: localTimestamp(8),
+    value: 0,
+    unit: "kcal",
+  };
+
+  assert.equal(
+    summarizeHealthDay("2026-08-29", [zeroSample]).activeEnergyKcal,
+    0,
+  );
+});
