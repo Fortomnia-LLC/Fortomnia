@@ -1,6 +1,6 @@
 # Fortomnia Privacy Policy
 
-**Last updated: August 9, 2026**
+**Last updated: September 1, 2026**
 
 Fortomnia ("Fortomnia," "we," "us," or "our") provides tools for tracking fitness, nutrition, supplements, and related personal performance information. This Privacy Policy explains what information Fortomnia collects, how it is used, when it may be shared, and the choices available to you.
 
@@ -30,7 +30,7 @@ You may record supplement protocols and adherence logs, including supplement nam
 
 ### Technical information
 
-Our service providers may process limited technical information needed to operate, secure, diagnose, and deliver the app, such as device or app information, request metadata, authentication events, and error information.
+We collect limited technical information needed to operate, secure, diagnose, and improve the app, including app and device versions, operating system, app lifecycle events, screen names, a pseudonymous account identifier, and error information. We do not send workout, nutrition, supplement, recovery, note, email, or password values to our analytics provider.
 
 Fortomnia does not currently collect Apple Health data, precise location, contacts, photos, advertising identifiers, or payment information. This policy must be updated before those capabilities are introduced.
 
@@ -53,6 +53,7 @@ We use service providers to operate Fortomnia. They may process information only
 
 - **Supabase**, for authentication, database hosting, and backend functions.
 - **Expo and its infrastructure providers**, where applicable, for application build, delivery, and technical operations.
+- **PostHog**, for privacy-limited product analytics and error monitoring. Session replay, touch capture, precise location collection, and advertising tracking are disabled.
 
 We may also disclose information when reasonably necessary to comply with law, protect users or the service, investigate fraud or security incidents, or complete a business transaction such as a merger or acquisition. If such a transaction occurs, we will require the recipient to handle personal information consistently with applicable law.
 

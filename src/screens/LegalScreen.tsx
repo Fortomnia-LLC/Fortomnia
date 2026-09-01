@@ -54,7 +54,7 @@ export default function LegalScreen() {
         </PolicySection>
 
         <PolicySection title="Privacy policy">
-          <Text style={styles.updated}>Last updated August 9, 2026</Text>
+          <Text style={styles.updated}>Last updated September 1, 2026</Text>
           <Text style={styles.body}>
             Fortomnia provides tools for tracking fitness, nutrition,
             supplements, and related personal performance information. This
@@ -81,13 +81,25 @@ export default function LegalScreen() {
             advertising, or use personal information for cross-app tracking.
           </Text>
 
+          <Text style={styles.subheading}>Technical information</Text>
+          <Text style={styles.body}>
+            Fortomnia collects limited app and device versions, operating
+            system, app lifecycle events, screen names, a pseudonymous account
+            identifier, and error information. Workout, nutrition, supplement,
+            recovery, note, email, and password values are not sent to the
+            analytics provider.
+          </Text>
+
           <Text style={styles.subheading}>Service providers</Text>
           <Text style={styles.body}>
             Supabase provides authentication, database hosting, and backend
             functions. Expo and its infrastructure providers may support app
-            build, delivery, and technical operations. Providers may process
-            information only as needed to deliver their services and are
-            expected to protect it appropriately.
+            build, delivery, and technical operations. PostHog provides
+            privacy-limited product analytics and error monitoring; session
+            replay, touch capture, precise location collection, and advertising
+            tracking are disabled. Providers may process information only as
+            needed to deliver their services and are expected to protect it
+            appropriately.
           </Text>
 
           <Text style={styles.subheading}>Retention and deletion</Text>
