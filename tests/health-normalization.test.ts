@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { deduplicateHealthSamples, summarizeHealthDay } from "../src/lib/health/healthNormalization.ts";
+import { deduplicateHealthSamples, summarizeHealthDay, summarizeHealthRange } from "../src/lib/health/healthNormalization.ts";
 import type { HealthSample } from "../src/lib/health/healthTypes";
 
 function localTimestamp(hour: number, minute = 0) {
@@ -101,5 +101,29 @@ test("keeps valid zero values instead of treating them as missing", () => {
   assert.equal(
     summarizeHealthDay("2026-08-29", [zeroSample]).activeEnergyKcal,
     0,
+  );
+});
+
+test("rejects invalid or reversed health summary date ranges", () => {
+  assert.throws(
+    () => summarizeHealthRange("2026-02-30", "2026-03-01", []),
+    /valid YYYY-MM-DD/,
+  );
+  assert.throws(
+    () => summarizeHealthRange("2026-09-02", "2026-09-01", []),
+    /start date must not be after/,
+  );
+  assert.throws(
+    () => summarizeHealthRange("09/01/2026", "2026-09-02", []),
+    /valid YYYY-MM-DD/,
+  );
+});
+
+test("returns an inclusive summary for a valid date range", () => {
+  assert.deepEqual(
+    summarizeHealthRange("2026-08-29", "2026-08-31", []).map(
+      (summary) => summary.date,
+    ),
+    ["2026-08-29", "2026-08-30", "2026-08-31"],
   );
 });
