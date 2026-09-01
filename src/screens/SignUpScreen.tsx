@@ -13,6 +13,7 @@ import {
   TextInput,
 } from 'react-native';
 import { supabase } from '../lib/supabase';
+import { getAuthErrorMessage } from '../lib/authErrorMessage';
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -37,24 +38,28 @@ export default function SignUpScreen() {
 
     setIsSubmitting(true);
 
-    const { data, error } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-    });
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+      });
 
-    setIsSubmitting(false);
+      if (error) {
+        setErrorMessage(getAuthErrorMessage(error, 'sign-up'));
+        return;
+      }
 
-    if (error) {
-      setErrorMessage(error.message);
-      return;
-    }
-
-    if (!data.session) {
-      Alert.alert(
-        'Check your email',
-        'Open the confirmation email from Fortomnia, then return to sign in.',
-        [{ text: 'OK', onPress: () => router.back() }],
-      );
+      if (!data.session) {
+        Alert.alert(
+          'Check your email',
+          'Open the confirmation email from Fortomnia, then return to sign in.',
+          [{ text: 'OK', onPress: () => router.back() }],
+        );
+      }
+    } catch (error) {
+      setErrorMessage(getAuthErrorMessage(error, 'sign-up'));
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
