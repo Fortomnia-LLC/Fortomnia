@@ -52,8 +52,13 @@ function daysBefore(date: string, amount: number) {
   return dateKey(value);
 }
 
-function metric(value: number | null | undefined, suffix = "") {
-  return value == null ? "—" : `${Math.round(value)}${suffix}`;
+function metric(
+  value: number | null | undefined,
+  suffix = "",
+  fractionDigits = 0,
+) {
+  if (value == null || !Number.isFinite(value)) return "—";
+  return `${value.toFixed(fractionDigits)}${suffix}`;
 }
 
 function comparisonValue(value: number | null, unit: string) {
@@ -257,7 +262,15 @@ export default function HealthRecoveryScreen() {
 
   const cards = useMemo(
     () => [
-      ["moon-outline", "Sleep", metric(summary?.sleepMinutes ? summary.sleepMinutes / 60 : null, " hr")],
+      [
+        "moon-outline",
+        "Sleep",
+        metric(
+          summary?.sleepMinutes != null ? summary.sleepMinutes / 60 : null,
+          " hr",
+          1,
+        ),
+      ],
       ["pulse-outline", "Resting HR", metric(summary?.restingHeartRateBpm, " bpm")],
       ["heart-outline", "HRV", metric(summary?.heartRateVariabilityMs, " ms")],
       ["footsteps-outline", "Steps", metric(summary?.steps)],
@@ -328,11 +341,21 @@ export default function HealthRecoveryScreen() {
           {loading ? (
             <ActivityIndicator style={styles.loader} />
           ) : dataMode !== "apple_health" && available !== false ? (
-            <Pressable style={styles.primaryButton} onPress={connect}>
+            <Pressable
+              accessibilityLabel="Connect Apple Health"
+              accessibilityRole="button"
+              style={styles.primaryButton}
+              onPress={connect}
+            >
               <Text style={styles.primaryButtonText}>Connect Apple Health</Text>
             </Pressable>
           ) : dataMode === "apple_health" ? (
-            <Pressable style={styles.secondaryButton} onPress={() => void refresh()}>
+            <Pressable
+              accessibilityLabel="Refresh Apple Health data"
+              accessibilityRole="button"
+              style={styles.secondaryButton}
+              onPress={() => void refresh()}
+            >
               <Ionicons name="refresh" size={16} color="#E5E7EB" />
               <Text style={styles.secondaryButtonText}>Refresh health data</Text>
             </Pressable>
@@ -348,7 +371,12 @@ export default function HealthRecoveryScreen() {
             </Pressable>
           ) : null}
           {dataMode !== "preview" ? (
-            <Pressable style={styles.previewButton} onPress={showPreview}>
+            <Pressable
+              accessibilityLabel="Preview recovery intelligence"
+              accessibilityRole="button"
+              style={styles.previewButton}
+              onPress={showPreview}
+            >
               <Text style={styles.previewButtonText}>Preview recovery intelligence</Text>
             </Pressable>
           ) : null}
