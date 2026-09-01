@@ -15,20 +15,37 @@ export function deduplicateHealthSamples(samples: HealthSample[]): HealthSample[
   });
 }
 
+function usableValue(sample: HealthSample): sample is HealthSample & { value: number } {
+  return (
+    typeof sample.value === "number" &&
+    Number.isFinite(sample.value) &&
+    sample.value >= 0
+  );
+}
+
+function valuesForMetric(
+  samples: HealthSample[],
+  metric: HealthSample["metric"],
+): number[] {
+  return samples
+    .filter((sample) => sample.metric === metric && usableValue(sample))
+    .map((sample) => sample.value);
+}
+
 function sumMetric(samples: HealthSample[], metric: HealthSample["metric"]): number | null {
-  const values = samples.filter((sample) => sample.metric === metric && typeof sample.value === "number").map((sample) => sample.value as number);
+  const values = valuesForMetric(samples, metric);
   return values.length ? values.reduce((total, value) => total + value, 0) : null;
 }
 
 function latestMetric(samples: HealthSample[], metric: HealthSample["metric"]): number | null {
-  const matching = samples.filter((sample) => sample.metric === metric && typeof sample.value === "number").sort((a, b) => b.startAt.localeCompare(a.startAt));
+  const matching = samples
+    .filter((sample) => sample.metric === metric && usableValue(sample))
+    .sort((a, b) => b.startAt.localeCompare(a.startAt));
   return matching[0]?.value ?? null;
 }
 
 function averageMetric(samples: HealthSample[], metric: HealthSample["metric"]): number | null {
-  const values = samples
-    .filter((sample) => sample.metric === metric && typeof sample.value === "number")
-    .map((sample) => sample.value as number);
+  const values = valuesForMetric(samples, metric);
   return values.length ? values.reduce((total, value) => total + value, 0) / values.length : null;
 }
 
