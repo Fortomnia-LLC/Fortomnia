@@ -7,7 +7,7 @@
     "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "ironforge",
+    "scheme": "fortomnia",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
@@ -17,13 +17,13 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.grc0830source.ironforge",
+      "bundleIdentifier": "com.grc0830source.fortomnia",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "com.grc0830source.ironforge",
+      "package": "com.grc0830source.fortomnia",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0B0B0B"
