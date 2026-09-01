@@ -86,11 +86,24 @@ function addDays(dateKey: string, amount: number): string {
   return localDateKey(date.toISOString());
 }
 
+function isValidDateKey(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T12:00:00`);
+  return !Number.isNaN(parsed.getTime()) && localDateKey(parsed.toISOString()) === value;
+}
+
 export function summarizeHealthRange(
   startDate: string,
   endDate: string,
   input: HealthSample[],
 ): DailyHealthSummary[] {
+  if (!isValidDateKey(startDate) || !isValidDateKey(endDate)) {
+    throw new RangeError("Health summary dates must use valid YYYY-MM-DD calendar dates.");
+  }
+  if (startDate > endDate) {
+    throw new RangeError("Health summary start date must not be after the end date.");
+  }
+
   const summaries: DailyHealthSummary[] = [];
   for (let date = startDate; date <= endDate; date = addDays(date, 1)) {
     summaries.push(summarizeHealthDay(date, input));
