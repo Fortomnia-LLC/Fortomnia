@@ -22,7 +22,10 @@ import {
   loadAppleHealthConnection,
   saveAppleHealthConnection,
 } from "../lib/health/healthConnectionStorage";
-import { shouldRestoreAppleHealth } from "../lib/health/healthConnection";
+import {
+  getHealthSyncFreshness,
+  shouldRestoreAppleHealth,
+} from "../lib/health/healthConnection";
 import {
   assessRecoveryBaseline,
   RECOVERY_BASELINE_WINDOW_DAYS,
@@ -75,8 +78,15 @@ function assessmentColor(assessment: RecoveryAssessment) {
 }
 
 function lastSyncLabel(value: string | null) {
-  if (!value) return "Connected";
-  return `Last synced ${new Date(value).toLocaleString()}`;
+  const freshness = getHealthSyncFreshness(value);
+  if (freshness.status === "never_synced") return "Connected — not synced yet";
+  if (freshness.status === "stale") {
+    return `Last synced ${new Date(value as string).toLocaleString()} • Refresh recommended`;
+  }
+  if (freshness.status === "clock_skew") {
+    return "Connected — check device date and time";
+  }
+  return `Last synced ${new Date(value as string).toLocaleString()}`;
 }
 
 function healthErrorMessage(error: unknown) {
@@ -207,6 +217,37 @@ export default function HealthRecoveryScreen() {
     }
   }
 
+  function disconnect() {
+    Alert.alert(
+      "Disconnect Apple Health?",
+      "Fortomnia will forget this connection and clear the health summary shown here. Apple Health permissions remain under your control in iPhone Settings.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Disconnect",
+          style: "destructive",
+          onPress: () => {
+            void (async () => {
+              setLoading(true);
+              try {
+                await clearAppleHealthConnection();
+                setDataMode("disconnected");
+                setLastSyncedAt(null);
+                setSummary(null);
+                setAssessment(null);
+                setErrorMessage(null);
+              } catch (error) {
+                setErrorMessage(`Unable to disconnect Apple Health: ${healthErrorMessage(error)}`);
+              } finally {
+                setLoading(false);
+              }
+            })();
+          },
+        },
+      ],
+    );
+  }
+
   function showPreview() {
     setDataMode("preview");
     setErrorMessage(null);
@@ -294,6 +335,16 @@ export default function HealthRecoveryScreen() {
             <Pressable style={styles.secondaryButton} onPress={() => void refresh()}>
               <Ionicons name="refresh" size={16} color="#E5E7EB" />
               <Text style={styles.secondaryButtonText}>Refresh health data</Text>
+            </Pressable>
+          ) : null}
+          {dataMode === "apple_health" ? (
+            <Pressable
+              accessibilityLabel="Disconnect Apple Health"
+              accessibilityRole="button"
+              style={styles.disconnectButton}
+              onPress={disconnect}
+            >
+              <Text style={styles.disconnectButtonText}>Disconnect Apple Health</Text>
             </Pressable>
           ) : null}
           {dataMode !== "preview" ? (
@@ -433,6 +484,8 @@ const styles = StyleSheet.create({
   secondaryButtonText: { color: "#E5E7EB", fontWeight: "700" },
   previewButton: { paddingVertical: 7, alignItems: "center" },
   previewButtonText: { color: "#93C5FD", fontSize: 13, fontWeight: "700" },
+  disconnectButton: { paddingVertical: 7, alignItems: "center" },
+  disconnectButtonText: { color: "#FDA4AF", fontSize: 13, fontWeight: "700" },
   error: { color: "#FDA4AF", backgroundColor: "#2A1218", padding: 12, borderRadius: 10, fontSize: 13, lineHeight: 19 },
   dataNotice: { alignItems: "flex-start", backgroundColor: "#261F0D", borderColor: "#594513", borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 10, padding: 12 },
   dataNoticeText: { color: "#FDE68A", flex: 1, fontSize: 13, lineHeight: 19 },
