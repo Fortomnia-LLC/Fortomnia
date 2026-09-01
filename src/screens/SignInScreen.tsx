@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 
 import { supabase } from '../../src/lib/supabase';
+import { getAuthErrorMessage } from '../../src/lib/authErrorMessage';
 
 export default function SignInScreen() {
   const [email, setEmail] = useState('');
@@ -24,16 +25,20 @@ export default function SignInScreen() {
     setErrorMessage(null);
     setIsSubmitting(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
 
-    if (error) {
-      setErrorMessage(error.message);
+      if (error) {
+        setErrorMessage(getAuthErrorMessage(error, 'sign-in'));
+      }
+    } catch (error) {
+      setErrorMessage(getAuthErrorMessage(error, 'sign-in'));
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitting(false);
   }
 
   const isDisabled = !email.trim() || !password || isSubmitting;
