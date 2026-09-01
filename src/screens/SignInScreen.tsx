@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 
 import { supabase } from '../../src/lib/supabase';
+import { getAuthErrorMessage } from '../../src/lib/authErrorMessage';
 
 export default function SignInScreen() {
   const [email, setEmail] = useState('');
@@ -28,16 +29,20 @@ export default function SignInScreen() {
     setErrorMessage(null);
     setIsSubmitting(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
 
-    if (error) {
-      setErrorMessage(error.message);
+      if (error) {
+        setErrorMessage(getAuthErrorMessage(error, 'sign-in'));
+      }
+    } catch (error) {
+      setErrorMessage(getAuthErrorMessage(error, 'sign-in'));
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitting(false);
   }
 
   async function handleForgotPassword() {
@@ -53,19 +58,23 @@ export default function SignInScreen() {
 
     setIsSendingReset(true);
 
-    const { error } = await supabase.auth.resetPasswordForEmail(
-      trimmedEmail,
-      { redirectTo: Linking.createURL('reset-password', { scheme: 'fortomnia' }) },
-    );
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(
+        trimmedEmail,
+        { redirectTo: Linking.createURL('reset-password', { scheme: 'fortomnia' }) },
+      );
 
-    setIsSendingReset(false);
+      if (error) {
+        setErrorMessage(getAuthErrorMessage(error, 'password-reset'));
+        return;
+      }
 
-    if (error) {
-      setErrorMessage(error.message);
-      return;
+      setResetMessage('Check your email for a password reset link.');
+    } catch (error) {
+      setErrorMessage(getAuthErrorMessage(error, 'password-reset'));
+    } finally {
+      setIsSendingReset(false);
     }
-
-    setResetMessage('Check your email for a password reset link.');
   }
 
   const isDisabled = !email.trim() || !password || isSubmitting;
