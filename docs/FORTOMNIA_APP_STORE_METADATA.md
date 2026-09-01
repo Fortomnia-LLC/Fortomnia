@@ -200,7 +200,7 @@ Complete Apple's current age-rating questionnaire based on the final submitted b
 
 - [ ] Fortomnia name is cleared for the intended filing and release scope.
 - [ ] Bundle identifier and application identifiers reflect the final naming decision.
-- [ ] `[[SUPPORT_EMAIL]]` is replaced across public policies.
+- [x] The monitored support address is included across public policies.
 - [ ] `[[LEGAL_OWNER_NAME]]` and all App Review placeholders are replaced.
 - [ ] Marketing, support, privacy, deletion, and terms URLs are live.
 - [ ] A dedicated review account is active and populated with fictional data.

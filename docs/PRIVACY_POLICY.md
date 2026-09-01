@@ -4,8 +4,6 @@
 
 Fortomnia ("Fortomnia," "we," "us," or "our") provides tools for tracking fitness, nutrition, supplements, and related personal performance information. This Privacy Policy explains what information Fortomnia collects, how it is used, when it may be shared, and the choices available to you.
 
-> **Publication placeholder:** Replace `[[SUPPORT_EMAIL]]` with a monitored public email address before publishing this policy or submitting Fortomnia for review.
-
 ## Information We Collect
 
 ### Account information
@@ -65,7 +63,7 @@ We retain account information and user-created records while your account remain
 
 You can initiate permanent account deletion from the Profile screen by selecting **Delete account** and confirming the request. Account deletion removes your Fortomnia account and associated user records unless retention is legally required.
 
-If you cannot access the app or deletion fails, contact us at `[[SUPPORT_EMAIL]]`.
+If you cannot access the app or deletion fails, contact us at [support@fortomnia.com](mailto:support@fortomnia.com).
 
 ## Security
 
@@ -73,7 +71,7 @@ We use reasonable administrative, technical, and organizational safeguards desig
 
 ## Your Choices and Rights
 
-Depending on where you live, you may have rights to access, correct, delete, or obtain a copy of your personal information, or to object to or restrict certain processing. You may update supported profile information in the app and delete your account through the Profile screen. To submit another privacy request, contact `[[SUPPORT_EMAIL]]`.
+Depending on where you live, you may have rights to access, correct, delete, or obtain a copy of your personal information, or to object to or restrict certain processing. You may update supported profile information in the app and delete your account through the Profile screen. To submit another privacy request, contact [support@fortomnia.com](mailto:support@fortomnia.com).
 
 We may need to verify your identity before completing a request.
 
@@ -93,4 +91,4 @@ We may update this Privacy Policy as Fortomnia changes. We will revise the "Last
 
 For privacy questions or requests, contact:
 
-`[[SUPPORT_EMAIL]]`
+[support@fortomnia.com](mailto:support@fortomnia.com)

@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import type { ReactNode } from "react";
 import {
+  Linking,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -13,6 +14,8 @@ type PolicySectionProps = {
   children: ReactNode;
   title: string;
 };
+
+const SUPPORT_EMAIL = "support@fortomnia.com";
 
 function PolicySection({ children, title }: PolicySectionProps) {
   return (
@@ -46,8 +49,17 @@ export default function LegalScreen() {
 
         <PolicySection title="Support">
           <Text style={styles.body}>
-            Public support contact information will be added before release.
-            Never send passwords, authentication codes, complete medical
+            Contact us at{" "}
+            <Text
+              accessibilityRole="link"
+              onPress={() =>
+                void Linking.openURL(`mailto:${SUPPORT_EMAIL}`)
+              }
+              style={styles.supportLink}
+            >
+              {SUPPORT_EMAIL}
+            </Text>
+            . Never send passwords, authentication codes, complete medical
             records, government identifiers, or payment-card information in a
             support request.
           </Text>
@@ -138,7 +150,7 @@ export default function LegalScreen() {
         </PolicySection>
 
         <PolicySection title="Terms of use">
-          <Text style={styles.updated}>Last updated August 9, 2026</Text>
+          <Text style={styles.updated}>Last updated September 1, 2026</Text>
           <Text style={styles.subheading}>Recordkeeping, not medical advice</Text>
           <Text style={styles.body}>
             Fortomnia is a recordkeeping and informational tool, not a
@@ -180,8 +192,8 @@ export default function LegalScreen() {
         </PolicySection>
 
         <Text style={styles.releaseNotice}>
-          Support contact details and final legally reviewed policies will be
-          added before public release.
+          Questions about privacy, account deletion, or these terms may be sent
+          to {SUPPORT_EMAIL}.
         </Text>
       </ScrollView>
     </SafeAreaView>
@@ -206,6 +218,11 @@ const styles = StyleSheet.create({
     color: "#F97316",
     fontSize: 16,
     fontWeight: "700",
+  },
+  supportLink: {
+    color: "#F97316",
+    fontWeight: "700",
+    textDecorationLine: "underline",
   },
   eyebrow: {
     color: "#F97316",
