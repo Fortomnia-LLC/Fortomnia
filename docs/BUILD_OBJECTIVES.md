@@ -6,6 +6,16 @@ Status legend: **Complete foundation** = usable groundwork exists but may still 
 
 ## Milestone 15 — Health, Apple Watch, and AI coaching
 
+### Completed increments — 2026-09-01
+
+- Enabled the existing GitHub quality workflow for all `milestone/**` branches. Every push now runs unit tests, TypeScript validation, and Expo Doctor.
+- Added tested Apple Health sync freshness states: fresh, stale, never synced, and device clock skew.
+- Added a Recovery-screen stale-sync warning and an explicit Apple Health disconnect control that clears Fortomnia's local health state.
+- Hardened health normalization against negative, non-finite, and malformed native values while preserving legitimate zero readings.
+- Added strict, terminating validation for inclusive health-summary date ranges.
+- Improved Recovery sleep display precision and accessibility labels for Health actions.
+- Verified the completed increment through successful GitHub Quality Check runs #154, #155, and #157.
+
 ### Objective ledger
 
 | Objective | Status on `milestone/15-health-wearables` | Existing foundation | Remaining acceptance target |
