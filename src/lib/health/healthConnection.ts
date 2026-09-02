@@ -7,8 +7,45 @@ export type AppleHealthAuthorizationRequestStatus =
 export function shouldRestoreAppleHealth(
   available: boolean,
   requestStatus: AppleHealthAuthorizationRequestStatus,
+  hasStoredConnection: boolean,
 ): boolean {
-  return available && requestStatus === "unnecessary";
+  return available && hasStoredConnection && requestStatus === "unnecessary";
+}
+
+export type StoredAppleHealthConnection = {
+  connected: true;
+  lastSyncedAt: string | null;
+};
+
+export function parseAppleHealthConnection(value: string): StoredAppleHealthConnection | null {
+  try {
+    const parsed = JSON.parse(value) as Record<string, unknown>;
+    if (parsed.connected !== true) return null;
+    if (parsed.lastSyncedAt === null || parsed.lastSyncedAt === undefined) {
+      return { connected: true, lastSyncedAt: null };
+    }
+    if (
+      typeof parsed.lastSyncedAt === "string" &&
+      Number.isFinite(Date.parse(parsed.lastSyncedAt))
+    ) {
+      return {
+        connected: true,
+        lastSyncedAt: new Date(parsed.lastSyncedAt).toISOString(),
+      };
+    }
+  } catch {
+    // Invalid local state is treated as disconnected.
+  }
+  return null;
+}
+
+export function createAppleHealthConnection(
+  lastSyncedAt: string | null,
+): StoredAppleHealthConnection {
+  if (lastSyncedAt === null) return { connected: true, lastSyncedAt: null };
+  const parsed = Date.parse(lastSyncedAt);
+  if (!Number.isFinite(parsed)) throw new TypeError("A valid Apple Health sync time is required.");
+  return { connected: true, lastSyncedAt: new Date(parsed).toISOString() };
 }
 
 export type HealthSyncFreshness = {
