@@ -26,6 +26,46 @@ test("deduplicates provider samples using external IDs", () => {
   assert.equal(deduplicateHealthSamples(samples).length, 5);
 });
 
+test("uses the stable native id when no external id is available", () => {
+  const original: HealthSample = {
+    id: "stable-native-id",
+    provider: "apple_health",
+    metric: "steps",
+    startAt: localTimestamp(9),
+    value: 200,
+    unit: "count",
+  };
+  const updated: HealthSample = {
+    ...original,
+    value: 250,
+    sourceBundleId: "com.apple.health",
+  };
+
+  assert.deepEqual(deduplicateHealthSamples([original, updated]), [updated]);
+});
+
+test("chooses the same richer duplicate regardless of HealthKit result order", () => {
+  const partial: HealthSample = {
+    id: "duplicate-order",
+    externalId: "healthkit-duplicate-order",
+    provider: "apple_health",
+    metric: "body_weight",
+    startAt: "2026-08-29T16:00:00Z",
+    value: 90,
+    unit: "kg",
+  };
+  const complete: HealthSample = {
+    ...partial,
+    sourceName: "Fortomnia",
+    sourceBundleId: "com.fortomnia.app",
+    startTimeZoneOffsetMinutes: -240,
+    timeZone: "America/New_York",
+  };
+
+  assert.deepEqual(deduplicateHealthSamples([partial, complete]), [complete]);
+  assert.deepEqual(deduplicateHealthSamples([complete, partial]), [complete]);
+});
+
 test("creates a normalized daily summary", () => {
   assert.deepEqual(
     {
