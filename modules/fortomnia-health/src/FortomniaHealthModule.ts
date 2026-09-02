@@ -2,6 +2,7 @@ import { requireNativeModule } from "expo";
 import type {
   NativeHealthAnchors,
   NativeHealthChanges,
+  NativeHealthDataChangedEvent,
   NativeHealthMetric,
   NativeHealthSample,
 } from "./FortomniaHealth.types";
@@ -20,6 +21,10 @@ export type NativeHealthAuthorizationResult = {
 };
 
 type FortomniaHealthNativeModule = {
+  addListener(
+    eventName: "onHealthDataChanged",
+    listener: (event: NativeHealthDataChangedEvent) => void,
+  ): { remove(): void };
   isAvailable(): boolean;
   getAuthorizationRequestStatus(
     read: NativeHealthMetric[],
@@ -40,6 +45,11 @@ type FortomniaHealthNativeModule = {
     endAt: string,
     anchors: NativeHealthAnchors,
   ): Promise<NativeHealthChanges>;
+  enableBackgroundDelivery(
+    metrics: NativeHealthMetric[],
+  ): Promise<NativeHealthMetric[]>;
+  disableBackgroundDelivery(): Promise<void>;
 };
 
 export default requireNativeModule<FortomniaHealthNativeModule>("FortomniaHealth");
+
