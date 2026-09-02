@@ -30,8 +30,12 @@ export type HealthSample = {
 export type HealthAuthorization = {
   provider: HealthProvider;
   available: boolean;
+  requestCompleted: boolean;
+  requestedRead: HealthMetric[];
+  readStatus: "not_requested" | "requested_unknown";
   grantedRead: HealthMetric[];
   grantedWrite: HealthMetric[];
+  deniedWrite: HealthMetric[];
 };
 
 export type DailyHealthSummary = {

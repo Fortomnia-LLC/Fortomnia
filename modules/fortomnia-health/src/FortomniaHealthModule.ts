@@ -7,6 +7,13 @@ export type NativeHealthAuthorizationRequestStatus =
   | "unknown"
   | "unavailable";
 
+export type NativeHealthAuthorizationResult = {
+  available: boolean;
+  requestCompleted: boolean;
+  grantedWrite: NativeHealthMetric[];
+  deniedWrite: NativeHealthMetric[];
+};
+
 type FortomniaHealthNativeModule = {
   isAvailable(): boolean;
   getAuthorizationRequestStatus(
@@ -16,7 +23,7 @@ type FortomniaHealthNativeModule = {
   requestAuthorization(
     read: NativeHealthMetric[],
     write: NativeHealthMetric[],
-  ): Promise<boolean>;
+  ): Promise<NativeHealthAuthorizationResult>;
   readSamples(
     metrics: NativeHealthMetric[],
     startAt: string,

@@ -16,6 +16,7 @@ Status legend: **Complete foundation** = usable groundwork exists but may still 
 - Improved Recovery sleep display precision and accessibility labels for Health actions.
 - Verified the completed increment through successful GitHub Quality Check runs #154, #155, and #157.
 - Reconciled the three Milestone 14 readiness commits and preserved their Android, device-test, and release-gate evidence.
+- Corrected Apple Health authorization reporting so read access is never falsely claimed and partial write permissions remain explicit.
 
 ### Objective ledger
 

@@ -7,6 +7,7 @@ import {
 } from "./healthProvider";
 import type { DailyHealthSummary, HealthAuthorization, HealthMetric, HealthSample } from "./healthTypes";
 import { summarizeHealthDay, summarizeHealthRange } from "./healthNormalization";
+import { mapAppleHealthAuthorization, unavailableAppleHealthAuthorization } from "./healthAuthorization";
 
 function dayBoundary(date: string, endOfDay = false): string {
   return new Date(`${date}T${endOfDay ? "23:59:59.999" : "00:00:00"}`).toISOString();
@@ -26,13 +27,17 @@ export const appleHealthProvider: FortomniaHealthProvider = {
   provider: "apple_health",
   async isAvailable() { return FortomniaHealth.isAvailable(); },
   async getAuthorization(): Promise<HealthAuthorization> {
-    return { provider: "apple_health", available: FortomniaHealth.isAvailable(), grantedRead: [], grantedWrite: [] };
+    if (!FortomniaHealth.isAvailable()) return unavailableAppleHealthAuthorization();
+    return {
+      ...unavailableAppleHealthAuthorization(),
+      available: true,
+    };
   },
   async requestAuthorization(read, write = []) {
     const available = FortomniaHealth.isAvailable();
-    if (!available) return { provider: "apple_health", available: false, grantedRead: [], grantedWrite: [] };
-    const granted = await FortomniaHealth.requestAuthorization(nativeMetrics(read), nativeMetrics(write));
-    return { provider: "apple_health", available: true, grantedRead: granted ? read : [], grantedWrite: granted ? write : [] };
+    if (!available) return unavailableAppleHealthAuthorization();
+    const result = await FortomniaHealth.requestAuthorization(nativeMetrics(read), nativeMetrics(write));
+    return mapAppleHealthAuthorization(read, result);
   },
   async readSamples(query: HealthQuery): Promise<HealthSample[]> {
     const samples = await FortomniaHealth.readSamples(nativeMetrics(query.metrics), query.startAt, query.endAt);
