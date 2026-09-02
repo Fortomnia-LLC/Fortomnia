@@ -27,6 +27,25 @@ import {
 import { reconcileAppleHealthSamples } from "./healthSampleReconciliation";
 
 const nativeMetrics = (metrics: HealthMetric[]) => metrics as NativeHealthMetric[];
+export const APPLE_HEALTH_RECOVERY_METRICS: HealthMetric[] = [
+  "steps", "active_energy", "resting_heart_rate", "heart_rate_variability",
+  "sleep", "body_weight", "body_fat_percentage", "workout",
+];
+let appleHealthSyncQueue: Promise<void> = Promise.resolve();
+
+export function addAppleHealthChangeListener(listener: () => void) {
+  return FortomniaHealth.addListener("onHealthDataChanged", () => listener());
+}
+
+export async function enableAppleHealthBackgroundDelivery(): Promise<void> {
+  await FortomniaHealth.enableBackgroundDelivery(
+    nativeMetrics(APPLE_HEALTH_RECOVERY_METRICS),
+  );
+}
+
+export async function disableAppleHealthBackgroundDelivery(): Promise<void> {
+  await FortomniaHealth.disableBackgroundDelivery();
+}
 
 export type AppleHealthChanges = {
   samples: HealthSample[];
@@ -76,25 +95,23 @@ export async function syncAnchoredAppleHealthSamples(
     saveSamples: saveAppleHealthSampleCache,
   },
 ): Promise<AppleHealthSyncResult> {
-  const [storedAnchors, storedSamples] = await Promise.all([
-    dependencies.loadAnchors(),
-    dependencies.loadSamples(),
-  ]);
-  const changes = await dependencies.readChanges(query, storedAnchors);
-  const cachedSamples = reconcileAppleHealthSamples(
-    storedSamples,
-    changes.samples,
-    changes.deletedIds,
-    query.startAt,
-  );
-
-  // Persist samples before advancing anchors. If cache storage fails, the same
-  // HealthKit changes are replayed safely on the next synchronization.
-  await dependencies.saveSamples(cachedSamples);
-  await dependencies.saveAnchors(
-    mergeAppleHealthAnchors(storedAnchors, changes.anchors),
-  );
-  return { ...changes, cachedSamples };
+  const run = async () => {
+    const [storedAnchors, storedSamples] = await Promise.all([
+      dependencies.loadAnchors(), dependencies.loadSamples(),
+    ]);
+    const changes = await dependencies.readChanges(query, storedAnchors);
+    const cachedSamples = reconcileAppleHealthSamples(
+      storedSamples, changes.samples, changes.deletedIds, query.startAt,
+    );
+    // Persist samples before advancing anchors. If cache storage fails, the
+    // same HealthKit changes are replayed safely on the next synchronization.
+    await dependencies.saveSamples(cachedSamples);
+    await dependencies.saveAnchors(mergeAppleHealthAnchors(storedAnchors, changes.anchors));
+    return { ...changes, cachedSamples };
+  };
+  const result = appleHealthSyncQueue.then(run, run);
+  appleHealthSyncQueue = result.then(() => undefined, () => undefined);
+  return result;
 }
 
 export async function getAppleHealthAuthorizationRequestStatus() {
