@@ -1,17 +1,17 @@
 # Android Readiness
 
-This checklist tracks Android work for the Fortomnia app in the `ironforge` Expo project.
+This checklist tracks Android work for the Fortomnia app in the `fortomnia` Expo project.
 
 ## Confirmed application identity
 
 - Expo owner: `body-app`
-- Expo slug: `ironforge`
+- Expo slug: `fortomnia`
 - EAS project ID: `48a69035-01c0-431f-8543-f47065f75bba`
 - Android application ID: `com.grc0830source.fortomnia`
 - Display name: Fortomnia
 - Custom URL scheme: `fortomnia`
 
-The Android application ID becomes permanent after the first Google Play upload. Confirm it again before creating the Play Console application. Do not use the separate `IronForgeApp` Expo project for these builds.
+The Android application ID becomes permanent after the first Google Play upload. Confirm it again before creating the Play Console application. Do not use any separate legacy Expo project for these builds.
 
 ## Verified Android platform baseline
 

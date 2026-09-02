@@ -4,7 +4,7 @@ Pod::Spec.new do |s|
   s.summary = 'Fortomnia Apple Health bridge'
   s.description = 'Expo module that provides Fortomnia access to authorized Apple Health data.'
   s.author = 'Fortomnia'
-  s.homepage = 'https://github.com/grc0830-source/IronForge'
+  s.homepage = 'https://fortomnia.com'
   s.platforms = { :ios => '15.1' }
   s.source = { git: '' }
   s.static_framework = true

@@ -115,7 +115,7 @@ export async function lookupFoodBarcode(
     {
       headers: {
         "User-Agent":
-          "Fortomnia/1.0 (https://github.com/grc0830-source/IronForge)",
+          "Fortomnia/1.0 (https://fortomnia.com)",
       },
     },
   );
