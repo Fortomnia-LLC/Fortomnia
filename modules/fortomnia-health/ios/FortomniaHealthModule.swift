@@ -90,6 +90,37 @@ public class FortomniaHealthModule: Module {
       }
       return output
     }
+
+    AsyncFunction("readAnchoredSamples") { (metrics: [String], startAt: String, endAt: String, anchors: [String: String]) async throws -> [String: Any] in
+      guard
+        let start = self.date(from: startAt),
+        let end = self.date(from: endAt)
+      else {
+        throw HealthModuleError.invalidDate
+      }
+
+      var samples: [[String: Any?]] = []
+      var deletedIds: [String] = []
+      var nextAnchors: [String: String] = [:]
+
+      for metric in metrics {
+        let changes = try await self.anchoredSamples(
+          for: metric,
+          start: start,
+          end: end,
+          encodedAnchor: anchors[metric]
+        )
+        samples.append(contentsOf: changes.samples)
+        deletedIds.append(contentsOf: changes.deletedIds)
+        nextAnchors[metric] = changes.encodedAnchor
+      }
+
+      return [
+        "samples": samples,
+        "deletedIds": Array(Set(deletedIds)).sorted(),
+        "anchors": nextAnchors
+      ]
+    }
   }
 
   private func date(from value: String) -> Date? {
@@ -160,6 +191,66 @@ public class FortomniaHealthModule: Module {
     }
   }
 
+  private func anchoredSamples(
+    for metric: String,
+    start: Date,
+    end: Date,
+    encodedAnchor: String?
+  ) async throws -> (samples: [[String: Any?]], deletedIds: [String], encodedAnchor: String) {
+    guard let type = sampleType(for: metric) else {
+      return ([], [], encodedAnchor ?? "")
+    }
+
+    let anchor = try decodeAnchor(encodedAnchor)
+    let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: [])
+
+    return try await withCheckedThrowingContinuation { continuation in
+      let query = HKAnchoredObjectQuery(
+        type: type,
+        predicate: predicate,
+        anchor: anchor,
+        limit: HKObjectQueryNoLimit
+      ) { _, added, deleted, nextAnchor, error in
+        if let error {
+          continuation.resume(throwing: error)
+          return
+        }
+
+        do {
+          let encodedNextAnchor = try self.encodeAnchor(nextAnchor)
+          continuation.resume(returning: (
+            (added ?? []).compactMap { self.serialize($0, metric: metric) },
+            (deleted ?? []).map { $0.uuid.uuidString },
+            encodedNextAnchor
+          ))
+        } catch {
+          continuation.resume(throwing: error)
+        }
+      }
+      self.healthStore.execute(query)
+    }
+  }
+
+  private func decodeAnchor(_ encoded: String?) throws -> HKQueryAnchor? {
+    guard let encoded, !encoded.isEmpty else { return nil }
+    guard let data = Data(base64Encoded: encoded) else { return nil }
+    do {
+      return try NSKeyedUnarchiver.unarchivedObject(ofClass: HKQueryAnchor.self, from: data)
+    } catch {
+      // A stale or corrupt local anchor must never strand Health sync. Restart
+      // this metric from an unanchored query and replace the stored anchor.
+      return nil
+    }
+  }
+
+  private func encodeAnchor(_ anchor: HKQueryAnchor?) throws -> String {
+    guard let anchor else { throw HealthModuleError.missingAnchor }
+    return try NSKeyedArchiver.archivedData(
+      withRootObject: anchor,
+      requiringSecureCoding: true
+    ).base64EncodedString()
+  }
+
   private func serialize(_ sample: HKSample, metric: String) -> [String: Any?]? {
     var value: Double? = nil
     var unit: String? = nil
@@ -218,4 +309,5 @@ public class FortomniaHealthModule: Module {
 
 enum HealthModuleError: Error {
   case invalidDate
+  case missingAnchor
 }

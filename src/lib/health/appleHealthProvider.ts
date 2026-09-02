@@ -1,5 +1,8 @@
 import FortomniaHealth from "../../../modules/fortomnia-health";
-import type { NativeHealthMetric } from "../../../modules/fortomnia-health/src/FortomniaHealth.types";
+import type {
+  NativeHealthAnchors,
+  NativeHealthMetric,
+} from "../../../modules/fortomnia-health/src/FortomniaHealth.types";
 import {
   DEFAULT_HEALTH_READ_METRICS,
   type FortomniaHealthProvider,
@@ -12,8 +15,50 @@ import {
   summarizeHealthRange,
 } from "./healthNormalization";
 import { mapAppleHealthAuthorization, unavailableAppleHealthAuthorization } from "./healthAuthorization";
+import {
+  loadAppleHealthAnchors,
+  saveAppleHealthAnchors,
+} from "./healthAnchorStorage";
+import { mergeAppleHealthAnchors } from "./healthAnchors";
 
 const nativeMetrics = (metrics: HealthMetric[]) => metrics as NativeHealthMetric[];
+
+export type AppleHealthChanges = {
+  samples: HealthSample[];
+  deletedIds: string[];
+  anchors: Partial<Record<HealthMetric, string>>;
+};
+
+export async function readAnchoredAppleHealthSamples(
+  query: HealthQuery,
+  anchors: Partial<Record<HealthMetric, string>>,
+): Promise<AppleHealthChanges> {
+  const result = await FortomniaHealth.readAnchoredSamples(
+    nativeMetrics(query.metrics),
+    query.startAt,
+    query.endAt,
+    anchors as NativeHealthAnchors,
+  );
+  return {
+    samples: result.samples.map((sample) => ({
+      ...sample,
+      provider: "apple_health" as const,
+    })),
+    deletedIds: result.deletedIds,
+    anchors: result.anchors,
+  };
+}
+
+export async function syncAnchoredAppleHealthSamples(
+  query: HealthQuery,
+): Promise<AppleHealthChanges> {
+  const storedAnchors = await loadAppleHealthAnchors();
+  const changes = await readAnchoredAppleHealthSamples(query, storedAnchors);
+  await saveAppleHealthAnchors(
+    mergeAppleHealthAnchors(storedAnchors, changes.anchors),
+  );
+  return changes;
+}
 
 export async function getAppleHealthAuthorizationRequestStatus() {
   if (!FortomniaHealth.isAvailable()) return "unavailable" as const;
