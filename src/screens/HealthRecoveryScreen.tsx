@@ -26,6 +26,7 @@ import {
   getHealthSyncFreshness,
   shouldRestoreAppleHealth,
 } from "../lib/health/healthConnection";
+import { getHealthErrorPresentation } from "../lib/health/healthError";
 import {
   assessRecoveryBaseline,
   RECOVERY_BASELINE_WINDOW_DAYS,
@@ -94,11 +95,6 @@ function lastSyncLabel(value: string | null) {
   return `Last synced ${new Date(value as string).toLocaleString()}`;
 }
 
-function healthErrorMessage(error: unknown) {
-  if (error instanceof Error && error.message) return error.message;
-  return "Apple Health returned an unknown error.";
-}
-
 export default function HealthRecoveryScreen() {
   const router = useRouter();
   const [available, setAvailable] = useState<boolean | null>(null);
@@ -145,8 +141,9 @@ export default function HealthRecoveryScreen() {
       setAvailable(isAvailable);
       if (isAvailable && dataMode === "apple_health") await loadAppleHealth();
     } catch (error) {
-      setErrorMessage(`Apple Health refresh failed: ${healthErrorMessage(error)}`);
-      console.warn("Unable to refresh Apple Health", error);
+      const healthError = getHealthErrorPresentation(error);
+      setErrorMessage(`Apple Health refresh failed: ${healthError.message}`);
+      console.warn("Unable to refresh Apple Health", healthError.kind);
     } finally {
       setLoading(false);
     }
@@ -183,9 +180,11 @@ export default function HealthRecoveryScreen() {
           console.warn("Unable to clear Apple Health sync metadata", storageError);
         });
         if (active) {
+          const healthError = getHealthErrorPresentation(error);
           setDataMode("disconnected");
           setLastSyncedAt(null);
-          setErrorMessage(`Apple Health reconnect failed: ${healthErrorMessage(error)}`);
+          setErrorMessage(`Apple Health reconnect failed: ${healthError.message}`);
+          console.warn("Unable to reconnect Apple Health", healthError.kind);
         }
       } finally {
         if (active) setLoading(false);
@@ -213,10 +212,10 @@ export default function HealthRecoveryScreen() {
       await loadAppleHealth();
       setDataMode("apple_health");
     } catch (error) {
-      const message = healthErrorMessage(error);
-      setErrorMessage(`Apple Health connection failed: ${message}`);
-      Alert.alert("Apple Health", `Connection failed: ${message}`);
-      console.warn("Unable to connect Apple Health", error);
+      const healthError = getHealthErrorPresentation(error);
+      setErrorMessage(`Apple Health connection failed: ${healthError.message}`);
+      Alert.alert("Apple Health", `Connection failed: ${healthError.message}`);
+      console.warn("Unable to connect Apple Health", healthError.kind);
     } finally {
       setLoading(false);
     }
@@ -242,7 +241,9 @@ export default function HealthRecoveryScreen() {
                 setAssessment(null);
                 setErrorMessage(null);
               } catch (error) {
-                setErrorMessage(`Unable to disconnect Apple Health: ${healthErrorMessage(error)}`);
+                const healthError = getHealthErrorPresentation(error);
+                setErrorMessage(`Unable to disconnect Apple Health: ${healthError.message}`);
+                console.warn("Unable to disconnect Apple Health", healthError.kind);
               } finally {
                 setLoading(false);
               }
