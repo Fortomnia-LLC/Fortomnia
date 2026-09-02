@@ -2,17 +2,62 @@ import type { DailyHealthSummary, HealthSample } from "./healthTypes";
 
 function sampleKey(sample: HealthSample): string {
   if (sample.externalId) return `${sample.provider}:${sample.externalId}`;
+  if (sample.id) return `${sample.provider}:${sample.id}`;
   return [sample.provider, sample.metric, sample.startAt, sample.endAt ?? "", sample.value ?? "", sample.unit ?? "", sample.sourceBundleId ?? sample.sourceName ?? ""].join(":");
 }
 
+function sampleCompleteness(sample: HealthSample): number {
+  return [
+    sample.endAt,
+    sample.value,
+    sample.unit,
+    sample.sourceBundleId,
+    sample.sourceName,
+    sample.startTimeZoneOffsetMinutes,
+    sample.endTimeZoneOffsetMinutes,
+    sample.timeZone,
+  ].reduce<number>((score, value) => score + (value === null || value === undefined || value === "" ? 0 : 1), 0);
+}
+
+function stableSampleValue(sample: HealthSample): string {
+  return JSON.stringify([
+    sample.metric,
+    sample.startAt,
+    sample.endAt ?? null,
+    sample.value ?? null,
+    sample.unit ?? null,
+    sample.sourceBundleId ?? null,
+    sample.sourceName ?? null,
+    sample.startTimeZoneOffsetMinutes ?? null,
+    sample.endTimeZoneOffsetMinutes ?? null,
+    sample.timeZone ?? null,
+  ]);
+}
+
+function preferredDuplicate(current: HealthSample, candidate: HealthSample): HealthSample {
+  const completenessDifference = sampleCompleteness(candidate) - sampleCompleteness(current);
+  if (completenessDifference > 0) return candidate;
+  if (completenessDifference < 0) return current;
+
+  // HealthKit query ordering is not an API guarantee. A stable tie-break keeps
+  // repeated syncs idempotent even if native results arrive in another order.
+  return stableSampleValue(candidate) < stableSampleValue(current) ? candidate : current;
+}
+
 export function deduplicateHealthSamples(samples: HealthSample[]): HealthSample[] {
-  const seen = new Set<string>();
-  return samples.filter((sample) => {
+  const unique = new Map<string, HealthSample>();
+  const order: string[] = [];
+  for (const sample of samples) {
     const key = sampleKey(sample);
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+    const existing = unique.get(key);
+    if (existing) {
+      unique.set(key, preferredDuplicate(existing, sample));
+    } else {
+      unique.set(key, sample);
+      order.push(key);
+    }
+  }
+  return order.map((key) => unique.get(key)!);
 }
 
 function usableValue(sample: HealthSample): sample is HealthSample & { value: number } {
