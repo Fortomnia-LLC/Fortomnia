@@ -68,6 +68,8 @@ Status legend: **Complete foundation** = usable groundwork exists but may still 
 8. Ship the protected premium AI runtime on top of existing deterministic systems.
 9. Run end-to-end release tests: permissions denied/partial, offline Watch, duplicate samples, time-zone changes, background sync, widget stale/locked states, RLS, entitlement loss/restore, unsafe AI prompts, and deterministic fallback.
 
+The Watch companion must satisfy the physical-device and reliability gates in [WATCH_COMPANION_ACCEPTANCE.md](./WATCH_COMPANION_ACCEPTANCE.md); compiling or passing simulator tests alone is not completion evidence.
+
 ## Training intelligence backlog
 
 - AI onboarding interview covering goals, experience, schedule, injuries/limitations, equipment, preferred movements, weak points, and nutrition context.
