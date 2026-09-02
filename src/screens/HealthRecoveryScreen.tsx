@@ -15,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import {
   appleHealthProvider,
   getAppleHealthAuthorizationRequestStatus,
+  syncAnchoredAppleHealthSamples,
 } from "../lib/health/appleHealthProvider";
 import { DEFAULT_HEALTH_READ_METRICS } from "../lib/health/healthProvider";
 import {
@@ -27,6 +28,7 @@ import {
   shouldRestoreAppleHealth,
 } from "../lib/health/healthConnection";
 import { getHealthErrorPresentation } from "../lib/health/healthError";
+import { getHealthQueryRange, summarizeHealthRange } from "../lib/health/healthNormalization";
 import {
   assessRecoveryBaseline,
   RECOVERY_BASELINE_WINDOW_DAYS,
@@ -113,10 +115,13 @@ export default function HealthRecoveryScreen() {
 
   const loadAppleHealth = useCallback(async () => {
     const today = dateKey();
-    const summaries = await appleHealthProvider.readDailySummaries(
-      daysBefore(today, RECOVERY_BASELINE_WINDOW_DAYS),
-      today,
-    );
+    const startDate = daysBefore(today, RECOVERY_BASELINE_WINDOW_DAYS);
+    const range = getHealthQueryRange(startDate, today);
+    const result = await syncAnchoredAppleHealthSamples({
+      metrics: ["steps", "active_energy", "resting_heart_rate", "heart_rate_variability", "sleep", "body_weight", "body_fat_percentage", "workout"],
+      ...range,
+    });
+    const summaries = summarizeHealthRange(startDate, today, result.cachedSamples);
     applySummaries(summaries);
     const syncedAt = new Date().toISOString();
     setLastSyncedAt(syncedAt);
@@ -546,3 +551,4 @@ const styles = StyleSheet.create({
   comparisonSummary: { color: "#D1D5DB", fontSize: 12, lineHeight: 18 },
   privacy: { color: "#6B7280", fontSize: 11, lineHeight: 17, textAlign: "center", marginTop: 2 },
 });
+
