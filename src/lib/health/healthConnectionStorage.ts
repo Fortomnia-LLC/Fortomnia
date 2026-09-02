@@ -5,6 +5,7 @@ import {
   type StoredAppleHealthConnection,
 } from "./healthConnection";
 import { clearAppleHealthAnchors } from "./healthAnchorStorage";
+import { clearAppleHealthSampleCache } from "./healthSampleCache";
 
 const APPLE_HEALTH_CONNECTION_KEY = "fortomnia.apple-health.connection";
 
@@ -34,5 +35,7 @@ export async function clearAppleHealthConnection(): Promise<void> {
   await Promise.all([
     SecureStore.deleteItemAsync(APPLE_HEALTH_CONNECTION_KEY),
     clearAppleHealthAnchors(),
+    clearAppleHealthSampleCache(),
   ]);
 }
+

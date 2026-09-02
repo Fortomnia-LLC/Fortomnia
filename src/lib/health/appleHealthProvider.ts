@@ -20,6 +20,11 @@ import {
   saveAppleHealthAnchors,
 } from "./healthAnchorStorage";
 import { mergeAppleHealthAnchors } from "./healthAnchors";
+import {
+  loadAppleHealthSampleCache,
+  saveAppleHealthSampleCache,
+} from "./healthSampleCache";
+import { reconcileAppleHealthSamples } from "./healthSampleReconciliation";
 
 const nativeMetrics = (metrics: HealthMetric[]) => metrics as NativeHealthMetric[];
 
@@ -27,6 +32,18 @@ export type AppleHealthChanges = {
   samples: HealthSample[];
   deletedIds: string[];
   anchors: Partial<Record<HealthMetric, string>>;
+};
+
+export type AppleHealthSyncResult = AppleHealthChanges & {
+  cachedSamples: HealthSample[];
+};
+
+type AppleHealthSyncDependencies = {
+  loadAnchors: typeof loadAppleHealthAnchors;
+  loadSamples: typeof loadAppleHealthSampleCache;
+  readChanges: typeof readAnchoredAppleHealthSamples;
+  saveAnchors: typeof saveAppleHealthAnchors;
+  saveSamples: typeof saveAppleHealthSampleCache;
 };
 
 export async function readAnchoredAppleHealthSamples(
@@ -51,13 +68,33 @@ export async function readAnchoredAppleHealthSamples(
 
 export async function syncAnchoredAppleHealthSamples(
   query: HealthQuery,
-): Promise<AppleHealthChanges> {
-  const storedAnchors = await loadAppleHealthAnchors();
-  const changes = await readAnchoredAppleHealthSamples(query, storedAnchors);
-  await saveAppleHealthAnchors(
+  dependencies: AppleHealthSyncDependencies = {
+    loadAnchors: loadAppleHealthAnchors,
+    loadSamples: loadAppleHealthSampleCache,
+    readChanges: readAnchoredAppleHealthSamples,
+    saveAnchors: saveAppleHealthAnchors,
+    saveSamples: saveAppleHealthSampleCache,
+  },
+): Promise<AppleHealthSyncResult> {
+  const [storedAnchors, storedSamples] = await Promise.all([
+    dependencies.loadAnchors(),
+    dependencies.loadSamples(),
+  ]);
+  const changes = await dependencies.readChanges(query, storedAnchors);
+  const cachedSamples = reconcileAppleHealthSamples(
+    storedSamples,
+    changes.samples,
+    changes.deletedIds,
+    query.startAt,
+  );
+
+  // Persist samples before advancing anchors. If cache storage fails, the same
+  // HealthKit changes are replayed safely on the next synchronization.
+  await dependencies.saveSamples(cachedSamples);
+  await dependencies.saveAnchors(
     mergeAppleHealthAnchors(storedAnchors, changes.anchors),
   );
-  return changes;
+  return { ...changes, cachedSamples };
 }
 
 export async function getAppleHealthAuthorizationRequestStatus() {
@@ -106,3 +143,4 @@ export const appleHealthProvider: FortomniaHealthProvider = {
     throw new Error("Apple Health writes are not enabled yet.");
   },
 };
+
