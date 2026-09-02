@@ -26,7 +26,8 @@ Status legend: **Complete foundation** = usable groundwork exists but may still 
 | Apple Health authorization and reads | Complete foundation | Local Expo module `modules/fortomnia-health`; health provider, normalization, connection storage, and recovery UI | Harden error states, partial permissions, persistence, time zones, duplicate samples, and production privacy disclosures |
 | Health signals | Complete foundation | Sleep, heart rate, resting heart rate, HRV, steps, active energy, workouts, weight, and body-fat types are represented | Validate units and source precedence; add incremental/background ingestion and explicit freshness indicators |
 | Recovery/readiness analysis | Complete foundation | 7–28 day personal baselines and deterministic, explainable training guidance | Extend the existing algorithm with confidence, missing-data behavior, weekly trend review, and safe plan adjustments; do not introduce a second readiness engine |
-| Apple Watch companion | Required | HealthKit data produced by Apple Watch can be read on iPhone through Apple Health | Add a real watchOS target/companion with planned-session start, current exercise, set logging, load/reps/RPE or RIR, timers, heart rate, next exercise, completion, offline queueing, and phone reconciliation |
+| Fortomnia Apple Watch app | Required | HealthKit data produced by Apple Watch can be read on iPhone through Apple Health | Add a real watchOS app/companion with planned-session start, current exercise, set logging, load/reps/RPE or RIR, timers, heart rate, next exercise, completion, offline queueing, and phone reconciliation |
+| iPhone and Lock Screen widgets | Required | Recovery, workout, and reminder data already exist in the iPhone app | Add WidgetKit Home Screen and Lock Screen widgets for recovery freshness, next workout/current session, and safe quick actions; use App Groups for minimal shared snapshots, deep-link into Fortomnia, handle stale/empty states, refresh within system limits, and redact sensitive health details while the device is locked |
 | Workout recording and HealthKit write-back | In progress | Native module declares workout/body write types, but the current product flow is read-oriented | Implement workout-session lifecycle, permission UX, write-back, duplicate prevention, and—where architecture permits—Watch/iPhone workout mirroring |
 | Reliable health sync | Required | Current on-demand provider flow and normalized daily summaries | Add anchored/incremental queries, background delivery, stable sample IDs, idempotent storage, source priority, retry, conflict resolution, and observable last-sync state |
 | Android health | Later | Cross-provider types already include `health_connect` | Implement Health Connect only after the iOS contract and sync model are stable |
@@ -50,7 +51,7 @@ Status legend: **Complete foundation** = usable groundwork exists but may still 
 3. Extend the existing AI questionnaire/profile and `user_entitlements`; do not create parallel onboarding, entitlement, or billing state.
 4. Extend `exercises` plus current exercise/implement/event mappings; do not create a replacement exercise library.
 5. Normalize or bridge `profiles.available_equipment` and `user_specialty_equipment`; do not add another disconnected equipment-preference table.
-6. Treat Apple Health ingestion and an Apple Watch companion as separate deliverables. The first has a foundation; the second is still required.
+6. Treat Apple Health ingestion, the Fortomnia Apple Watch app, and WidgetKit extensions as separate deliverables with shared contracts rather than duplicate storage or business logic.
 7. Keep deterministic safety, progression, equipment compatibility, and recovery logic authoritative. AI may explain and personalize within those constraints.
 8. Every schema change must include migration, RLS review, backfill/compatibility plan, and tests.
 
@@ -58,12 +59,13 @@ Status legend: **Complete foundation** = usable groundwork exists but may still 
 
 1. **Complete:** Reconcile the Milestone 14 branch delta and freeze shared data contracts.
 2. Harden HealthKit ingestion, persistence, privacy, and recovery tests.
-3. Build the watchOS workout companion and offline/idempotent synchronization.
-4. Unify equipment catalog concepts and add gym profiles without replacing current tables.
-5. Expand and quality-audit exercise/equipment mappings using licensed or original data.
-6. Add deterministic substitution ranking.
-7. Ship the protected premium AI runtime on top of existing deterministic systems.
-8. Run end-to-end release tests: permissions denied/partial, offline Watch, duplicate samples, time-zone changes, background sync, RLS, entitlement loss/restore, unsafe AI prompts, and deterministic fallback.
+3. Build the Fortomnia Apple Watch app and offline/idempotent synchronization.
+4. Add privacy-safe iPhone and Lock Screen widgets using shared app data and deep links.
+5. Unify equipment catalog concepts and add gym profiles without replacing current tables.
+6. Expand and quality-audit exercise/equipment mappings using licensed or original data.
+7. Add deterministic substitution ranking.
+8. Ship the protected premium AI runtime on top of existing deterministic systems.
+9. Run end-to-end release tests: permissions denied/partial, offline Watch, duplicate samples, time-zone changes, background sync, widget stale/locked states, RLS, entitlement loss/restore, unsafe AI prompts, and deterministic fallback.
 
 ## Training intelligence backlog
 
