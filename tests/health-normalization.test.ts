@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { deduplicateHealthSamples, summarizeHealthDay, summarizeHealthRange } from "../src/lib/health/healthNormalization.ts";
+import {
+  deduplicateHealthSamples,
+  getHealthQueryRange,
+  summarizeHealthDay,
+  summarizeHealthRange,
+} from "../src/lib/health/healthNormalization.ts";
 import type { HealthSample } from "../src/lib/health/healthTypes";
 
 function localTimestamp(hour: number, minute = 0) {
@@ -75,6 +80,55 @@ test("groups UTC HealthKit timestamps by the device-local calendar day", () => {
   assert.equal(summarizeHealthDay("2026-08-29", [lateLocalSample]).steps, 250);
 });
 
+test("keeps a sample on its recorded day after travel", () => {
+  const westCoastSample: HealthSample = {
+    id: "travel-steps",
+    provider: "apple_health",
+    metric: "steps",
+    startAt: "2026-08-29T01:30:00Z",
+    startTimeZoneOffsetMinutes: -420,
+    timeZone: "America/Los_Angeles",
+    value: 500,
+    unit: "count",
+  };
+
+  assert.equal(summarizeHealthDay("2026-08-28", [westCoastSample]).steps, 500);
+  assert.equal(summarizeHealthDay("2026-08-29", [westCoastSample]).steps, null);
+});
+
+test("uses the wake-up offset for sleep across a daylight-saving transition", () => {
+  const springForwardSleep: HealthSample = {
+    id: "dst-sleep",
+    provider: "apple_health",
+    metric: "sleep",
+    startAt: "2026-03-08T07:30:00Z",
+    endAt: "2026-03-08T14:30:00Z",
+    startTimeZoneOffsetMinutes: -480,
+    endTimeZoneOffsetMinutes: -420,
+    timeZone: "America/Los_Angeles",
+    value: 420,
+    unit: "min",
+  };
+
+  assert.equal(summarizeHealthDay("2026-03-08", [springForwardSleep]).sleepMinutes, 420);
+});
+
+test("handles travel across the international date line", () => {
+  const tokyoSample: HealthSample = {
+    id: "date-line-steps",
+    provider: "apple_health",
+    metric: "steps",
+    startAt: "2026-09-01T16:15:00Z",
+    startTimeZoneOffsetMinutes: 540,
+    timeZone: "Asia/Tokyo",
+    value: 300,
+    unit: "count",
+  };
+
+  assert.equal(summarizeHealthDay("2026-09-02", [tokyoSample]).steps, 300);
+  assert.equal(summarizeHealthDay("2026-09-01", [tokyoSample]).steps, null);
+});
+
 test("rejects negative and non-finite values from health summaries", () => {
   const invalidSamples: HealthSample[] = [
     { id: "negative-steps", provider: "apple_health", metric: "steps", startAt: localTimestamp(9), value: -500, unit: "count" },
@@ -126,4 +180,12 @@ test("returns an inclusive summary for a valid date range", () => {
     ),
     ["2026-08-29", "2026-08-30", "2026-08-31"],
   );
+});
+
+test("pads HealthKit queries for the full range of travel time zones", () => {
+  assert.deepEqual(getHealthQueryRange("2026-08-29", "2026-08-31"), {
+    startAt: "2026-08-28T00:00:00.000Z",
+    endAt: "2026-09-01T23:59:59.999Z",
+  });
+  assert.throws(() => getHealthQueryRange("2026-09-02", "2026-09-01"), /ordered/);
 });

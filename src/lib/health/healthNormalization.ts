@@ -65,8 +65,20 @@ export function summarizeHealthDay(date: string, input: HealthSample[]): DailyHe
   };
 }
 
-function localDateKey(value: string): string {
+function localDateKey(value: string, offsetMinutes?: number | null): string {
   const date = new Date(value);
+  if (
+    typeof offsetMinutes === "number" &&
+    Number.isFinite(offsetMinutes) &&
+    offsetMinutes >= -14 * 60 &&
+    offsetMinutes <= 14 * 60
+  ) {
+    const recordedLocalTime = new Date(date.getTime() + offsetMinutes * 60_000);
+    const year = recordedLocalTime.getUTCFullYear();
+    const month = String(recordedLocalTime.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(recordedLocalTime.getUTCDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
@@ -75,9 +87,12 @@ function localDateKey(value: string): string {
 
 function sampleDateKey(sample: HealthSample): string {
   // Overnight sleep belongs to the day the athlete wakes up. Other signals
-  // remain attached to the day on which the sample began.
-  if (sample.metric === "sleep" && sample.endAt) return localDateKey(sample.endAt);
-  return localDateKey(sample.startAt);
+  // remain attached to the day on which the sample began. Native-recorded
+  // offsets keep that assignment stable after travel or daylight-saving changes.
+  if (sample.metric === "sleep" && sample.endAt) {
+    return localDateKey(sample.endAt, sample.endTimeZoneOffsetMinutes);
+  }
+  return localDateKey(sample.startAt, sample.startTimeZoneOffsetMinutes);
 }
 
 function addDays(dateKey: string, amount: number): string {
@@ -90,6 +105,22 @@ function isValidDateKey(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const parsed = new Date(`${value}T12:00:00`);
   return !Number.isNaN(parsed.getTime()) && localDateKey(parsed.toISOString()) === value;
+}
+
+export function getHealthQueryRange(startDate: string, endDate: string) {
+  if (!isValidDateKey(startDate) || !isValidDateKey(endDate) || startDate > endDate) {
+    throw new RangeError("Health query dates must be an ordered, valid YYYY-MM-DD range.");
+  }
+
+  // The widest civil time-zone offsets are UTC-12 through UTC+14. Padding
+  // both edges prevents travel from excluding samples before per-sample
+  // calendar-day assignment runs.
+  const start = new Date(`${startDate}T00:00:00.000Z`);
+  start.setUTCDate(start.getUTCDate() - 1);
+  const end = new Date(`${endDate}T00:00:00.000Z`);
+  end.setUTCDate(end.getUTCDate() + 2);
+  end.setUTCMilliseconds(-1);
+  return { startAt: start.toISOString(), endAt: end.toISOString() };
 }
 
 export function summarizeHealthRange(
