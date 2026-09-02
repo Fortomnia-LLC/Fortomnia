@@ -11,8 +11,10 @@ public class FortomniaHealthModule: Module {
       HKHealthStore.isHealthDataAvailable()
     }
 
-    AsyncFunction("requestAuthorization") { (read: [String], write: [String]) async throws -> Bool in
-      guard HKHealthStore.isHealthDataAvailable() else { return false }
+    AsyncFunction("requestAuthorization") { (read: [String], write: [String]) async throws -> [String: Any] in
+      guard HKHealthStore.isHealthDataAvailable() else {
+        return ["available": false, "requestCompleted": false, "grantedWrite": [], "deniedWrite": []]
+      }
 
       let readTypes = Set<HKObjectType>(
         read.compactMap { self.sampleType(for: $0) }.map { $0 as HKObjectType }
@@ -20,7 +22,24 @@ public class FortomniaHealthModule: Module {
       let writeTypes = Set<HKSampleType>(write.compactMap { self.writableSampleType(for: $0) })
 
       try await self.healthStore.requestAuthorization(toShare: writeTypes, read: readTypes)
-      return true
+
+      let grantedWrite = write.filter { metric in
+        guard let type = self.writableSampleType(for: metric) else { return false }
+        return self.healthStore.authorizationStatus(for: type) == .sharingAuthorized
+      }
+      let deniedWrite = write.filter { metric in
+        guard let type = self.writableSampleType(for: metric) else { return false }
+        return self.healthStore.authorizationStatus(for: type) == .sharingDenied
+      }
+
+      // HealthKit intentionally does not reveal per-type read authorization.
+      // Empty query results may mean no data exists or that access was denied.
+      return [
+        "available": true,
+        "requestCompleted": true,
+        "grantedWrite": grantedWrite,
+        "deniedWrite": deniedWrite
+      ]
     }
 
     AsyncFunction("getAuthorizationRequestStatus") { (read: [String], write: [String]) async throws -> String in
