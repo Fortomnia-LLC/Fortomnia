@@ -1,5 +1,10 @@
 import { requireNativeModule } from "expo";
-import type { NativeHealthMetric, NativeHealthSample } from "./FortomniaHealth.types";
+import type {
+  NativeHealthAnchors,
+  NativeHealthChanges,
+  NativeHealthMetric,
+  NativeHealthSample,
+} from "./FortomniaHealth.types";
 
 export type NativeHealthAuthorizationRequestStatus =
   | "should_request"
@@ -29,6 +34,12 @@ type FortomniaHealthNativeModule = {
     startAt: string,
     endAt: string,
   ): Promise<NativeHealthSample[]>;
+  readAnchoredSamples(
+    metrics: NativeHealthMetric[],
+    startAt: string,
+    endAt: string,
+    anchors: NativeHealthAnchors,
+  ): Promise<NativeHealthChanges>;
 };
 
 export default requireNativeModule<FortomniaHealthNativeModule>("FortomniaHealth");
