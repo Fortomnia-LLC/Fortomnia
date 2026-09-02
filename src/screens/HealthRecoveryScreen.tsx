@@ -14,6 +14,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   appleHealthProvider,
+  APPLE_HEALTH_RECOVERY_METRICS,
+  addAppleHealthChangeListener,
+  disableAppleHealthBackgroundDelivery,
+  enableAppleHealthBackgroundDelivery,
   getAppleHealthAuthorizationRequestStatus,
   syncAnchoredAppleHealthSamples,
 } from "../lib/health/appleHealthProvider";
@@ -118,7 +122,7 @@ export default function HealthRecoveryScreen() {
     const startDate = daysBefore(today, RECOVERY_BASELINE_WINDOW_DAYS);
     const range = getHealthQueryRange(startDate, today);
     const result = await syncAnchoredAppleHealthSamples({
-      metrics: ["steps", "active_energy", "resting_heart_rate", "heart_rate_variability", "sleep", "body_weight", "body_fat_percentage", "workout"],
+      metrics: APPLE_HEALTH_RECOVERY_METRICS,
       ...range,
     });
     const summaries = summarizeHealthRange(startDate, today, result.cachedSamples);
@@ -181,6 +185,9 @@ export default function HealthRecoveryScreen() {
 
         if (stored) setLastSyncedAt(stored.lastSyncedAt);
         setDataMode("apple_health");
+        void enableAppleHealthBackgroundDelivery().catch((error) => {
+          console.warn("Unable to enable Apple Health background delivery", getHealthErrorPresentation(error).kind);
+        });
         await loadAppleHealth();
       } catch (error) {
         void clearAppleHealthConnection().catch((storageError) => {
@@ -204,6 +211,16 @@ export default function HealthRecoveryScreen() {
     };
   }, [loadAppleHealth]);
 
+  useEffect(() => {
+    if (Platform.OS !== "ios" || dataMode !== "apple_health") return;
+    const subscription = addAppleHealthChangeListener(() => {
+      void loadAppleHealth().catch((error) => {
+        console.warn("Unable to process Apple Health background update", getHealthErrorPresentation(error).kind);
+      });
+    });
+    return () => subscription.remove();
+  }, [dataMode, loadAppleHealth]);
+
   async function connect() {
     setLoading(true);
     setErrorMessage(null);
@@ -217,6 +234,9 @@ export default function HealthRecoveryScreen() {
         return;
       }
       await saveAppleHealthConnection(null);
+      void enableAppleHealthBackgroundDelivery().catch((error) => {
+        console.warn("Unable to enable Apple Health background delivery", getHealthErrorPresentation(error).kind);
+      });
       setDataMode("apple_health");
       await loadAppleHealth();
     } catch (error) {
@@ -242,7 +262,10 @@ export default function HealthRecoveryScreen() {
             void (async () => {
               setLoading(true);
               try {
-                await clearAppleHealthConnection();
+                await Promise.all([
+                  clearAppleHealthConnection(),
+                  disableAppleHealthBackgroundDelivery(),
+                ]);
                 setDataMode("disconnected");
                 setLastSyncedAt(null);
                 setSummary(null);

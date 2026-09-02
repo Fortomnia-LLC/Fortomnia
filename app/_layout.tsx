@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { configureNotificationHandler } from '../src/lib/notificationService';
+import { AppleHealthBackgroundSync } from '../src/components/AppleHealthBackgroundSync';
 
 import {
   AuthProvider,
@@ -41,6 +42,7 @@ function RootNavigator() {
 export default function RootLayout() {
   return (
     <AuthProvider>
+      <AppleHealthBackgroundSync />
       <StatusBar style="light" />
       <RootNavigator />
     </AuthProvider>
@@ -55,3 +57,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 });
+

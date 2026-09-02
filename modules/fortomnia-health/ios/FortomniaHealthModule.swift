@@ -3,9 +3,21 @@ import HealthKit
 
 public class FortomniaHealthModule: Module {
   private let healthStore = HKHealthStore()
+  private var observerQueries: [String: HKObserverQuery] = [:]
+  private let backgroundMetricsKey = "fortomnia.apple-health.background-metrics.v1"
 
   public func definition() -> ModuleDefinition {
     Name("FortomniaHealth")
+    Events("onHealthDataChanged")
+
+    OnCreate {
+      let metrics = UserDefaults.standard.stringArray(forKey: self.backgroundMetricsKey) ?? []
+      self.startObserverQueries(for: metrics)
+    }
+
+    OnDestroy {
+      self.stopObserverQueries()
+    }
 
     Function("isAvailable") {
       HKHealthStore.isHealthDataAvailable()
@@ -121,6 +133,62 @@ public class FortomniaHealthModule: Module {
         "anchors": nextAnchors
       ]
     }
+
+    AsyncFunction("enableBackgroundDelivery") { (metrics: [String]) async throws -> [String] in
+      let supported = Array(Set(metrics.filter { self.sampleType(for: $0) != nil })).sorted()
+      for metric in supported {
+        guard let type = self.sampleType(for: metric) else { continue }
+        try await self.enableBackgroundDelivery(for: type)
+      }
+      UserDefaults.standard.set(supported, forKey: self.backgroundMetricsKey)
+      self.startObserverQueries(for: supported)
+      return supported
+    }
+
+    AsyncFunction("disableBackgroundDelivery") { () async throws -> Void in
+      try await self.disableAllBackgroundDelivery()
+      UserDefaults.standard.removeObject(forKey: self.backgroundMetricsKey)
+      self.stopObserverQueries()
+    }
+  }
+
+  private func enableBackgroundDelivery(for type: HKObjectType) async throws {
+    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+      healthStore.enableBackgroundDelivery(for: type, frequency: .immediate) { success, error in
+        if let error { continuation.resume(throwing: error) }
+        else if success { continuation.resume(returning: ()) }
+        else { continuation.resume(throwing: HealthModuleError.backgroundDeliveryFailed) }
+      }
+    }
+  }
+
+  private func disableAllBackgroundDelivery() async throws {
+    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+      healthStore.disableAllBackgroundDelivery { success, error in
+        if let error { continuation.resume(throwing: error) }
+        else if success { continuation.resume(returning: ()) }
+        else { continuation.resume(throwing: HealthModuleError.backgroundDeliveryFailed) }
+      }
+    }
+  }
+
+  private func startObserverQueries(for metrics: [String]) {
+    stopObserverQueries()
+    for metric in metrics {
+      guard let type = sampleType(for: metric) else { continue }
+      let query = HKObserverQuery(sampleType: type, predicate: nil) { [weak self] _, completion, error in
+        defer { completion() }
+        guard error == nil else { return }
+        self?.sendEvent("onHealthDataChanged", ["metrics": [metric]])
+      }
+      observerQueries[metric] = query
+      healthStore.execute(query)
+    }
+  }
+
+  private func stopObserverQueries() {
+    observerQueries.values.forEach { healthStore.stop($0) }
+    observerQueries.removeAll()
   }
 
   private func date(from value: String) -> Date? {
@@ -310,4 +378,6 @@ public class FortomniaHealthModule: Module {
 enum HealthModuleError: Error {
   case invalidDate
   case missingAnchor
+  case backgroundDeliveryFailed
 }
+

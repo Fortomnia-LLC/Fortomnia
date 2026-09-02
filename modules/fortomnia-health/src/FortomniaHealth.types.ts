@@ -6,3 +6,5 @@ export type NativeHealthChanges = {
   deletedIds: string[];
   anchors: NativeHealthAnchors;
 };
+export type NativeHealthDataChangedEvent = { metrics: NativeHealthMetric[] };
+
