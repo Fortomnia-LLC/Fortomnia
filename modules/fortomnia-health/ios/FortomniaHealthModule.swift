@@ -182,11 +182,18 @@ public class FortomniaHealthModule: Module {
       unit = "min"
     }
 
+    let recordedTimeZone = (sample.metadata?[HKMetadataKeyTimeZone] as? String)
+      .flatMap { TimeZone(identifier: $0) }
+    let sampleTimeZone = recordedTimeZone ?? TimeZone.current
+
     return [
       "id": sample.uuid.uuidString,
       "metric": metric,
       "startAt": ISO8601DateFormatter().string(from: sample.startDate),
       "endAt": ISO8601DateFormatter().string(from: sample.endDate),
+      "startTimeZoneOffsetMinutes": sampleTimeZone.secondsFromGMT(for: sample.startDate) / 60,
+      "endTimeZoneOffsetMinutes": sampleTimeZone.secondsFromGMT(for: sample.endDate) / 60,
+      "timeZone": sampleTimeZone.identifier,
       "value": value,
       "unit": unit,
       "sourceName": sample.sourceRevision.source.name,

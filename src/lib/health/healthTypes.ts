@@ -19,6 +19,9 @@ export type HealthSample = {
   metric: HealthMetric;
   startAt: string;
   endAt?: string | null;
+  startTimeZoneOffsetMinutes?: number | null;
+  endTimeZoneOffsetMinutes?: number | null;
+  timeZone?: string | null;
   value?: number | null;
   unit?: string | null;
   sourceName?: string | null;

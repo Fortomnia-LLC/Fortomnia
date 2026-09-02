@@ -6,12 +6,12 @@ import {
   type HealthQuery,
 } from "./healthProvider";
 import type { DailyHealthSummary, HealthAuthorization, HealthMetric, HealthSample } from "./healthTypes";
-import { summarizeHealthDay, summarizeHealthRange } from "./healthNormalization";
+import {
+  getHealthQueryRange,
+  summarizeHealthDay,
+  summarizeHealthRange,
+} from "./healthNormalization";
 import { mapAppleHealthAuthorization, unavailableAppleHealthAuthorization } from "./healthAuthorization";
-
-function dayBoundary(date: string, endOfDay = false): string {
-  return new Date(`${date}T${endOfDay ? "23:59:59.999" : "00:00:00"}`).toISOString();
-}
 
 const nativeMetrics = (metrics: HealthMetric[]) => metrics as NativeHealthMetric[];
 
@@ -44,16 +44,16 @@ export const appleHealthProvider: FortomniaHealthProvider = {
     return samples.map((sample) => ({ ...sample, provider: "apple_health" as const }));
   },
   async readDailySummary(date: string): Promise<DailyHealthSummary> {
-    const startAt = dayBoundary(date);
-    const endAt = dayBoundary(date, true);
+    const { startAt, endAt } = getHealthQueryRange(date, date);
     const samples = await this.readSamples({ metrics: ["steps", "active_energy", "resting_heart_rate", "heart_rate_variability", "sleep", "body_weight", "body_fat_percentage", "workout"], startAt, endAt });
     return summarizeHealthDay(date, samples);
   },
   async readDailySummaries(startDate: string, endDate: string): Promise<DailyHealthSummary[]> {
+    const { startAt, endAt } = getHealthQueryRange(startDate, endDate);
     const samples = await this.readSamples({
       metrics: ["steps", "active_energy", "resting_heart_rate", "heart_rate_variability", "sleep", "body_weight", "body_fat_percentage", "workout"],
-      startAt: dayBoundary(startDate),
-      endAt: dayBoundary(endDate, true),
+      startAt,
+      endAt,
     });
     return summarizeHealthRange(startDate, endDate, samples);
   },
