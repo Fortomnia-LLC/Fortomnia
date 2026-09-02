@@ -1,88 +1,53 @@
 # Milestone 14 Device Test Matrix
 
-Use the exact commit and build identifiers intended for release. Record Pass, Fail, or Blocked for every row; do not treat the frozen Milestone 13 submission as coverage for Milestone 14.
+This matrix separates historical evidence from the final PR-head release gate. Historical results remain useful regression evidence, but only results recorded against the final candidate builds count toward moving PR #3 out of draft.
 
-## Build record
+## Candidate identity
 
 | Item | iPhone | Android |
 | --- | --- | --- |
-| Commit SHA | `1d8d8420b138723ab3b9237d7fe23d2d38288dcd` | `e95f205b0558695bf74b96e6c4edada5d6608864` |
-| EAS build ID | `33667a87-7564-432c-ba98-5093214beaf4` | `d0b06ea0-31f7-4dbd-9a8b-156bb4a843a8` |
-| App version/build number | 1.0.0 / 2 | Preview build |
-| Device and OS version | iPhone 17 Pro / iOS 26.6 | Pending tester reports |
-| Tester | grc0830 | Three external testers |
-| Test date | 2026-08-24 | In progress |
+| Application-code baseline | `c405c65e9aee5e24995827c8c4be2e81a52cd984` | `c405c65e9aee5e24995827c8c4be2e81a52cd984` |
+| Final PR head used for build | Pending documentation commit | Pending documentation commit |
+| EAS build ID | Pending | Pending |
+| App version/build number | Pending | Pending |
+| Device and OS | Pending | Pending three external tester reports |
+| Tester and date | Pending | Pending |
 
-## Production candidate
+Do not approve the PR until both build records above identify builds from the same final PR head and every critical scenario below is Pass.
 
-| Item | Value |
-| --- | --- |
-| Commit SHA | `c2496e420c9831d9a95f7cfe1005281a0b144aac` |
-| EAS build ID | `0c62911d-1000-4861-8c9f-1927e3ecdcb7` |
-| EAS submission ID | `e0d939b2-6452-4354-86d5-8293c3eff140` |
-| App version/build number | 1.0.0 / 3 |
-| Profile | production |
-| Apple upload | Testing in Team (Expo) and Fortomnia External Beta; automatic tester notification enabled on 2026-08-24 |
+## Historical evidence retained
 
-## Installation and startup
+| Platform | Commit | Build | Evidence | Status for final gate |
+| --- | --- | --- | --- | --- |
+| iOS | `1d8d8420b138723ab3b9237d7fe23d2d38288dcd` | `33667a87-7564-432c-ba98-5093214beaf4` | Startup/session, account lifecycle, coached workout, time/distance feedback, recap, measurements, offline/reconnect, forms and accessibility on iPhone 17 Pro / iOS 26.6 | Regression context only |
+| iOS production | `c2496e420c9831d9a95f7cfe1005281a0b144aac` | `0c62911d-1000-4861-8c9f-1927e3ecdcb7` | Milestone 13 production candidate and submission `e0d939b2-6452-4354-86d5-8293c3eff140` | Frozen Milestone 13 evidence only |
+| Android | `e95f205b0558695bf74b96e6c4edada5d6608864` | `d0b06ea0-31f7-4dbd-9a8b-156bb4a843a8` | Distributed to three external testers; no results recorded | Not evidence for final gate |
 
-| Test | iPhone | Android | Notes |
+## Minimum final-head retest scenarios
+
+Each scenario should be completed as one continuous flow where practical. Record Pass, Fail, or Blocked and add device, OS, tester, date, and defect links in Notes.
+
+| Scenario | iPhone | Android | Notes |
 | --- | --- | --- | --- |
-| Clean install succeeds | Pass |  |  |
-| App icon and splash render correctly | Pass |  |  |
-| Cold launch succeeds | Pass |  | Native preview `33667a87-7564-432c-ba98-5093214beaf4` |
-| Returning from background restores the session | Pass |  | Native preview `33667a87-7564-432c-ba98-5093214beaf4` |
-| Airplane-mode launch shows a recoverable state | Pass |  | Current Milestone 14 preview rechecked |
-| Reconnecting restores data without restarting | Pass |  | Current Milestone 14 preview rechecked |
-
-## Account lifecycle
-
-| Test | iPhone | Android | Notes |
-| --- | --- | --- | --- |
-| Create a fresh account | Pass |  | Rechecked in native preview `33667a87-7564-432c-ba98-5093214beaf4` |
-| Confirm email and return to Fortomnia | Pass |  | Rechecked in native preview `33667a87-7564-432c-ba98-5093214beaf4` |
-| Sign in and sign out | Pass |  | Rechecked in native preview `33667a87-7564-432c-ba98-5093214beaf4` |
-| Request and complete password reset | Pass |  | Rechecked in native preview `33667a87-7564-432c-ba98-5093214beaf4` |
-| Reinstall and restore an existing session | Pass |  |  |
-| Delete the test account and verify sign-out | Pass |  | Rechecked in native preview `33667a87-7564-432c-ba98-5093214beaf4` |
-
-## Training intelligence
-
-| Test | iPhone | Android | Notes |
-| --- | --- | --- | --- |
-| Generate or open a workout template | Pass |  | Current Milestone 14 preview rechecked |
-| Exercise cards show today’s targets | Pass |  | Current Milestone 14 preview rechecked |
-| “Log recommended set” prefills correctly | Pass |  | Current Milestone 14 preview rechecked |
-| Strength target feedback is correct | Pass |  | Current Milestone 14 preview rechecked |
-| Time target feedback is correct | Pass |  | Metric native device flow passed in preview `33667a87-7564-432c-ba98-5093214beaf4` |
-| Distance target feedback is correct | Pass |  | Metric native device flow passed in preview `33667a87-7564-432c-ba98-5093214beaf4` |
-| Calorie target feedback is correct |  |  | Automated; device flow not separately confirmed |
-| Round target feedback is correct |  |  | Automated; device flow not separately confirmed |
-| Warm-ups and drop sets are not evaluated | Pass |  |  |
-| Low-readiness targets hold conservatively |  |  | Automated; device flow not separately confirmed |
-| Completing a workout shows the recap | Pass |  | Native preview `33667a87-7564-432c-ba98-5093214beaf4` |
-| Recap totals and next direction are correct | Pass |  | Current Milestone 14 preview rechecked |
-
-## Measurements and forms
-
-| Test | iPhone | Android | Notes |
-| --- | --- | --- | --- |
-| Imperial profile preference saves | Pass |  |  |
-| Nutrition accepts pounds and feet/inches | Pass |  |  |
-| Metric profile and nutrition values save | Pass |  | Metric workout flow and hidden RIR behavior rechecked in native preview `33667a87-7564-432c-ba98-5093214beaf4` |
-| Switching systems converts existing values | Pass |  |  |
-| Primary actions and selected controls use the blue palette | Pass |  | Current Milestone 14 preview rechecked |
-| Keyboard does not hide active fields or buttons | Pass |  | Log Set, Log Food, and Nutrition Goals checked |
-| Forms remain usable with large accessibility text | Pass |  | Maximum text size requires more scrolling but has no clipping or hidden controls |
-| Weekday calorie targets save and change with the selected date | Pass |  | Native preview `33667a87-7564-432c-ba98-5093214beaf4` |
-| Food barcode scan finds a product and populates the food form | Pass |  | Camera permission, lookup, population, and save passed in native preview `33667a87-7564-432c-ba98-5093214beaf4` |
-| Supplement schedule saves correctly | Pass |  | Native preview `33667a87-7564-432c-ba98-5093214beaf4` |
+| 1. Install, cold launch, background/resume, sign in, sign out, and session restore | Pending | Pending | Critical startup/session smoke |
+| 2. Fresh account, email confirmation, password reset, reconnect after airplane mode, and account deletion | Pending | Pending | Critical auth/data-loss smoke |
+| 3. Save Athletic Profile specialties and available equipment; generate an equipment-aware program; verify unavailable implements are excluded or substituted; create and reopen its templates | Pending | Pending | New `c405c65` specialty pipeline |
+| 4. Complete a coached workout using strength, time, distance, calorie, and round targets; verify recommended-set prefill, met/exceeded/missed feedback, warm-up/drop-set exclusion, recap totals, and next direction | Pending | Pending | Covers all native metric rows in one workout |
+| 5. Record low readiness and verify conservative holds for reps, time, distance, calories, and rounds | Pending | Pending | Previously automated only; native confirmation required |
+| 6. Save Imperial and Metric profile/nutrition values, switch systems, and confirm values and template targets remain correct | Pending | Pending | Measurement/data regression |
+| 7. Exercise large text, keyboard reachability, primary control labels, back navigation, small-screen/edge-to-edge layout, icon, splash, and dark theme | Pending | Pending | Android system navigation is Android-only; use an available smaller device on each platform where practical |
 
 ## Release decision
 
-Release only when every critical row passes on both platforms, the exact commit passes GitHub Actions, and no unresolved crash, data-loss, authentication, or account-deletion defect remains.
+PR #3 may leave draft only when:
 
-- iPhone approval: Native preview `33667a87-7564-432c-ba98-5093214beaf4` passes focused release regression checks, account lifecycle, and Metric time/distance flows
-- Android approval: Pending three external tester reports
-- Final approved commit: ____________________
-- Release decision/date: ____________________
+- GitHub quality checks pass on the final PR head.
+- Both candidate build records identify that same head.
+- Scenarios 1–7 are Pass on both platforms, except explicitly platform-specific checks.
+- No unresolved crash, data-loss, authentication, account-deletion, or incorrect-program-generation defect remains.
+- Failures are fixed and the affected scenario plus adjacent smoke coverage are rerun on replacement builds.
+
+- iPhone approval: Pending
+- Android approval: Pending three external tester reports against the final-head build
+- Final approved commit: Pending
+- Release decision/date: Pending

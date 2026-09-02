@@ -15,9 +15,7 @@ The Android application ID becomes permanent after the first Google Play upload.
 
 ## Verified Android platform baseline
 
-Verified on August 25, 2026 at Milestone 14 revision `5e45cc6`:
-
-- GitHub quality run 87 passed unit tests, TypeScript validation, and Expo Doctor.
+Baseline originally verified on August 25, 2026 at Milestone 14 revision `5e45cc6`. The GitHub quality workflow subsequently passed on application-code baseline `c405c65e9aee5e24995827c8c4be2e81a52cd984`. A final quality pass is still required after the evidence-documentation commits.
 - Expo SDK 54 targets Android 16 / API level 36.
 - API level 36 meets Google Play's requirement for new apps and updates beginning August 31, 2026.
 - Edge-to-edge is enabled as required by Android 16.
@@ -36,7 +34,7 @@ The `android-preview` profile creates an APK that can be installed directly on A
 eas build --platform android --profile android-preview
 ```
 
-This is the next build to create. It does not publish to Google Play.
+Create a new APK from the final PR head. The older preview build `d0b06ea0-31f7-4dbd-9a8b-156bb4a843a8` predates the equipment-aware specialty pipeline and cannot approve PR #3. This profile does not publish to Google Play.
 
 ### Google Play build
 
@@ -50,24 +48,16 @@ Do not submit this build until internal device testing is complete and the Play 
 
 ## Internal test pass
 
-Test on at least one physical Android phone and, when practical, a current Android emulator.
+Android results are pending from three external testers. Each tester must use the new APK built from the final PR head and record device model, Android version, build ID, date, result, and defect links.
 
-- [ ] Install, launch, background, resume, and cold-start the app
-- [ ] Create an account, sign in, sign out, and restore an existing session
-- [ ] Verify password reset and custom-scheme links
-- [ ] Start, resume, and complete a workout
-- [ ] Add, edit, and delete sets
-- [ ] Verify the previous-set and next-target cards
-- [ ] Verify progression, hold, and recovery recommendations
-- [ ] Exercise Android system back navigation throughout the app
-- [ ] Exercise the keyboard on every form and confirm fields/buttons remain reachable
-- [ ] Check small-screen layout, status-bar spacing, and edge-to-edge content
-- [ ] Verify pounds and kilograms
-- [ ] Verify offline and failed-network states
-- [ ] Verify account deletion and privacy/support links
-- [ ] Confirm the launcher icon, adaptive icon mask, splash screen, and dark theme
+Use scenarios 1–7 in `docs/MILESTONE_14_DEVICE_TEST_MATRIX.md` as the authoritative minimum pass. Together they cover:
 
-Record device model, Android version, build URL, and any defects for each pass.
+- install, launch, background/resume, session recovery, authentication, links, offline/reconnect, and account deletion;
+- workout start/resume/completion, set editing, coached targets, every performance metric, low-readiness holds, and recaps;
+- Athletic Profile specialties, specialty equipment discovery, substitutions, generated programs, and reopened templates;
+- pounds/kilograms, forms, keyboard reachability, large text, small screens, edge-to-edge layout, back navigation, icons, splash, and dark theme.
+
+Any critical failure blocks approval. After a fix, generate a replacement build and rerun the failed scenario plus startup/session smoke.
 
 ## Google Play preparation
 

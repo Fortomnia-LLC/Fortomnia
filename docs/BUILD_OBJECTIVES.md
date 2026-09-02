@@ -15,6 +15,7 @@ Status legend: **Complete foundation** = usable groundwork exists but may still 
 - Added strict, terminating validation for inclusive health-summary date ranges.
 - Improved Recovery sleep display precision and accessibility labels for Health actions.
 - Verified the completed increment through successful GitHub Quality Check runs #154, #155, and #157.
+- Reconciled the three Milestone 14 readiness commits and preserved their Android, device-test, and release-gate evidence.
 
 ### Objective ledger
 
@@ -38,7 +39,7 @@ Status legend: **Complete foundation** = usable groundwork exists but may still 
 | Equipment-aware programming | Required | Exercise/implement mappings and broad equipment values exist | Deterministically rank exact matches and safe substitutions first; use AI to explain or refine, not to bypass compatibility constraints |
 | GymRadar-informed expansion | Required with source constraint | Existing Fortomnia catalog and specialty taxonomy are the destination | Use GymRadar to study category coverage and identify omissions. Do not scrape/copy its listings, reviews, photos, or proprietary data without an API, partnership, or explicit reuse license; preserve provenance for every imported asset |
 | Privacy and user control | Required | Health data remains local/provider-driven in the current foundation | Update privacy disclosures before release; provide granular permissions, disconnect/delete controls, AI-use consent, retention rules, and an account-data deletion path |
-| Milestone integration | Required | This branch is 43 commits ahead and 3 commits behind `milestone/14-training-intelligence` at comparison time | Reconcile the three Milestone 14 commits, resolve schema/code overlap deliberately, rerun migrations/tests, and preserve both milestones before merge |
+| Milestone integration | Complete foundation | The three Milestone 14 readiness commits are reconciled into this branch with both milestones preserved | Keep shared contracts synchronized and rerun migrations/tests before the milestone merge |
 
 ### Duplicate-prevention rules
 
@@ -53,7 +54,7 @@ Status legend: **Complete foundation** = usable groundwork exists but may still 
 
 ### Milestone 15 delivery order
 
-1. Reconcile the Milestone 14 branch delta and freeze shared data contracts.
+1. **Complete:** Reconcile the Milestone 14 branch delta and freeze shared data contracts.
 2. Harden HealthKit ingestion, persistence, privacy, and recovery tests.
 3. Build the watchOS workout companion and offline/idempotent synchronization.
 4. Unify equipment catalog concepts and add gym profiles without replacing current tables.

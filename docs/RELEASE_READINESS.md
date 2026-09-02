@@ -1,6 +1,6 @@
 # Fortomnia Release Readiness
 
-Last updated: August 24, 2026
+Last updated: August 30, 2026
 
 ## Automated validation
 
@@ -108,21 +108,27 @@ The remaining npm audit findings are inherited through Expo and Metro build tool
 
 ## Milestone 14 release-candidate verification
 
-The checked iPhone items above describe the frozen Milestone 13 App Store submission. Milestone 14 adds training intelligence, Android support, multi-metric workouts, Imperial measurements, post-set feedback, and workout recaps. These changes require a fresh device pass before release.
+The checked iPhone items above describe the frozen Milestone 13 App Store submission and are historical context only. PR #3 now uses application-code baseline `c405c65e9aee5e24995827c8c4be2e81a52cd984`, which adds the equipment-aware specialty program pipeline after the previously tested native builds.
 
-- [x] GitHub Actions passes on the current Milestone 14 branch.
+### Confirmed automated evidence
+
+- [x] The GitHub quality workflow passed on application-code baseline `c405c65e9aee5e24995827c8c4be2e81a52cd984`.
+- [x] Multi-metric progression, feedback, repeated-low-readiness holds, specialty selection, equipment discovery, and specialty program integration have automated coverage.
 - [x] Android preview and production build profiles are explicit.
-- [x] Multi-metric progression and feedback have automated coverage.
-- [x] Imperial/Metric conversions have automated coverage.
-- [ ] Install the exact Milestone 14 release build on a physical iPhone.
-- [ ] Install the exact Milestone 14 preview build on a physical Android phone.
-- [ ] Complete the cross-platform smoke matrix in `docs/MILESTONE_14_DEVICE_TEST_MATRIX.md`.
-- [ ] Verify a fresh account, email confirmation, password reset, sign-out, and account deletion on the release build.
-- [ ] Verify coaching targets, post-set feedback, workout completion, and recap on both platforms.
-- [ ] Verify Imperial and Metric profile/nutrition flows on both platforms.
-- [ ] Test airplane-mode launch and recovery after reconnecting.
-- [ ] Record and resolve every release-blocking defect.
-- [ ] Tag the exact approved commit used for store builds.
+- [x] The Supabase foreign-key index migration was applied and its missing-index advisor warning was cleared.
+
+### Required final-head evidence
+
+- [ ] Confirm GitHub quality checks pass on the post-documentation PR head.
+- [ ] Create iOS and Android candidate builds from that same final head and record both EAS build IDs.
+- [ ] Complete scenarios 1–7 in `docs/MILESTONE_14_DEVICE_TEST_MATRIX.md` on a physical iPhone and physical Android phone.
+- [ ] Record the three external Android tester reports with device, OS, tester, date, and defects.
+- [ ] Natively confirm calorie and round feedback and low-readiness holds; these were previously automated only.
+- [ ] Natively confirm specialty selection, saved specialty equipment, unavailable-equipment substitution, program creation, and template reopening on both platforms.
+- [ ] Resolve every critical/high defect and rerun affected scenarios on replacement builds.
+- [ ] Record the final approved commit and release decision.
+
+PR #3 remains draft until every required final-head item is complete on both platforms.
 
 ## Release approval
 
