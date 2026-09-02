@@ -80,7 +80,7 @@ The remaining npm audit findings are inherited through Expo and Metro build tool
 - [x] Terms of Use draft exists.
 - [x] Support and account-deletion documents exist.
 - [x] Encryption exemption is declared in the Expo configuration.
-- [ ] Replace every `[[SUPPORT_EMAIL]]` placeholder.
+- [x] Replace every `[[SUPPORT_EMAIL]]` placeholder.
 - [ ] Replace legal-owner and App Review placeholders.
 - [ ] Obtain appropriate legal review of public policies.
 - [ ] Publish privacy, terms, support, and deletion pages.

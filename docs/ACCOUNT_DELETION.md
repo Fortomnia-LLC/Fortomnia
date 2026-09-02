@@ -27,6 +27,4 @@ Deletion is permanent and cannot be undone. Limited records may be retained when
 
 ## If You Cannot Delete Your Account
 
-If you cannot sign in or the deletion process returns an error, contact `[[SUPPORT_EMAIL]]`. Include the email address associated with the account and a description of the issue. Do not send your password or authentication codes.
-
-> **Publication placeholder:** Replace `[[SUPPORT_EMAIL]]` with a monitored public email address before publishing this page or submitting Fortomnia for review.
+If you cannot sign in or the deletion process returns an error, contact [support@fortomnia.com](mailto:support@fortomnia.com). Include the email address associated with the account and a description of the issue. Do not send your password or authentication codes.
