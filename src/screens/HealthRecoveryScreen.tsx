@@ -173,7 +173,9 @@ export default function HealthRecoveryScreen() {
           return null;
         });
         const requestStatus = await getAppleHealthAuthorizationRequestStatus();
-        if (!active || !shouldRestoreAppleHealth(isAvailable, requestStatus)) return;
+        if (!active || !shouldRestoreAppleHealth(isAvailable, requestStatus, Boolean(stored))) {
+          return;
+        }
 
         if (stored) setLastSyncedAt(stored.lastSyncedAt);
         setDataMode("apple_health");
@@ -210,8 +212,9 @@ export default function HealthRecoveryScreen() {
         setAvailable(false);
         return;
       }
-      await loadAppleHealth();
+      await saveAppleHealthConnection(null);
       setDataMode("apple_health");
+      await loadAppleHealth();
     } catch (error) {
       const message = healthErrorMessage(error);
       setErrorMessage(`Apple Health connection failed: ${message}`);
