@@ -11,7 +11,7 @@
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": { "image": "./assets/splash-icon.png", "resizeMode": "contain", "backgroundColor": "#0B0B0B" },
-    "ios": { "supportsTablet": false, "bundleIdentifier": "com.grc0830source.fortomnia", "infoPlist": { "ITSAppUsesNonExemptEncryption": false } },
+    "ios": { "appleTeamId": "U8WXSCKNDN", "supportsTablet": false, "bundleIdentifier": "com.grc0830source.fortomnia", "infoPlist": { "ITSAppUsesNonExemptEncryption": false } },
     "android": { "package": "com.grc0830source.fortomnia", "adaptiveIcon": { "foregroundImage": "./assets/adaptive-icon.png", "backgroundColor": "#0B0B0B" }, "edgeToEdgeEnabled": true, "predictiveBackGestureEnabled": false },
     "web": { "favicon": "./assets/favicon.png" },
     "plugins": [
