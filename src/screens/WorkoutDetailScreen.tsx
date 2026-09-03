@@ -42,6 +42,7 @@ import {
   getRestSecondsRemaining,
 } from "../lib/restTimer";
 import { useEffect, useRef, useState } from "react";
+import { useWatchWorkoutSync } from "../hooks/useWatchWorkoutSync";
 
 const REST_TIMER_STORAGE_KEY = "fortomnia.restTimerDurationSeconds";
 
@@ -256,6 +257,13 @@ export default function WorkoutDetailScreen() {
   );
   const workoutRecap = buildWorkoutRecap(sets, recommendations);
   const isRestTimerRunning = restEndsAt !== null;
+
+  useWatchWorkoutSync({
+    plannedExercises,
+    refreshWorkout,
+    userId: session?.user.id,
+    workout,
+  });
 
   function startRestTimer(durationSeconds = restDurationSeconds) {
     completedRestEndRef.current = null;
