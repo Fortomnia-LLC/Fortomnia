@@ -1,10 +1,11 @@
 import ExpoModulesCore
 import WatchConnectivity
 
-public final class FortomniaWatchModule: Module, WCSessionDelegate {
+public final class FortomniaWatchModule: Module {
   private let snapshotKey = "fortomnia.workout.snapshot.v1"
   private let actionsKey = "fortomnia.workout.actions.v1"
   private let acknowledgementsKey = "fortomnia.workout.acknowledgements.v1"
+  private lazy var sessionDelegate = WatchSessionDelegate(owner: self)
 
   private var session: WCSession? {
     WCSession.isSupported() ? WCSession.default : nil
@@ -63,13 +64,13 @@ public final class FortomniaWatchModule: Module, WCSessionDelegate {
 
   private func activateSession() {
     guard let session else { return }
-    session.delegate = self
+    session.delegate = sessionDelegate
     if session.activationState != .activated {
       session.activate()
     }
   }
 
-  private func statePayload() -> [String: Any] {
+  fileprivate func statePayload() -> [String: Any] {
     guard let session else {
       return ["supported": false, "activated": false, "paired": false, "appInstalled": false, "reachable": false]
     }
@@ -88,7 +89,7 @@ public final class FortomniaWatchModule: Module, WCSessionDelegate {
     return object is [String: Any]
   }
 
-  private func receive(_ payload: [String: Any]) {
+  fileprivate func receive(_ payload: [String: Any]) {
     guard let actionsJson = payload[actionsKey] as? String,
           isJSONArray(actionsJson) else { return }
     sendEvent("onWatchActions", ["actionsJson": actionsJson])
@@ -100,37 +101,50 @@ public final class FortomniaWatchModule: Module, WCSessionDelegate {
     return object is [Any]
   }
 
-  public func session(
+  fileprivate func connectionStateChanged() {
+    sendEvent("onWatchStateChanged", statePayload())
+  }
+}
+
+private final class WatchSessionDelegate: NSObject, WCSessionDelegate {
+  weak var owner: FortomniaWatchModule?
+
+  init(owner: FortomniaWatchModule) {
+    self.owner = owner
+    super.init()
+  }
+
+  func session(
     _ session: WCSession,
     activationDidCompleteWith activationState: WCSessionActivationState,
     error: Error?
   ) {
-    sendEvent("onWatchStateChanged", statePayload())
+    owner?.connectionStateChanged()
   }
 
-  public func sessionDidBecomeInactive(_ session: WCSession) {
-    sendEvent("onWatchStateChanged", statePayload())
+  func sessionDidBecomeInactive(_ session: WCSession) {
+    owner?.connectionStateChanged()
   }
 
-  public func sessionDidDeactivate(_ session: WCSession) {
+  func sessionDidDeactivate(_ session: WCSession) {
     session.activate()
-    sendEvent("onWatchStateChanged", statePayload())
+    owner?.connectionStateChanged()
   }
 
-  public func sessionReachabilityDidChange(_ session: WCSession) {
-    sendEvent("onWatchStateChanged", statePayload())
+  func sessionReachabilityDidChange(_ session: WCSession) {
+    owner?.connectionStateChanged()
   }
 
-  public func sessionWatchStateDidChange(_ session: WCSession) {
-    sendEvent("onWatchStateChanged", statePayload())
+  func sessionWatchStateDidChange(_ session: WCSession) {
+    owner?.connectionStateChanged()
   }
 
-  public func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
-    receive(message)
+  func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
+    owner?.receive(message)
   }
 
-  public func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any]) {
-    receive(userInfo)
+  func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any]) {
+    owner?.receive(userInfo)
   }
 }
 
