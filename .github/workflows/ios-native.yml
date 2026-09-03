@@ -5,6 +5,7 @@ on:
     paths:
       - "modules/fortomnia-health/**"
       - "modules/fortomnia-watch/**"
+      - "targets/fortomnia-watch/**"
       - "app.json"
       - "package.json"
       - "package-lock.json"
@@ -15,6 +16,7 @@ on:
     paths:
       - "modules/fortomnia-health/**"
       - "modules/fortomnia-watch/**"
+      - "targets/fortomnia-watch/**"
       - "app.json"
       - "package.json"
       - "package-lock.json"
