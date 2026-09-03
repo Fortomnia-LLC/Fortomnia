@@ -19,7 +19,9 @@ type FortomniaWatchNativeModule = {
   ): Subscription;
   getState(): NativeWatchState;
   activate(): Promise<NativeWatchState>;
+  getPendingActions(): string | null;
   sendWorkoutSnapshot(snapshotJson: string): Promise<NativeWatchState>;
+  clearWorkout(): Promise<void>;
   acknowledgeActions(actionIds: string[]): Promise<void>;
 };
 
