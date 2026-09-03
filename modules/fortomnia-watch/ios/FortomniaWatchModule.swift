@@ -5,6 +5,8 @@ public final class FortomniaWatchModule: Module {
   private let snapshotKey = "fortomnia.workout.snapshot.v1"
   private let actionsKey = "fortomnia.workout.actions.v1"
   private let acknowledgementsKey = "fortomnia.workout.acknowledgements.v1"
+  private let clearWorkoutKey = "fortomnia.workout.clear.v1"
+  private var pendingActionsJson: String?
   private lazy var sessionDelegate = WatchSessionDelegate(owner: self)
 
   private var session: WCSession? {
@@ -28,6 +30,10 @@ public final class FortomniaWatchModule: Module {
       return self.statePayload()
     }
 
+    Function("getPendingActions") {
+      self.pendingActionsJson
+    }
+
     AsyncFunction("sendWorkoutSnapshot") { (snapshotJson: String) async throws -> [String: Any] in
       guard let session = self.session else { throw WatchModuleError.unsupported }
       guard self.isJSONObject(snapshotJson) else { throw WatchModuleError.invalidPayload }
@@ -43,6 +49,16 @@ public final class FortomniaWatchModule: Module {
         session.sendMessage([self.snapshotKey: snapshotJson], replyHandler: nil) { _ in }
       }
       return self.statePayload()
+    }
+
+    AsyncFunction("clearWorkout") { () async throws -> Void in
+      guard let session = self.session else { throw WatchModuleError.unsupported }
+      let payload: [String: Any] = [self.clearWorkoutKey: true]
+      self.activateSession()
+      try session.updateApplicationContext(payload)
+      if session.activationState == .activated && session.isReachable {
+        session.sendMessage(payload, replyHandler: nil) { _ in }
+      }
     }
 
     AsyncFunction("acknowledgeActions") { (actionIds: [String]) async throws -> Void in
@@ -92,6 +108,7 @@ public final class FortomniaWatchModule: Module {
   fileprivate func receive(_ payload: [String: Any]) {
     guard let actionsJson = payload[actionsKey] as? String,
           isJSONArray(actionsJson) else { return }
+    pendingActionsJson = actionsJson
     sendEvent("onWatchActions", ["actionsJson": actionsJson])
   }
 
