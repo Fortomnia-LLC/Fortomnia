@@ -19,6 +19,7 @@
       "expo-secure-store",
       ["expo-camera", { "cameraPermission": "Allow Fortomnia to use your camera to scan food barcodes.", "recordAudioAndroid": false }],
       "expo-notifications",
+      "@bacons/apple-targets",
       "./modules/fortomnia-health/app.plugin.js"
     ],
     "experiments": { "typedRoutes": true },
