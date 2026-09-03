@@ -26,7 +26,7 @@ Status legend: **Complete foundation** = usable groundwork exists but may still 
 | Apple Health authorization and reads | Complete foundation | Local Expo module `modules/fortomnia-health`; health provider, normalization, connection storage, and recovery UI | Harden error states, partial permissions, persistence, time zones, duplicate samples, and production privacy disclosures |
 | Health signals | Complete foundation | Sleep, heart rate, resting heart rate, HRV, steps, active energy, workouts, weight, and body-fat types are represented | Validate units and source precedence; add incremental/background ingestion and explicit freshness indicators |
 | Recovery/readiness analysis | Complete foundation | 7–28 day personal baselines and deterministic, explainable training guidance | Extend the existing algorithm with confidence, missing-data behavior, weekly trend review, and safe plan adjustments; do not introduce a second readiness engine |
-| Fortomnia Apple Watch app | Required | HealthKit data produced by Apple Watch can be read on iPhone through Apple Health | Add a real watchOS app/companion with planned-session start, current exercise, set logging, load/reps/RPE or RIR, timers, heart rate, next exercise, completion, offline queueing, and phone reconciliation |
+| Fortomnia Apple Watch app | In progress | HealthKit data produced by Apple Watch can be read on iPhone through Apple Health; versioned workout-transfer and idempotent offline-action contracts are being established | Add a real SwiftUI watchOS app/companion with planned-session start, current exercise, set logging, load/reps/RPE or RIR, timers, heart rate, next exercise, completion, offline queueing, and phone reconciliation |
 | Watch motion rep counting | Conditional | The planned watchOS companion can collect Core Motion accelerometer and gyroscope signals during an explicitly started set | Prototype only for exercises with meaningful wrist motion and require exercise selection, wrist-side handling, manual correction, and real-athlete validation. Ship per exercise only if at least 95% of validation sets are counted exactly or within one rep, false reps outside active sets are prevented, and ordinary logging remains the fallback; otherwise do not release it |
 | iPhone and Lock Screen widgets | Required | Recovery, workout, and reminder data already exist in the iPhone app | Add WidgetKit Home Screen and Lock Screen widgets for recovery freshness, next workout/current session, and safe quick actions; use App Groups for minimal shared snapshots, deep-link into Fortomnia, handle stale/empty states, refresh within system limits, and redact sensitive health details while the device is locked |
 | Workout recording and HealthKit write-back | In progress | Native module declares workout/body write types, but the current product flow is read-oriented | Implement workout-session lifecycle, permission UX, write-back, duplicate prevention, and—where architecture permits—Watch/iPhone workout mirroring |
@@ -67,6 +67,8 @@ Status legend: **Complete foundation** = usable groundwork exists but may still 
 7. Add deterministic substitution ranking.
 8. Ship the protected premium AI runtime on top of existing deterministic systems.
 9. Run end-to-end release tests: permissions denied/partial, offline Watch, duplicate samples, time-zone changes, background sync, widget stale/locked states, RLS, entitlement loss/restore, unsafe AI prompts, and deterministic fallback.
+
+The Watch companion must satisfy the physical-device and reliability gates in [WATCH_COMPANION_ACCEPTANCE.md](./WATCH_COMPANION_ACCEPTANCE.md); compiling or passing simulator tests alone is not completion evidence.
 
 ## Training intelligence backlog
 
@@ -114,3 +116,4 @@ Status legend: **Complete foundation** = usable groundwork exists but may still 
 - Analytics must exclude sensitive health content and respect consent.
 - Every recommendation should state the inputs used, tolerate missing data, and fall back safely.
 - No release may represent wellness guidance as diagnosis or treatment.
+
