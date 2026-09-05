@@ -16,6 +16,7 @@ export type NativeHealthAuthorizationRequestStatus =
 export type NativeHealthAuthorizationResult = {
   available: boolean;
   requestCompleted: boolean;
+  grantedRead?: NativeHealthMetric[];
   grantedWrite: NativeHealthMetric[];
   deniedWrite: NativeHealthMetric[];
 };
@@ -52,4 +53,3 @@ type FortomniaHealthNativeModule = {
 };
 
 export default requireNativeModule<FortomniaHealthNativeModule>("FortomniaHealth");
-

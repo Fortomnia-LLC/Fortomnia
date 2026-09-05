@@ -48,20 +48,24 @@ class FortomniaHealthModule : Module() {
 
     AsyncFunction("requestAuthorization") Coroutine { read: List<String>, write: List<String> ->
       if (!isAvailable()) {
-        return@Coroutine mapOf("available" to false, "requestCompleted" to false, "grantedWrite" to emptyList<String>(), "deniedWrite" to emptyList<String>())
+        return@Coroutine mapOf("available" to false, "requestCompleted" to false, "grantedRead" to emptyList<String>(), "grantedWrite" to emptyList<String>(), "deniedWrite" to emptyList<String>())
       }
       val requested = permissions(read, write)
       permissionLauncher.launch(ArrayList(requested))
       val granted = client().permissionController.getGrantedPermissions()
+      val grantedRead = read.filter { metric -> readPermission(metric)?.let(granted::contains) == true }
       val grantedWrite = write.filter { metric -> writePermission(metric)?.let(granted::contains) == true }
       val deniedWrite = write.filterNot(grantedWrite::contains)
-      mapOf("available" to true, "requestCompleted" to true, "grantedWrite" to grantedWrite, "deniedWrite" to deniedWrite)
+      mapOf("available" to true, "requestCompleted" to true, "grantedRead" to grantedRead, "grantedWrite" to grantedWrite, "deniedWrite" to deniedWrite)
     }
 
     AsyncFunction("readSamples") Coroutine { metrics: List<String>, startAt: String, endAt: String ->
       val start = Instant.parse(startAt)
       val end = Instant.parse(endAt)
-      metrics.flatMap { readMetric(it, start, end) }
+      val granted = client().permissionController.getGrantedPermissions()
+      metrics
+        .filter { metric -> readPermission(metric)?.let(granted::contains) == true }
+        .flatMap { readMetric(it, start, end) }
     }
   }
 

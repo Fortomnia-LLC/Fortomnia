@@ -23,6 +23,18 @@ import {
 } from "../lib/health/appleHealthProvider";
 import { DEFAULT_HEALTH_READ_METRICS } from "../lib/health/healthProvider";
 import {
+  getHealthConnectAuthorizationRequestStatus,
+  HEALTH_CONNECT_RECOVERY_METRICS,
+  healthConnectProvider,
+  syncHealthConnectSamples,
+} from "../lib/health/healthConnectProvider";
+import {
+  clearHealthConnectConnection,
+  loadHealthConnectConnection,
+  loadHealthConnectSampleCache,
+  saveHealthConnectConnection,
+} from "../lib/health/healthConnectStorage";
+import {
   clearAppleHealthConnection,
   loadAppleHealthConnection,
   saveAppleHealthConnection,
@@ -44,7 +56,7 @@ import type {
   RecoverySignalStatus,
 } from "../lib/health/healthTypes";
 
-type DataMode = "disconnected" | "apple_health" | "preview";
+type DataMode = "disconnected" | "apple_health" | "health_connect" | "preview";
 
 function dateKey(date = new Date()) {
   const year = date.getFullYear();
@@ -134,6 +146,22 @@ export default function HealthRecoveryScreen() {
     });
   }, [applySummaries]);
 
+  const loadHealthConnect = useCallback(async () => {
+    const today = dateKey();
+    const startDate = daysBefore(today, RECOVERY_BASELINE_WINDOW_DAYS);
+    const range = getHealthQueryRange(startDate, today);
+    const samples = await syncHealthConnectSamples({
+      metrics: HEALTH_CONNECT_RECOVERY_METRICS,
+      ...range,
+    });
+    applySummaries(summarizeHealthRange(startDate, today, samples));
+    const syncedAt = new Date().toISOString();
+    setLastSyncedAt(syncedAt);
+    void saveHealthConnectConnection(syncedAt).catch((error) => {
+      console.warn("Unable to save Health Connect sync metadata", error);
+    });
+  }, [applySummaries]);
+
   const refresh = useCallback(async () => {
     setLoading(true);
     setErrorMessage(null);
@@ -142,21 +170,24 @@ export default function HealthRecoveryScreen() {
         applySummaries(buildRecoveryPreview());
         return;
       }
-      if (Platform.OS !== "ios") {
+      if (Platform.OS !== "ios" && Platform.OS !== "android") {
         setAvailable(false);
         return;
       }
-      const isAvailable = await appleHealthProvider.isAvailable();
+      const provider = Platform.OS === "android" ? healthConnectProvider : appleHealthProvider;
+      const isAvailable = await provider.isAvailable();
       setAvailable(isAvailable);
       if (isAvailable && dataMode === "apple_health") await loadAppleHealth();
+      if (isAvailable && dataMode === "health_connect") await loadHealthConnect();
     } catch (error) {
       const healthError = getHealthErrorPresentation(error);
-      setErrorMessage(`Apple Health refresh failed: ${healthError.message}`);
-      console.warn("Unable to refresh Apple Health", healthError.kind);
+      const name = Platform.OS === "android" ? "Health Connect" : "Apple Health";
+      setErrorMessage(`${name} refresh failed: ${healthError.message}`);
+      console.warn(`Unable to refresh ${name}`, healthError.kind);
     } finally {
       setLoading(false);
     }
-  }, [applySummaries, dataMode, loadAppleHealth]);
+  }, [applySummaries, dataMode, loadAppleHealth, loadHealthConnect]);
 
   useEffect(() => {
     let active = true;
@@ -164,41 +195,55 @@ export default function HealthRecoveryScreen() {
     async function restoreConnection() {
       setLoading(true);
       try {
-        if (Platform.OS !== "ios") {
+        if (Platform.OS !== "ios" && Platform.OS !== "android") {
           if (active) setAvailable(false);
           return;
         }
 
-        const isAvailable = await appleHealthProvider.isAvailable();
+        const isAndroid = Platform.OS === "android";
+        const provider = isAndroid ? healthConnectProvider : appleHealthProvider;
+        const isAvailable = await provider.isAvailable();
         if (!active) return;
         setAvailable(isAvailable);
         if (!isAvailable) return;
 
-        const stored = await loadAppleHealthConnection().catch((error) => {
-          console.warn("Unable to restore Apple Health sync metadata", error);
+        const stored = await (isAndroid ? loadHealthConnectConnection() : loadAppleHealthConnection()).catch((error) => {
+          console.warn("Unable to restore health sync metadata", error);
           return null;
         });
-        const requestStatus = await getAppleHealthAuthorizationRequestStatus();
+        const requestStatus = await (isAndroid
+          ? getHealthConnectAuthorizationRequestStatus()
+          : getAppleHealthAuthorizationRequestStatus());
         if (!active || !shouldRestoreAppleHealth(isAvailable, requestStatus, Boolean(stored))) {
           return;
         }
 
         if (stored) setLastSyncedAt(stored.lastSyncedAt);
-        setDataMode("apple_health");
-        void enableAppleHealthBackgroundDelivery().catch((error) => {
-          console.warn("Unable to enable Apple Health background delivery", getHealthErrorPresentation(error).kind);
-        });
-        await loadAppleHealth();
+        setDataMode(isAndroid ? "health_connect" : "apple_health");
+        if (isAndroid) {
+          const cached = await loadHealthConnectSampleCache();
+          if (cached.length) {
+            const today = dateKey();
+            applySummaries(summarizeHealthRange(daysBefore(today, RECOVERY_BASELINE_WINDOW_DAYS), today, cached));
+          }
+          await loadHealthConnect();
+        } else {
+          void enableAppleHealthBackgroundDelivery().catch((error) => {
+            console.warn("Unable to enable Apple Health background delivery", getHealthErrorPresentation(error).kind);
+          });
+          await loadAppleHealth();
+        }
       } catch (error) {
-        void clearAppleHealthConnection().catch((storageError) => {
-          console.warn("Unable to clear Apple Health sync metadata", storageError);
+        void (Platform.OS === "android" ? clearHealthConnectConnection() : clearAppleHealthConnection()).catch((storageError) => {
+          console.warn("Unable to clear health sync metadata", storageError);
         });
         if (active) {
           const healthError = getHealthErrorPresentation(error);
           setDataMode("disconnected");
           setLastSyncedAt(null);
-          setErrorMessage(`Apple Health reconnect failed: ${healthError.message}`);
-          console.warn("Unable to reconnect Apple Health", healthError.kind);
+          const name = Platform.OS === "android" ? "Health Connect" : "Apple Health";
+          setErrorMessage(`${name} reconnect failed: ${healthError.message}`);
+          console.warn(`Unable to reconnect ${name}`, healthError.kind);
         }
       } finally {
         if (active) setLoading(false);
@@ -209,7 +254,7 @@ export default function HealthRecoveryScreen() {
     return () => {
       active = false;
     };
-  }, [loadAppleHealth]);
+  }, [applySummaries, loadAppleHealth, loadHealthConnect]);
 
   useEffect(() => {
     if (Platform.OS !== "ios" || dataMode !== "apple_health") return;
@@ -225,7 +270,9 @@ export default function HealthRecoveryScreen() {
     setLoading(true);
     setErrorMessage(null);
     try {
-      const authorization = await appleHealthProvider.requestAuthorization(
+      const isAndroid = Platform.OS === "android";
+      const provider = isAndroid ? healthConnectProvider : appleHealthProvider;
+      const authorization = await provider.requestAuthorization(
         DEFAULT_HEALTH_READ_METRICS,
         [],
       );
@@ -233,26 +280,31 @@ export default function HealthRecoveryScreen() {
         setAvailable(false);
         return;
       }
-      await saveAppleHealthConnection(null);
-      void enableAppleHealthBackgroundDelivery().catch((error) => {
-        console.warn("Unable to enable Apple Health background delivery", getHealthErrorPresentation(error).kind);
-      });
-      setDataMode("apple_health");
-      await loadAppleHealth();
+      await (isAndroid ? saveHealthConnectConnection(null) : saveAppleHealthConnection(null));
+      if (!isAndroid) {
+        void enableAppleHealthBackgroundDelivery().catch((error) => {
+          console.warn("Unable to enable Apple Health background delivery", getHealthErrorPresentation(error).kind);
+        });
+      }
+      setDataMode(isAndroid ? "health_connect" : "apple_health");
+      await (isAndroid ? loadHealthConnect() : loadAppleHealth());
     } catch (error) {
       const healthError = getHealthErrorPresentation(error);
-      setErrorMessage(`Apple Health connection failed: ${healthError.message}`);
-      Alert.alert("Apple Health", `Connection failed: ${healthError.message}`);
-      console.warn("Unable to connect Apple Health", healthError.kind);
+      const name = Platform.OS === "android" ? "Health Connect" : "Apple Health";
+      setErrorMessage(`${name} connection failed: ${healthError.message}`);
+      Alert.alert(name, `Connection failed: ${healthError.message}`);
+      console.warn(`Unable to connect ${name}`, healthError.kind);
     } finally {
       setLoading(false);
     }
   }
 
   function disconnect() {
+    const isAndroid = Platform.OS === "android";
+    const name = isAndroid ? "Health Connect" : "Apple Health";
     Alert.alert(
-      "Disconnect Apple Health?",
-      "Fortomnia will forget this connection and clear the health summary shown here. Apple Health permissions remain under your control in iPhone Settings.",
+      `Disconnect ${name}?`,
+      `Fortomnia will forget this connection and clear the health summary shown here. ${name} permissions remain under your control in device settings.`,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -262,10 +314,9 @@ export default function HealthRecoveryScreen() {
             void (async () => {
               setLoading(true);
               try {
-                await Promise.all([
-                  clearAppleHealthConnection(),
-                  disableAppleHealthBackgroundDelivery(),
-                ]);
+                await (isAndroid
+                  ? clearHealthConnectConnection()
+                  : Promise.all([clearAppleHealthConnection(), disableAppleHealthBackgroundDelivery()]));
                 setDataMode("disconnected");
                 setLastSyncedAt(null);
                 setSummary(null);
@@ -273,8 +324,8 @@ export default function HealthRecoveryScreen() {
                 setErrorMessage(null);
               } catch (error) {
                 const healthError = getHealthErrorPresentation(error);
-                setErrorMessage(`Unable to disconnect Apple Health: ${healthError.message}`);
-                console.warn("Unable to disconnect Apple Health", healthError.kind);
+                setErrorMessage(`Unable to disconnect ${name}: ${healthError.message}`);
+                console.warn(`Unable to disconnect ${name}`, healthError.kind);
               } finally {
                 setLoading(false);
               }
@@ -329,7 +380,12 @@ export default function HealthRecoveryScreen() {
       ? "Preview data — not your health information"
       : dataMode === "apple_health"
         ? "From authorized Apple Health data"
-        : "Connect Apple Health to populate";
+        : dataMode === "health_connect"
+          ? "From authorized Health Connect data"
+          : `Connect ${Platform.OS === "android" ? "Health Connect" : "Apple Health"} to populate`;
+
+  const providerName = Platform.OS === "android" ? "Health Connect" : "Apple Health";
+  const connected = dataMode === "apple_health" || dataMode === "health_connect";
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -350,7 +406,7 @@ export default function HealthRecoveryScreen() {
           <Ionicons name="watch-outline" size={30} color="#60A5FA" />
         </View>
         <Text style={styles.subtitle}>
-          Compare today&apos;s Apple Watch signals with your own rolling baseline,
+          Compare today&apos;s wearable health signals with your own rolling baseline,
           then use the explanation to guide—not dictate—today&apos;s training.
         </Text>
 
@@ -360,9 +416,9 @@ export default function HealthRecoveryScreen() {
               <Ionicons name="heart" size={22} color="#F5F5F5" />
             </View>
             <View style={styles.flex}>
-              <Text style={styles.cardTitle}>Apple Health</Text>
+              <Text style={styles.cardTitle}>{providerName}</Text>
               <Text style={styles.muted}>
-                {dataMode === "apple_health"
+                {connected
                   ? lastSyncLabel(lastSyncedAt)
                   : available === false
                     ? "Not available on this device"
@@ -372,18 +428,18 @@ export default function HealthRecoveryScreen() {
           </View>
           {loading ? (
             <ActivityIndicator style={styles.loader} />
-          ) : dataMode !== "apple_health" && available !== false ? (
+          ) : !connected && available !== false ? (
             <Pressable
-              accessibilityLabel="Connect Apple Health"
+              accessibilityLabel={`Connect ${providerName}`}
               accessibilityRole="button"
               style={styles.primaryButton}
               onPress={connect}
             >
-              <Text style={styles.primaryButtonText}>Connect Apple Health</Text>
+              <Text style={styles.primaryButtonText}>Connect {providerName}</Text>
             </Pressable>
-          ) : dataMode === "apple_health" ? (
+          ) : connected ? (
             <Pressable
-              accessibilityLabel="Refresh Apple Health data"
+              accessibilityLabel={`Refresh ${providerName} data`}
               accessibilityRole="button"
               style={styles.secondaryButton}
               onPress={() => void refresh()}
@@ -392,14 +448,14 @@ export default function HealthRecoveryScreen() {
               <Text style={styles.secondaryButtonText}>Refresh health data</Text>
             </Pressable>
           ) : null}
-          {dataMode === "apple_health" ? (
+          {connected ? (
             <Pressable
-              accessibilityLabel="Disconnect Apple Health"
+              accessibilityLabel={`Disconnect ${providerName}`}
               accessibilityRole="button"
               style={styles.disconnectButton}
               onPress={disconnect}
             >
-              <Text style={styles.disconnectButtonText}>Disconnect Apple Health</Text>
+              <Text style={styles.disconnectButtonText}>Disconnect {providerName}</Text>
             </Pressable>
           ) : null}
           {dataMode !== "preview" ? (
@@ -415,7 +471,7 @@ export default function HealthRecoveryScreen() {
         </View>
 
         {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
-        {!loading && dataMode === "apple_health" && !hasReadableHealthData ? (
+        {!loading && connected && !hasReadableHealthData ? (
           <View style={styles.dataNotice}>
             <Ionicons name="information-circle-outline" size={20} color="#FBBF24" />
             <Text style={styles.dataNoticeText}>
@@ -574,4 +630,3 @@ const styles = StyleSheet.create({
   comparisonSummary: { color: "#D1D5DB", fontSize: 12, lineHeight: 18 },
   privacy: { color: "#6B7280", fontSize: 11, lineHeight: 17, textAlign: "center", marginTop: 2 },
 });
-
