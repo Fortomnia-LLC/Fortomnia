@@ -1,4 +1,5 @@
 {
-  "platforms": ["apple"],
-  "apple": { "modules": ["FortomniaHealthModule"] }
+  "platforms": ["apple", "android"],
+  "apple": { "modules": ["FortomniaHealthModule"] },
+  "android": { "modules": ["expo.modules.fortomniahealth.FortomniaHealthModule"] }
 }
