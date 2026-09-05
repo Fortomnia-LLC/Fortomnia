@@ -41,6 +41,4 @@ jobs:
       - name: Start signed iOS production build
         env:
           EXPO_NO_CAPABILITY_SYNC: "1"
-        run: |
-          unset CI
-          yes | script -q -e -c "eas build --platform ios --profile production --no-wait" /dev/null
+        run: eas build --platform ios --profile production --non-interactive --no-wait
