@@ -17,6 +17,7 @@ final class WatchWorkoutStore: NSObject, ObservableObject {
   private let snapshotKey = "fortomnia.workout.snapshot.v1"
   private let actionsKey = "fortomnia.workout.actions.v1"
   private let acknowledgementsKey = "fortomnia.workout.acknowledgements.v1"
+  private let clearWorkoutKey = "fortomnia.workout.clear.v1"
   private let storedSnapshotKey = "fortomnia.watch.snapshot.v1"
   private let storedActionsKey = "fortomnia.watch.pending-actions.v1"
   private let storedSetCountsKey = "fortomnia.watch.completed-set-counts.v1"
@@ -142,6 +143,14 @@ final class WatchWorkoutStore: NSObject, ObservableObject {
     lastSyncError = nil
   }
 
+  private func clearWorkout() {
+    snapshot = nil
+    exerciseIndex = 0
+    completedSetCounts = [:]
+    defaults.removeObject(forKey: storedSnapshotKey)
+    persistActions()
+  }
+
   private func sendPendingActions() {
     guard let session, !pendingActions.isEmpty,
           let data = try? encoder.encode(pendingActions),
@@ -215,6 +224,7 @@ extension WatchWorkoutStore: WCSessionDelegate {
     Task { @MainActor in
       if let json = payload[self.snapshotKey] as? String { self.receiveSnapshot(json) }
       if let ids = payload[self.acknowledgementsKey] as? [String] { self.receiveAcknowledgements(ids) }
+      if payload[self.clearWorkoutKey] as? Bool == true { self.clearWorkout() }
     }
   }
 }
