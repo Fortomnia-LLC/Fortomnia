@@ -12,12 +12,12 @@ export function shouldRestoreAppleHealth(
   return available && hasStoredConnection && requestStatus === "unnecessary";
 }
 
-export type StoredAppleHealthConnection = {
+export type StoredHealthConnection = {
   connected: true;
   lastSyncedAt: string | null;
 };
 
-export function parseAppleHealthConnection(value: string): StoredAppleHealthConnection | null {
+export function parseHealthConnection(value: string): StoredHealthConnection | null {
   try {
     const parsed = JSON.parse(value) as Record<string, unknown>;
     if (parsed.connected !== true) return null;
@@ -39,14 +39,18 @@ export function parseAppleHealthConnection(value: string): StoredAppleHealthConn
   return null;
 }
 
-export function createAppleHealthConnection(
+export function createHealthConnection(
   lastSyncedAt: string | null,
-): StoredAppleHealthConnection {
+): StoredHealthConnection {
   if (lastSyncedAt === null) return { connected: true, lastSyncedAt: null };
   const parsed = Date.parse(lastSyncedAt);
   if (!Number.isFinite(parsed)) throw new TypeError("A valid Apple Health sync time is required.");
   return { connected: true, lastSyncedAt: new Date(parsed).toISOString() };
 }
+
+export type StoredAppleHealthConnection = StoredHealthConnection;
+export const parseAppleHealthConnection = parseHealthConnection;
+export const createAppleHealthConnection = createHealthConnection;
 
 export type HealthSyncFreshness = {
   ageMinutes: number | null;
