@@ -5,6 +5,8 @@ import android.content.Intent
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
+import androidx.health.connect.client.changes.DeletionChange
+import androidx.health.connect.client.changes.UpsertionChange
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
 import androidx.health.connect.client.records.BodyFatRecord
@@ -16,6 +18,7 @@ import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.records.WeightRecord
 import androidx.health.connect.client.request.ReadRecordsRequest
+import androidx.health.connect.client.request.ChangesTokenRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import expo.modules.kotlin.activityresult.AppContextActivityResultContract
 import expo.modules.kotlin.activityresult.AppContextActivityResultLauncher
@@ -67,6 +70,42 @@ class FortomniaHealthModule : Module() {
         .filter { metric -> readPermission(metric)?.let(granted::contains) == true }
         .flatMap { readMetric(it, start, end) }
     }
+
+    AsyncFunction("createChangesTokens") Coroutine { metrics: List<String> ->
+      val granted = client().permissionController.getGrantedPermissions()
+      metrics.mapNotNull { metric ->
+        val type = recordClass(metric)
+        val permitted = readPermission(metric)?.let(granted::contains) == true
+        if (type == null || !permitted) null
+        else metric to client().getChangesToken(ChangesTokenRequest(setOf(type)))
+      }.toMap()
+    }
+
+    AsyncFunction("readChanges") Coroutine { metrics: List<String>, tokens: Map<String, String> ->
+      val granted = client().permissionController.getGrantedPermissions()
+      val samples = mutableListOf<Map<String, Any?>>()
+      val deletedIds = mutableSetOf<String>()
+      val nextTokens = mutableMapOf<String, String>()
+
+      metrics.forEach { metric ->
+        val token = tokens[metric] ?: return@forEach
+        if (readPermission(metric)?.let(granted::contains) != true) return@forEach
+        var nextToken = token
+        do {
+          val response = client().getChanges(nextToken)
+          response.changes.forEach { change ->
+            when (change) {
+              is UpsertionChange -> samples.addAll(serializeRecord(change.record, metric))
+              is DeletionChange -> deletedIds.add(change.recordId)
+            }
+          }
+          nextToken = response.nextChangesToken
+        } while (response.hasMore)
+        nextTokens[metric] = nextToken
+      }
+
+      mapOf("samples" to samples, "deletedIds" to deletedIds.sorted(), "anchors" to emptyMap<String, String>(), "tokens" to nextTokens)
+    }
   }
 
   private fun requireContext() = appContext.reactContext ?: throw IllegalStateException("Android context is unavailable")
@@ -101,6 +140,19 @@ class FortomniaHealthModule : Module() {
     "body_weight" -> read<WeightRecord>(start, end).map { point(it.metadata.id, metric, it.time, it.zoneOffset?.totalSeconds, it.weight.inKilograms, "kg", it.metadata.dataOrigin.packageName) }
     "body_fat_percentage" -> read<BodyFatRecord>(start, end).map { point(it.metadata.id, metric, it.time, it.zoneOffset?.totalSeconds, it.percentage.value, "percent", it.metadata.dataOrigin.packageName) }
     "workout" -> read<ExerciseSessionRecord>(start, end).map { interval(it.metadata.id, metric, it.startTime, it.endTime, it.startZoneOffset?.totalSeconds, it.endZoneOffset?.totalSeconds, java.time.Duration.between(it.startTime, it.endTime).toMinutes().toDouble(), "min", it.metadata.dataOrigin.packageName) }
+    else -> emptyList()
+  }
+
+  private fun serializeRecord(record: androidx.health.connect.client.records.Record, metric: String): List<Map<String, Any?>> = when (record) {
+    is StepsRecord -> listOf(interval(record.metadata.id, metric, record.startTime, record.endTime, record.startZoneOffset?.totalSeconds, record.endZoneOffset?.totalSeconds, record.count.toDouble(), "count", record.metadata.dataOrigin.packageName))
+    is ActiveCaloriesBurnedRecord -> listOf(interval(record.metadata.id, metric, record.startTime, record.endTime, record.startZoneOffset?.totalSeconds, record.endZoneOffset?.totalSeconds, record.energy.inKilocalories, "kcal", record.metadata.dataOrigin.packageName))
+    is HeartRateRecord -> record.samples.map { sample -> point("${record.metadata.id}:${sample.time.toEpochMilli()}", metric, sample.time, record.startZoneOffset?.totalSeconds, sample.beatsPerMinute.toDouble(), "bpm", record.metadata.dataOrigin.packageName) }
+    is RestingHeartRateRecord -> listOf(point(record.metadata.id, metric, record.time, record.zoneOffset?.totalSeconds, record.beatsPerMinute.toDouble(), "bpm", record.metadata.dataOrigin.packageName))
+    is HeartRateVariabilityRmssdRecord -> listOf(point(record.metadata.id, metric, record.time, record.zoneOffset?.totalSeconds, record.heartRateVariabilityMillis, "ms", record.metadata.dataOrigin.packageName))
+    is SleepSessionRecord -> listOf(interval(record.metadata.id, metric, record.startTime, record.endTime, record.startZoneOffset?.totalSeconds, record.endZoneOffset?.totalSeconds, java.time.Duration.between(record.startTime, record.endTime).toMinutes().toDouble(), "min", record.metadata.dataOrigin.packageName))
+    is WeightRecord -> listOf(point(record.metadata.id, metric, record.time, record.zoneOffset?.totalSeconds, record.weight.inKilograms, "kg", record.metadata.dataOrigin.packageName))
+    is BodyFatRecord -> listOf(point(record.metadata.id, metric, record.time, record.zoneOffset?.totalSeconds, record.percentage.value, "percent", record.metadata.dataOrigin.packageName))
+    is ExerciseSessionRecord -> listOf(interval(record.metadata.id, metric, record.startTime, record.endTime, record.startZoneOffset?.totalSeconds, record.endZoneOffset?.totalSeconds, java.time.Duration.between(record.startTime, record.endTime).toMinutes().toDouble(), "min", record.metadata.dataOrigin.packageName))
     else -> emptyList()
   }
 

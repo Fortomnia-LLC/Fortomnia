@@ -3,7 +3,13 @@ import type { NativeHealthMetric } from "../../../modules/fortomnia-health/src/F
 import { DEFAULT_HEALTH_READ_METRICS, type FortomniaHealthProvider, type HealthQuery } from "./healthProvider";
 import type { DailyHealthSummary, HealthAuthorization, HealthMetric, HealthSample } from "./healthTypes";
 import { getHealthQueryRange, summarizeHealthDay, summarizeHealthRange } from "./healthNormalization";
-import { saveHealthConnectSampleCache } from "./healthConnectStorage";
+import {
+  loadHealthConnectSampleCache,
+  loadHealthConnectTokens,
+  saveHealthConnectSampleCache,
+  saveHealthConnectTokens,
+} from "./healthConnectStorage";
+import { reconcileAppleHealthSamples } from "./healthSampleReconciliation";
 
 const nativeMetrics = (metrics: HealthMetric[]) => metrics as NativeHealthMetric[];
 export const HEALTH_CONNECT_RECOVERY_METRICS = DEFAULT_HEALTH_READ_METRICS;
@@ -18,9 +24,36 @@ export async function getHealthConnectAuthorizationRequestStatus() {
 }
 
 export async function syncHealthConnectSamples(query: HealthQuery): Promise<HealthSample[]> {
-  const samples = await healthConnectProvider.readSamples(query);
-  await saveHealthConnectSampleCache(samples);
-  return samples;
+  const [cached, tokens] = await Promise.all([
+    loadHealthConnectSampleCache(),
+    loadHealthConnectTokens(),
+  ]);
+  const hasAllTokens = query.metrics.every((metric) => Boolean(tokens[metric]));
+
+  if (!hasAllTokens) {
+    const samples = await healthConnectProvider.readSamples(query);
+    await saveHealthConnectSampleCache(samples);
+    const nextTokens = await FortomniaHealth.createChangesTokens(nativeMetrics(query.metrics));
+    await saveHealthConnectTokens(nextTokens);
+    return samples;
+  }
+
+  try {
+    const changes = await FortomniaHealth.readChanges(nativeMetrics(query.metrics), tokens);
+    const added = changes.samples.map((sample) => ({ ...sample, provider: "health_connect" as const }));
+    const samples = reconcileAppleHealthSamples(cached, added, changes.deletedIds, query.startAt);
+    await saveHealthConnectSampleCache(samples);
+    await saveHealthConnectTokens({ ...tokens, ...changes.tokens });
+    return samples;
+  } catch {
+    // Health Connect tokens expire after prolonged inactivity. A bounded full
+    // refresh safely recovers because native record IDs are stable.
+    const samples = await healthConnectProvider.readSamples(query);
+    await saveHealthConnectSampleCache(samples);
+    const nextTokens = await FortomniaHealth.createChangesTokens(nativeMetrics(query.metrics));
+    await saveHealthConnectTokens(nextTokens);
+    return samples;
+  }
 }
 
 export const healthConnectProvider: FortomniaHealthProvider = {
