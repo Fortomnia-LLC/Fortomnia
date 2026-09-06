@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
+import { Platform } from "react-native";
 
-import FortomniaWatch from "../../modules/fortomnia-watch";
 import type {
   PlannedExercise,
   WorkoutDetail,
@@ -80,14 +80,15 @@ export function useWatchWorkoutSync({
   const processingRef = useRef(Promise.resolve());
 
   useEffect(() => {
-    if (!userId || !workout || workout.completed_at) {
-      if (workout?.completed_at) void FortomniaWatch.clearWorkout();
+    if (Platform.OS !== "ios" || !userId || !workout) {
       return;
     }
 
     const activeWorkout = workout;
     let disposed = false;
+    let subscription: { remove(): void } | undefined;
 
+    void import("../../modules/fortomnia-watch").then(async ({ default: FortomniaWatch }) => {
     const processActions = async (actionsJson: string) => {
       const actions = parseWatchActions(actionsJson).filter(
         (action) => action.sessionId === activeWorkout.id,
@@ -124,10 +125,15 @@ export function useWatchWorkoutSync({
         .catch(() => undefined);
     };
 
-    const subscription = FortomniaWatch.addListener(
+    subscription = FortomniaWatch.addListener(
       "onWatchActions",
       ({ actionsJson }) => enqueueActions(actionsJson),
     );
+
+    if (activeWorkout.completed_at) {
+      await FortomniaWatch.clearWorkout();
+      return;
+    }
 
     void FortomniaWatch.activate().then(() => {
       const pending = FortomniaWatch.getPendingActions();
@@ -138,10 +144,16 @@ export function useWatchWorkoutSync({
       FortomniaWatch,
       buildSnapshot(activeWorkout, plannedExercises),
     );
+    }).catch((error: unknown) => {
+      console.warn(
+        "Apple Watch sync unavailable:",
+        error instanceof Error ? error.message : "Unknown error",
+      );
+    });
 
     return () => {
       disposed = true;
-      subscription.remove();
+      subscription?.remove();
     };
   }, [plannedExercises, refreshWorkout, userId, workout]);
 }
