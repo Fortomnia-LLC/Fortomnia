@@ -2,9 +2,7 @@ export function getPostHogConfig() {
   const apiKey = process.env.EXPO_PUBLIC_POSTHOG_API_KEY;
 
   if (!apiKey) {
-    throw new Error(
-      'Missing required environment variable: EXPO_PUBLIC_POSTHOG_API_KEY',
-    );
+    return null;
   }
 
   return {
