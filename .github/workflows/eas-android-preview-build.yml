@@ -1,3 +1,5 @@
+From https://github.com/Fortomnia-LLC/Fortomnia
+ * branch            feature/android-health-connect-incremental-sync -> FETCH_HEAD
 name: EAS Android Preview Build
 
 on:
@@ -42,3 +44,4 @@ jobs:
         run: eas build --platform android --profile android-preview --non-interactive --no-wait
 
 # Rebuild after restoring the lockfile.
+# Rebuild after Android native compile passed.
