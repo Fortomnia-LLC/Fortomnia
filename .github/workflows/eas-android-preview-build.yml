@@ -40,3 +40,5 @@ jobs:
 
       - name: Start Android preview build
         run: eas build --platform android --profile android-preview --non-interactive --no-wait
+
+# Rebuild after restoring the lockfile.
