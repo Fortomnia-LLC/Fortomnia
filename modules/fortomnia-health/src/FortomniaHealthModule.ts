@@ -2,6 +2,7 @@ import { requireNativeModule } from "expo";
 import type {
   NativeHealthAnchors,
   NativeHealthChanges,
+  NativeHealthConnectChanges,
   NativeHealthDataChangedEvent,
   NativeHealthMetric,
   NativeHealthSample,
@@ -46,6 +47,11 @@ type FortomniaHealthNativeModule = {
     endAt: string,
     anchors: NativeHealthAnchors,
   ): Promise<NativeHealthChanges>;
+  createChangesTokens(metrics: NativeHealthMetric[]): Promise<NativeHealthAnchors>;
+  readChanges(
+    metrics: NativeHealthMetric[],
+    tokens: NativeHealthAnchors,
+  ): Promise<NativeHealthConnectChanges>;
   enableBackgroundDelivery(
     metrics: NativeHealthMetric[],
   ): Promise<NativeHealthMetric[]>;
