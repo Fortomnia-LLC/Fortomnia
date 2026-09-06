@@ -3,7 +3,7 @@
     "version": ">= 21.7.0",
     "appVersionSource": "remote"
   },
- "build": {
+  "build": {
     "development": {
       "developmentClient": true,
       "distribution": "internal",
@@ -11,9 +11,12 @@
     },
     "preview": {
       "distribution": "internal",
-      "environment": "preview"
+      "environment": "preview",
+      "android": {
+        "buildType": "apk"
+      }
     },
-  "ios-simulator": {
+    "ios-simulator": {
       "extends": "preview",
       "ios": {
         "simulator": true
@@ -23,7 +26,7 @@
       "autoIncrement": true,
       "environment": "production"
     }
-   },
+  },
   "submit": {
     "production": {}
   }
