@@ -1,7 +1,23 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { analyticsScreenName } from '../src/lib/analytics.ts';
+import {
+  analyticsScreenName,
+  getPostHogConfig,
+} from '../src/lib/analytics.ts';
+
+test('keeps analytics optional when no API key is configured', () => {
+  const originalApiKey = process.env.EXPO_PUBLIC_POSTHOG_API_KEY;
+
+  delete process.env.EXPO_PUBLIC_POSTHOG_API_KEY;
+  assert.equal(getPostHogConfig(), null);
+
+  if (originalApiKey === undefined) {
+    delete process.env.EXPO_PUBLIC_POSTHOG_API_KEY;
+  } else {
+    process.env.EXPO_PUBLIC_POSTHOG_API_KEY = originalApiKey;
+  }
+});
 
 test('keeps stable route names', () => {
   assert.equal(analyticsScreenName('/workouts'), '/workouts');

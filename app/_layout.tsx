@@ -52,6 +52,15 @@ function ErrorFallback(_props: PostHogErrorBoundaryFallbackProps) {
 export default function RootLayout() {
   const postHogConfig = getPostHogConfig();
 
+  if (!postHogConfig) {
+    return (
+      <AuthProvider>
+        <StatusBar style="light" />
+        <RootNavigator />
+      </AuthProvider>
+    );
+  }
+
   return (
     <PostHogProvider
       apiKey={postHogConfig.apiKey}
