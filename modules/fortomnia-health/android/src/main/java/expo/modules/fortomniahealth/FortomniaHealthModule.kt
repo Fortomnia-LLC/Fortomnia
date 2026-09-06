@@ -22,6 +22,7 @@ import androidx.health.connect.client.request.ChangesTokenRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import expo.modules.kotlin.activityresult.AppContextActivityResultContract
 import expo.modules.kotlin.activityresult.AppContextActivityResultLauncher
+import expo.modules.kotlin.functions.Coroutine
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import java.io.Serializable
