@@ -6,7 +6,7 @@ import { supabase } from "../lib/supabase";
 
 export type LoggedSet = {
   duration_seconds: number | null;
-  intensity_rpe: number | null;
+  intensity_rpe?: number | null;
   metric_unit?: MetricUnit | null;
   metric_value?: number | null;
   exercise_id: string;
