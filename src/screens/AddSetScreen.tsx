@@ -20,6 +20,8 @@ import { useRecoveryCheckIns } from "../hooks/useRecoveryCheckIns";
 import {
   defaultMetricUnit,
   DISTANCE_UNITS,
+  getExerciseMetricDefaults,
+  isCardioExercise,
   PERFORMANCE_LABELS,
   PERFORMANCE_TYPES,
   type MetricUnit,
@@ -36,10 +38,11 @@ import { useAuth } from "../providers/AuthProvider";
 
 export default function AddSetScreen() {
   const router = useRouter();
-    const {
+  const {
     exerciseId: initialExerciseId,
     durationSeconds: initialDurationSeconds,
     id,
+    intensityRpe: initialIntensityRpe,
     metricUnit: initialMetricUnit,
     metricValue: initialMetricValue,
     parentSetId: initialParentSetId,
@@ -56,6 +59,7 @@ export default function AddSetScreen() {
     durationSeconds?: string;
     exerciseId?: string;
     id: string;
+    intensityRpe?: string;
     metricUnit?: MetricUnit;
     metricValue?: string;
     parentSetId?: string;
@@ -100,6 +104,9 @@ export default function AddSetScreen() {
   const [durationSeconds, setDurationSeconds] = useState(
     initialDurationSeconds ?? "",
   );
+  const [intensityRpe, setIntensityRpe] = useState(
+    initialIntensityRpe ?? "",
+  );
   const [setType, setSetType] = useState<"warmup" | "working">(
     initialSetType === "warmup" ? "warmup" : "working",
   );
@@ -114,6 +121,13 @@ export default function AddSetScreen() {
     previousSet,
     previousSets,
   } = usePreviousExerciseSet(exerciseId, workoutId, performanceType);
+
+  const selectedExercise = exercises.find(
+    (exercise) => exercise.id === exerciseId,
+  );
+  const cardioExercise = selectedExercise
+    ? isCardioExercise(selectedExercise)
+    : false;
 
   const parsedRepMin = initialRepMin === undefined
     ? undefined
@@ -193,11 +207,41 @@ export default function AddSetScreen() {
     }
   }
 
-   useEffect(() => {
+  useEffect(() => {
     if (!exerciseId && exercises.length > 0) {
       setExerciseId(exercises[0].id);
     }
   }, [exerciseId, exercises]);
+
+  useEffect(() => {
+    if (isEditing || initialPerformanceType || !selectedExercise) {
+      return;
+    }
+
+    const defaults = getExerciseMetricDefaults(selectedExercise);
+    setPerformanceType(defaults.performanceType);
+
+    if (
+      defaults.performanceType === "time" &&
+      !durationSeconds &&
+      defaults.targetDurationSeconds
+    ) {
+      setDurationSeconds(String(defaults.targetDurationSeconds));
+    }
+
+    if (defaults.targetMetricUnit) {
+      setMetricUnit(defaults.targetMetricUnit);
+    }
+
+    if (defaults.targetMetricValue !== null) {
+      setMetricValue(String(defaults.targetMetricValue));
+    }
+  }, [
+    durationSeconds,
+    initialPerformanceType,
+    isEditing,
+    selectedExercise,
+  ]);
 
   async function handleSave() {
     if (!session?.user.id || !workoutId || !exerciseId) {
@@ -217,6 +261,8 @@ export default function AddSetScreen() {
     const parsedDurationSeconds = Number(durationSeconds);
     const parsedMetricValue = Number(metricValue);
     const parsedRir = rir.trim() === "" ? null : Number(rir);
+    const parsedIntensityRpe =
+      intensityRpe.trim() === "" ? null : Number(intensityRpe);
 
     if (!Number.isFinite(parsedWeight) || parsedWeight < 0) {
       setErrorMessage("Weight must be zero or greater.");
@@ -248,6 +294,17 @@ export default function AddSetScreen() {
       return;
     }
 
+    if (
+      cardioExercise &&
+      (!Number.isInteger(parsedIntensityRpe) ||
+        parsedIntensityRpe === null ||
+        parsedIntensityRpe < 1 ||
+        parsedIntensityRpe > 10)
+    ) {
+      setErrorMessage("Cardio intensity must be an RPE from 1 to 10.");
+      return;
+    }
+
     const savedMetricValue =
       ["distance", "calories", "rounds"].includes(performanceType)
         ? parsedMetricValue
@@ -261,6 +318,7 @@ export default function AddSetScreen() {
     const savedDuration =
       performanceType === "time" ? parsedDurationSeconds : null;
     const savedRir = usesRepsInReserve(performanceType) ? parsedRir : null;
+    const savedIntensityRpe = cardioExercise ? parsedIntensityRpe : null;
 
     if (
       usesRepsInReserve(performanceType) &&
@@ -276,7 +334,7 @@ export default function AddSetScreen() {
     setIsSaving(true);
     setErrorMessage(null);
 
-        const { data: activeWorkout, error: workoutError } = await supabase
+    const { data: activeWorkout, error: workoutError } = await supabase
       .from("workout_sessions")
       .select("id")
       .eq("id", workoutId)
@@ -297,9 +355,10 @@ export default function AddSetScreen() {
         .from("workout_sets")
         .update({
           duration_seconds: savedDuration,
+          exercise_id: exerciseId,
+          intensity_rpe: savedIntensityRpe,
           metric_unit: savedMetricUnit,
           metric_value: savedMetricValue,
-          exercise_id: exerciseId,
           parent_set_id: setVariant === "drop" ? parentSetId : null,
           performance_type: performanceType,
           reps: savedReps,
@@ -330,15 +389,15 @@ export default function AddSetScreen() {
       });
       return;
     }
-      const { data: latestSet, error: latestSetError } =
-      await supabase
-        .from("workout_sets")
-        .select("set_number")
-        .eq("session_id", workoutId)
-        .eq("exercise_id", exerciseId)
-        .order("set_number", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+
+    const { data: latestSet, error: latestSetError } = await supabase
+      .from("workout_sets")
+      .select("set_number")
+      .eq("session_id", workoutId)
+      .eq("exercise_id", exerciseId)
+      .order("set_number", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     if (latestSetError) {
       setErrorMessage(latestSetError.message);
@@ -352,9 +411,10 @@ export default function AddSetScreen() {
       .from("workout_sets")
       .insert({
         duration_seconds: savedDuration,
+        exercise_id: exerciseId,
+        intensity_rpe: savedIntensityRpe,
         metric_unit: savedMetricUnit,
         metric_value: savedMetricValue,
-        exercise_id: exerciseId,
         parent_set_id: setVariant === "drop" ? parentSetId : null,
         performance_type: performanceType,
         reps: savedReps,
@@ -398,25 +458,25 @@ export default function AddSetScreen() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
       >
-      <ScrollView
-  automaticallyAdjustKeyboardInsets
-  contentContainerStyle={styles.content}
-  keyboardDismissMode="interactive"
-  keyboardShouldPersistTaps="handled"
+        <ScrollView
+          automaticallyAdjustKeyboardInsets
+          contentContainerStyle={styles.content}
+          keyboardDismissMode="interactive"
+          keyboardShouldPersistTaps="handled"
         >
-        <Pressable
-          onPress={() =>
-            router.replace({
-              pathname: "/workout/[id]",
-              params: { id: workoutId },
-            })
-          }
-          style={styles.navigation}
-        >
-          <Text style={styles.navigationText}>‹ Workout</Text>
-        </Pressable>
+          <Pressable
+            onPress={() =>
+              router.replace({
+                pathname: "/workout/[id]",
+                params: { id: workoutId },
+              })
+            }
+            style={styles.navigation}
+          >
+            <Text style={styles.navigationText}>‹ Workout</Text>
+          </Pressable>
 
-                  <Text style={styles.eyebrow}>FORTOMNIA</Text>
+          <Text style={styles.eyebrow}>FORTOMNIA</Text>
           <Text style={styles.title}>
             {isEditing ? "Edit set" : "Log set"}
           </Text>
@@ -426,67 +486,79 @@ export default function AddSetScreen() {
               : "Choose an exercise and record your performance."}
           </Text>
 
-        <Text style={styles.label}>Exercise</Text>
+          <Text style={styles.label}>Exercise</Text>
 
           <ExercisePicker
-          exercises={exercises}
-          onSelect={setExerciseId}
-          selectedExerciseId={exerciseId}
-        />
-        {setVariant === "drop" ? (
-          <View style={styles.dropSetBanner}>
-            <Text style={styles.dropSetEyebrow}>DROP SET</Text>
-            <Text style={styles.dropSetText}>
-              This set is linked to the working set you selected.
-            </Text>
-          </View>
-        ) : null}
+            exercises={exercises}
+            onSelect={setExerciseId}
+            selectedExerciseId={exerciseId}
+          />
 
-        <Text style={styles.label}>Performance</Text>
-        <View style={styles.setTypeOptions}>
-          {PERFORMANCE_TYPES.map((option) => (
-            <Pressable
-              key={option}
-              onPress={() => setPerformanceType(option)}
-              style={[
-                styles.setTypeButton,
-                performanceType === option && styles.setTypeButtonSelected,
-              ]}
-            >
-              <Text
+          {cardioExercise ? (
+            <View style={styles.cardioBanner}>
+              <Text style={styles.cardioEyebrow}>CARDIO TRACKING</Text>
+              <Text style={styles.cardioText}>
+                Time is the default. Intensity is tracked with RPE 1–10.
+              </Text>
+            </View>
+          ) : null}
+
+          {setVariant === "drop" ? (
+            <View style={styles.dropSetBanner}>
+              <Text style={styles.dropSetEyebrow}>DROP SET</Text>
+              <Text style={styles.dropSetText}>
+                This set is linked to the working set you selected.
+              </Text>
+            </View>
+          ) : null}
+
+          <Text style={styles.label}>Performance</Text>
+          <View style={styles.setTypeOptions}>
+            {PERFORMANCE_TYPES.map((option) => (
+              <Pressable
+                key={option}
+                onPress={() => setPerformanceType(option)}
                 style={[
-                  styles.setTypeText,
-                  performanceType === option && styles.setTypeTextSelected,
+                  styles.setTypeButton,
+                  performanceType === option && styles.setTypeButtonSelected,
                 ]}
               >
-                {PERFORMANCE_LABELS[option]}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-        <Text style={styles.label}>Set type</Text>
-        <View style={styles.setTypeOptions}>
-          {(["warmup", "working"] as const).map((option) => (
-            <Pressable
-              key={option}
-              onPress={() => setSetType(option)}
-              style={[
-                styles.setTypeButton,
-                setType === option && styles.setTypeButtonSelected,
-              ]}
-            >
-              <Text
+                <Text
+                  style={[
+                    styles.setTypeText,
+                    performanceType === option && styles.setTypeTextSelected,
+                  ]}
+                >
+                  {PERFORMANCE_LABELS[option]}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <Text style={styles.label}>Set type</Text>
+          <View style={styles.setTypeOptions}>
+            {(["warmup", "working"] as const).map((option) => (
+              <Pressable
+                key={option}
+                onPress={() => setSetType(option)}
                 style={[
-                  styles.setTypeText,
-                  setType === option && styles.setTypeTextSelected,
+                  styles.setTypeButton,
+                  setType === option && styles.setTypeButtonSelected,
                 ]}
               >
-                {option === "warmup" ? "Warm-up" : "Working"}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-                  <View style={styles.previousCard}>
+                <Text
+                  style={[
+                    styles.setTypeText,
+                    setType === option && styles.setTypeTextSelected,
+                  ]}
+                >
+                  {option === "warmup" ? "Warm-up" : "Working"}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <View style={styles.previousCard}>
             <Text style={styles.previousEyebrow}>PREVIOUS SET</Text>
 
             {isLoadingPrevious ? (
@@ -500,9 +572,7 @@ export default function AddSetScreen() {
                   {previousSet.reps} reps
                 </Text>
                 <Text style={styles.previousDetails}>
-                  {new Date(
-                    previousSet.performed_at,
-                  ).toLocaleDateString()}
+                  {new Date(previousSet.performed_at).toLocaleDateString()}
                   {previousSet.reps_in_reserve !== null
                     ? ` • ${previousSet.reps_in_reserve} RIR`
                     : ""}
@@ -514,7 +584,10 @@ export default function AddSetScreen() {
               </Text>
             )}
           </View>
-                  {!isEditing && performanceType === "reps" && progressionSuggestion ? (
+
+          {!isEditing &&
+          performanceType === "reps" &&
+          progressionSuggestion ? (
             <View style={styles.suggestionCard}>
               <Text style={styles.suggestionEyebrow}>
                 {progressionSuggestion.strategy === "deload"
@@ -540,7 +613,10 @@ export default function AddSetScreen() {
               </Pressable>
             </View>
           ) : null}
-          {!isEditing && performanceType !== "reps" && metricProgressionSuggestion ? (
+
+          {!isEditing &&
+          performanceType !== "reps" &&
+          metricProgressionSuggestion ? (
             <View style={styles.suggestionCard}>
               <Text style={styles.suggestionEyebrow}>
                 {metricProgressionSuggestion.recoveryContext === "repeated_low"
@@ -564,118 +640,136 @@ export default function AddSetScreen() {
             </View>
           ) : null}
 
-        <Text style={styles.label}>
-          Weight ({profile?.preferred_weight_unit ?? "lb"})
-        </Text>
-        <TextInput
-          inputMode="decimal"
-          onChangeText={setWeight}
-          selectTextOnFocus
-          style={styles.input}
-          value={weight}
-        />
+          <Text style={styles.label}>
+            Weight ({profile?.preferred_weight_unit ?? "lb"})
+          </Text>
+          <TextInput
+            inputMode="decimal"
+            onChangeText={setWeight}
+            selectTextOnFocus
+            style={styles.input}
+            value={weight}
+          />
 
-        {performanceType === "reps" ? (
-          <>
-            <Text style={styles.label}>Reps</Text>
-            <TextInput
-              inputMode="numeric"
-              onChangeText={setReps}
-              placeholder="8"
-              placeholderTextColor="#727885"
-              style={styles.input}
-              value={reps}
-            />
-          </>
-        ) : performanceType === "time" ? (
-          <>
-            <Text style={styles.label}>Duration (seconds)</Text>
-            <TextInput
-              inputMode="numeric"
-              onChangeText={setDurationSeconds}
-              placeholder="30"
-              placeholderTextColor="#727885"
-              style={styles.input}
-              value={durationSeconds}
-            />
-          </>
-        ) : null}
+          {performanceType === "reps" ? (
+            <>
+              <Text style={styles.label}>Reps</Text>
+              <TextInput
+                inputMode="numeric"
+                onChangeText={setReps}
+                placeholder="8"
+                placeholderTextColor="#727885"
+                style={styles.input}
+                value={reps}
+              />
+            </>
+          ) : performanceType === "time" ? (
+            <>
+              <Text style={styles.label}>Duration (seconds)</Text>
+              <TextInput
+                inputMode="numeric"
+                onChangeText={setDurationSeconds}
+                placeholder="600"
+                placeholderTextColor="#727885"
+                style={styles.input}
+                value={durationSeconds}
+              />
+            </>
+          ) : null}
 
-        {["distance", "calories", "rounds"].includes(performanceType) ? (
-          <>
-            <Text style={styles.label}>
-              {performanceType === "distance"
-                ? "Distance"
-                : performanceType === "calories"
-                  ? "Calories"
-                  : "Rounds"}
-            </Text>
-            <TextInput
-              inputMode="decimal"
-              onChangeText={setMetricValue}
-              placeholder={performanceType === "distance" ? "500" : "5"}
-              placeholderTextColor="#727885"
-              style={styles.input}
-              value={metricValue}
-            />
-            {performanceType === "distance" ? (
-              <View style={styles.setTypeOptions}>
-                {DISTANCE_UNITS.map((unit) => (
-                  <Pressable
-                    key={unit}
-                    onPress={() => setMetricUnit(unit)}
-                    style={[
-                      styles.setTypeButton,
-                      metricUnit === unit && styles.setTypeButtonSelected,
-                    ]}
-                  >
-                    <Text
+          {["distance", "calories", "rounds"].includes(performanceType) ? (
+            <>
+              <Text style={styles.label}>
+                {performanceType === "distance"
+                  ? "Distance"
+                  : performanceType === "calories"
+                    ? "Calories"
+                    : "Rounds"}
+              </Text>
+              <TextInput
+                inputMode="decimal"
+                onChangeText={setMetricValue}
+                placeholder={performanceType === "distance" ? "500" : "5"}
+                placeholderTextColor="#727885"
+                style={styles.input}
+                value={metricValue}
+              />
+              {performanceType === "distance" ? (
+                <View style={styles.setTypeOptions}>
+                  {DISTANCE_UNITS.map((unit) => (
+                    <Pressable
+                      key={unit}
+                      onPress={() => setMetricUnit(unit)}
                       style={[
-                        styles.setTypeText,
-                        metricUnit === unit && styles.setTypeTextSelected,
+                        styles.setTypeButton,
+                        metricUnit === unit && styles.setTypeButtonSelected,
                       ]}
                     >
-                      {unit}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-            ) : null}
-          </>
-        ) : null}
+                      <Text
+                        style={[
+                          styles.setTypeText,
+                          metricUnit === unit && styles.setTypeTextSelected,
+                        ]}
+                      >
+                        {unit}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              ) : null}
+            </>
+          ) : null}
 
-        {usesRepsInReserve(performanceType) ? (
-          <>
-            <Text style={styles.label}>Reps in reserve</Text>
-            <TextInput
-              inputMode="numeric"
-              onChangeText={setRir}
-              placeholder="2"
-              placeholderTextColor="#727885"
-              style={styles.input}
-              value={rir}
-            />
-          </>
-        ) : null}
+          {cardioExercise ? (
+            <>
+              <Text style={styles.label}>Intensity (RPE 1–10)</Text>
+              <TextInput
+                inputMode="numeric"
+                maxLength={2}
+                onChangeText={setIntensityRpe}
+                placeholder="7"
+                placeholderTextColor="#727885"
+                style={styles.input}
+                value={intensityRpe}
+              />
+              <Text style={styles.helperText}>
+                1 = very easy, 10 = maximal effort.
+              </Text>
+            </>
+          ) : null}
 
-        {errorMessage ? (
-          <Text style={styles.error}>{errorMessage}</Text>
-        ) : null}
+          {usesRepsInReserve(performanceType) ? (
+            <>
+              <Text style={styles.label}>Reps in reserve</Text>
+              <TextInput
+                inputMode="numeric"
+                onChangeText={setRir}
+                placeholder="2"
+                placeholderTextColor="#727885"
+                style={styles.input}
+                value={rir}
+              />
+            </>
+          ) : null}
 
-        <Pressable
-          disabled={isSaving}
-          onPress={handleSave}
-          style={[styles.saveButton, isSaving && styles.disabled]}
-        >
-          {isSaving ? (
-            <ActivityIndicator color="#0B0B0B" />
-          ) : (
+          {errorMessage ? (
+            <Text style={styles.error}>{errorMessage}</Text>
+          ) : null}
+
+          <Pressable
+            disabled={isSaving}
+            onPress={handleSave}
+            style={[styles.saveButton, isSaving && styles.disabled]}
+          >
+            {isSaving ? (
+              <ActivityIndicator color="#0B0B0B" />
+            ) : (
               <Text style={styles.saveText}>
                 {isEditing ? "Save changes" : "Save set"}
               </Text>
-          )}
-        </Pressable>
-      </ScrollView>
+            )}
+          </Pressable>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -729,6 +823,26 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     marginBottom: 8,
+  },
+  cardioBanner: {
+    backgroundColor: "#10253A",
+    borderColor: "#2563EB",
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 20,
+    marginTop: 12,
+    padding: 14,
+  },
+  cardioEyebrow: {
+    color: "#60A5FA",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1.5,
+  },
+  cardioText: {
+    color: "#D1D5DB",
+    fontSize: 13,
+    marginTop: 5,
   },
   dropSetBanner: {
     backgroundColor: "#24143B",
@@ -857,6 +971,12 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingHorizontal: 16,
     paddingVertical: 14,
+  },
+  helperText: {
+    color: "#9CA3AF",
+    fontSize: 12,
+    marginBottom: 20,
+    marginTop: -12,
   },
   error: {
     color: "#F87171",

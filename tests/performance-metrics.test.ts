@@ -22,8 +22,7 @@ test("formats distance, calorie, and round performance", () => {
   assert.equal(formatMetricValue("rounds", 5, "rounds"), "5 rounds");
 });
 
-
-test("selects distance defaults for locomotion and carries", () => {
+test("defaults cardio to time while keeping carries distance-based", () => {
   assert.deepEqual(
     getExerciseMetricDefaults({
       equipment: null,
@@ -31,11 +30,12 @@ test("selects distance defaults for locomotion and carries", () => {
       name: "Outdoor Run",
     }),
     {
-      explanation: "Locomotion work defaults to distance so progress stays comparable.",
-      performanceType: "distance",
-      targetDurationSeconds: null,
-      targetMetricUnit: "meters",
-      targetMetricValue: 400,
+      explanation:
+        "Cardio defaults to time so every session consistently captures duration and intensity. You can switch to distance, calories, or rounds when that metric better fits the machine.",
+      performanceType: "time",
+      targetDurationSeconds: 600,
+      targetMetricUnit: null,
+      targetMetricValue: null,
     },
   );
 
@@ -49,14 +49,14 @@ test("selects distance defaults for locomotion and carries", () => {
   );
 });
 
-test("selects calories, time, rounds, and reps by exercise context", () => {
+test("defaults cardio machines to time and preserves non-cardio metric defaults", () => {
   assert.equal(
     getExerciseMetricDefaults({
       equipment: "Rower",
       movement_pattern: "conditioning",
       name: "Rowing Machine",
     }).performanceType,
-    "calories",
+    "time",
   );
   assert.equal(
     getExerciseMetricDefaults({
@@ -69,7 +69,7 @@ test("selects calories, time, rounds, and reps by exercise context", () => {
   assert.equal(
     getExerciseMetricDefaults({
       equipment: null,
-      movement_pattern: "conditioning",
+      movement_pattern: "other",
       name: "Bodyweight AMRAP",
     }).performanceType,
     "rounds",
@@ -83,7 +83,6 @@ test("selects calories, time, rounds, and reps by exercise context", () => {
     "reps",
   );
 });
-
 
 test("limits RIR to rep-based performance", () => {
   assert.equal(usesRepsInReserve("reps"), true);
