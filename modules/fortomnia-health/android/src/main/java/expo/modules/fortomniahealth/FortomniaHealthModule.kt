@@ -19,6 +19,7 @@ import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import expo.modules.kotlin.activityresult.AppContextActivityResultContract
 import expo.modules.kotlin.activityresult.AppContextActivityResultLauncher
+import expo.modules.kotlin.functions.Coroutine
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import java.time.Instant
@@ -38,16 +39,22 @@ class FortomniaHealthModule : Module() {
       HealthConnectClient.getSdkStatus(requireContext()) == HealthConnectClient.SDK_AVAILABLE
     }
 
-    AsyncFunction("getAuthorizationRequestStatus") { read: List<String>, write: List<String> ->
-      if (!isAvailable()) return@AsyncFunction "unavailable"
+    AsyncFunction("getAuthorizationRequestStatus") Coroutine { read: List<String>, write: List<String> ->
+      if (!isAvailable()) return@Coroutine "unavailable"
       val requested = permissions(read, write)
       val granted = client().permissionController.getGrantedPermissions()
       if (granted.containsAll(requested)) "unnecessary" else "should_request"
     }
 
-    AsyncFunction("requestAuthorization") { read: List<String>, write: List<String> ->
+    AsyncFunction("requestAuthorization") Coroutine { read: List<String>, write: List<String> ->
       if (!isAvailable()) {
-        return@AsyncFunction mapOf("available" to false, "requestCompleted" to false, "grantedRead" to emptyList<String>(), "grantedWrite" to emptyList<String>(), "deniedWrite" to emptyList<String>())
+        return@Coroutine mapOf(
+          "available" to false,
+          "requestCompleted" to false,
+          "grantedRead" to emptyList<String>(),
+          "grantedWrite" to emptyList<String>(),
+          "deniedWrite" to emptyList<String>(),
+        )
       }
       val requested = permissions(read, write)
       permissionLauncher.launch(ArrayList(requested))
@@ -55,10 +62,16 @@ class FortomniaHealthModule : Module() {
       val grantedRead = read.filter { metric -> readPermission(metric)?.let(granted::contains) == true }
       val grantedWrite = write.filter { metric -> writePermission(metric)?.let(granted::contains) == true }
       val deniedWrite = write.filterNot(grantedWrite::contains)
-      mapOf("available" to true, "requestCompleted" to true, "grantedRead" to grantedRead, "grantedWrite" to grantedWrite, "deniedWrite" to deniedWrite)
+      mapOf(
+        "available" to true,
+        "requestCompleted" to true,
+        "grantedRead" to grantedRead,
+        "grantedWrite" to grantedWrite,
+        "deniedWrite" to deniedWrite,
+      )
     }
 
-    AsyncFunction("readSamples") { metrics: List<String>, startAt: String, endAt: String ->
+    AsyncFunction("readSamples") Coroutine { metrics: List<String>, startAt: String, endAt: String ->
       val start = Instant.parse(startAt)
       val end = Instant.parse(endAt)
       val granted = client().permissionController.getGrantedPermissions()
@@ -110,14 +123,25 @@ class FortomniaHealthModule : Module() {
     interval(id, metric, time, time, zoneSeconds, zoneSeconds, value, unit, source)
 
   private fun interval(id: String, metric: String, start: Instant, end: Instant, startZoneSeconds: Int?, endZoneSeconds: Int?, value: Double, unit: String, source: String) = mapOf(
-    "id" to id, "externalId" to id, "metric" to metric, "startAt" to start.toString(), "endAt" to end.toString(),
-    "startTimeZoneOffsetMinutes" to startZoneSeconds?.div(60), "endTimeZoneOffsetMinutes" to endZoneSeconds?.div(60),
-    "value" to value, "unit" to unit, "sourceBundleId" to source
+    "id" to id,
+    "externalId" to id,
+    "metric" to metric,
+    "startAt" to start.toString(),
+    "endAt" to end.toString(),
+    "startTimeZoneOffsetMinutes" to startZoneSeconds?.div(60),
+    "endTimeZoneOffsetMinutes" to endZoneSeconds?.div(60),
+    "value" to value,
+    "unit" to unit,
+    "sourceBundleId" to source,
   )
 }
 
 private class HealthPermissionsContract : AppContextActivityResultContract<ArrayList<String>, Set<String>> {
   private val delegate: ActivityResultContract<Set<String>, Set<String>> = PermissionController.createRequestPermissionResultContract()
-  override fun createIntent(context: Context, input: ArrayList<String>): Intent = delegate.createIntent(context, input.toSet())
-  override fun parseResult(input: ArrayList<String>, resultCode: Int, intent: Intent?): Set<String> = delegate.parseResult(resultCode, intent)
+
+  override fun createIntent(context: Context, input: ArrayList<String>): Intent =
+    delegate.createIntent(context, input.toSet())
+
+  override fun parseResult(input: ArrayList<String>, resultCode: Int, intent: Intent?): Set<String> =
+    delegate.parseResult(resultCode, intent)
 }
