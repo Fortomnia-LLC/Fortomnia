@@ -6,6 +6,7 @@ import { supabase } from "../lib/supabase";
 
 export type LoggedSet = {
   duration_seconds: number | null;
+  intensity_rpe: number | null;
   metric_unit?: MetricUnit | null;
   metric_value?: number | null;
   exercise_id: string;
@@ -46,6 +47,7 @@ export type WorkoutDetail = {
 
 type WorkoutSetRow = {
   duration_seconds: number | null;
+  intensity_rpe: number | null;
   metric_unit?: MetricUnit | null;
   metric_value?: number | null;
   exercise_id: string;
@@ -116,6 +118,7 @@ export function useWorkoutSession(workoutId: string | undefined) {
             id,
             exercise_id,
             duration_seconds,
+            intensity_rpe,
             metric_unit,
             metric_value,
             parent_set_id,
@@ -189,6 +192,7 @@ export function useWorkoutSession(workoutId: string | undefined) {
 
     return {
       duration_seconds: set.duration_seconds,
+      intensity_rpe: set.intensity_rpe,
       metric_unit: set.metric_unit,
       metric_value: set.metric_value == null ? null : Number(set.metric_value),
       exercise_id: set.exercise_id,
