@@ -60,7 +60,6 @@ export function formatMetricValue(
   return `${value} ${labels[unit]}`;
 }
 
-
 export type ExerciseMetricInput = {
   equipment: string | null;
   movement_pattern: string;
@@ -75,12 +74,61 @@ export type ExerciseMetricDefaults = {
   targetMetricValue: number | null;
 };
 
+const cardioTerms = [
+  "bike",
+  "bicycle",
+  "cycling",
+  "cycle",
+  "spin",
+  "rower",
+  "rowing machine",
+  "ski erg",
+  "skierg",
+  "elliptical",
+  "treadmill",
+  "stair",
+  "stepmill",
+  "climber",
+  "run",
+  "running",
+  "jog",
+  "walk",
+  "walking",
+  "swim",
+  "swimming",
+  "cardio",
+  "erg",
+  "air bike",
+  "assault bike",
+  "echo bike",
+] as const;
+
+export function isCardioExercise(exercise: ExerciseMetricInput): boolean {
+  if (exercise.movement_pattern === "conditioning") {
+    return true;
+  }
+
+  const searchable = `${exercise.name} ${exercise.equipment ?? ""}`.toLowerCase();
+  return cardioTerms.some((term) => searchable.includes(term));
+}
+
 export function getExerciseMetricDefaults(
   exercise: ExerciseMetricInput,
 ): ExerciseMetricDefaults {
   const searchable = `${exercise.name} ${exercise.equipment ?? ""}`.toLowerCase();
   const matches = (...terms: string[]) =>
     terms.some((term) => searchable.includes(term));
+
+  if (isCardioExercise(exercise)) {
+    return {
+      explanation:
+        "Cardio defaults to time so every session consistently captures duration and intensity. You can switch to distance, calories, or rounds when that metric better fits the machine.",
+      performanceType: "time",
+      targetDurationSeconds: 600,
+      targetMetricUnit: null,
+      targetMetricValue: null,
+    };
+  }
 
   if (matches("circuit", "amrap", "rounds")) {
     return {
@@ -92,19 +140,9 @@ export function getExerciseMetricDefaults(
     };
   }
 
-  if (matches("rower", "rowing machine", "ski erg", "skierg", "air bike", "assault bike")) {
-    return {
-      explanation: "Erg work defaults to calories for a simple, machine-readable target.",
-      performanceType: "calories",
-      targetDurationSeconds: null,
-      targetMetricUnit: "calories",
-      targetMetricValue: 10,
-    };
-  }
-
   if (
     exercise.movement_pattern === "carry" ||
-    matches("run", "walk", "swim", "sprint", "carry", "sled")
+    matches("sprint", "carry", "sled")
   ) {
     return {
       explanation: "Locomotion work defaults to distance so progress stays comparable.",
