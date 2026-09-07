@@ -1,15 +1,39 @@
-const { withEntitlementsPlist, withInfoPlist } = require("expo/config-plugins");
+const {
+  withEntitlementsPlist,
+  withGradleProperties,
+  withInfoPlist,
+} = require("expo/config-plugins");
+
 module.exports = function withFortomniaHealth(config) {
   config = withEntitlementsPlist(config, (config) => {
     config.modResults["com.apple.developer.healthkit"] = true;
     config.modResults["com.apple.developer.healthkit.background-delivery"] = true;
     return config;
   });
+
   config = withInfoPlist(config, (config) => {
-    config.modResults.NSHealthShareUsageDescription = "Fortomnia reads health and activity data you choose to share to personalize training, recovery, and progress insights.";
-    config.modResults.NSHealthUpdateUsageDescription = "Fortomnia can save workouts and body measurements to Apple Health when you choose to enable it.";
+    config.modResults.NSHealthShareUsageDescription =
+      "Fortomnia reads health and activity data you choose to share to personalize training, recovery, and progress insights.";
+    config.modResults.NSHealthUpdateUsageDescription =
+      "Fortomnia can save workouts and body measurements to Apple Health when you choose to enable it.";
     return config;
   });
+
+  config = withGradleProperties(config, (config) => {
+    const key = "android.minSdkVersion";
+    const value = "26";
+    const existing = config.modResults.find(
+      (item) => item.type === "property" && item.key === key,
+    );
+
+    if (existing) {
+      existing.value = value;
+    } else {
+      config.modResults.push({ type: "property", key, value });
+    }
+
+    return config;
+  });
+
   return config;
 };
-
