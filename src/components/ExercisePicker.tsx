@@ -1,3 +1,8 @@
+import {
+  useLocalSearchParams,
+  usePathname,
+  useRouter,
+} from "expo-router";
 import { useMemo, useState } from "react";
 import {
   Pressable,
@@ -18,17 +23,31 @@ type ExercisePickerProps = {
 
 const allFilter = "All";
 
+function firstParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 export function ExercisePicker({
   exercises,
   onSelect,
   selectedExerciseId,
 }: ExercisePickerProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useLocalSearchParams<Record<string, string | string[]>>();
   const [query, setQuery] = useState("");
   const [muscleGroup, setMuscleGroup] = useState(allFilter);
   const [equipment, setEquipment] = useState(allFilter);
   const [isExpanded, setIsExpanded] = useState(
     selectedExerciseId === null,
   );
+
+  const isWorkoutPicker =
+    pathname.includes("/workout/") && pathname.endsWith("/add-set");
+  const isTemplatePicker =
+    pathname.includes("/template/") && pathname.endsWith("/add-exercise");
+  const canCreateCustom = isWorkoutPicker || isTemplatePicker;
+
   const muscleGroups = useMemo(
     () => [
       allFilter,
@@ -52,6 +71,7 @@ export function ExercisePicker({
     ],
     [exercises],
   );
+
   const filteredExercises = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
@@ -94,6 +114,49 @@ export function ExercisePicker({
   );
   const displayedExercises = filteredExercises.slice(0, 30);
 
+  function handleCreateCustomExercise() {
+    const id = firstParam(params.id);
+
+    if (!id || !canCreateCustom) {
+      return;
+    }
+
+    const commonParams = {
+      returnExerciseId: selectedExerciseId ?? "",
+      returnId: id,
+      returnTo: isWorkoutPicker ? "workout" : "template",
+    };
+
+    if (isWorkoutPicker) {
+      router.push({
+        pathname: "/new-exercise",
+        params: {
+          ...commonParams,
+          repMax: firstParam(params.repMax) ?? "",
+          repMin: firstParam(params.repMin) ?? "",
+          reps: firstParam(params.reps) ?? "",
+          rir: firstParam(params.rir) ?? "",
+          setId: firstParam(params.setId) ?? "",
+          weight: firstParam(params.weight) ?? "",
+        },
+      });
+      return;
+    }
+
+    router.push({
+      pathname: "/new-exercise",
+      params: {
+        ...commonParams,
+        repMax: firstParam(params.repMax) ?? "",
+        repMin: firstParam(params.repMin) ?? "",
+        targetRir: firstParam(params.targetRir) ?? "",
+        targetSets: firstParam(params.targetSets) ?? "",
+        templateExerciseId:
+          firstParam(params.templateExerciseId) ?? "",
+      },
+    });
+  }
+
   if (!isExpanded && selectedExercise) {
     return (
       <View>
@@ -134,9 +197,22 @@ export function ExercisePicker({
             {selectedExercise.is_unilateral ? " • Unilateral" : ""}
           </Text>
         </View>
+
+        {canCreateCustom ? (
+          <Pressable
+            accessibilityHint="Creates a custom exercise and returns it to this workout flow"
+            accessibilityLabel="Create custom exercise"
+            accessibilityRole="button"
+            onPress={handleCreateCustomExercise}
+            style={styles.createButton}
+          >
+            <Text style={styles.createButtonText}>+ Create custom exercise</Text>
+          </Pressable>
+        ) : null}
       </View>
     );
   }
+
   return (
     <View>
       <TextInput
@@ -152,6 +228,18 @@ export function ExercisePicker({
         value={query}
       />
 
+      {canCreateCustom ? (
+        <Pressable
+          accessibilityHint="Creates a custom exercise and returns it to this workout flow"
+          accessibilityLabel="Create custom exercise"
+          accessibilityRole="button"
+          onPress={handleCreateCustomExercise}
+          style={styles.createButton}
+        >
+          <Text style={styles.createButtonText}>+ Create custom exercise</Text>
+        </Pressable>
+      ) : null}
+
       <Text style={styles.filterLabel}>Muscle group</Text>
       <ScrollView
         contentContainerStyle={styles.filterRow}
@@ -163,9 +251,9 @@ export function ExercisePicker({
 
           return (
             <Pressable
-                accessibilityLabel={`Filter by muscle group: ${option}`}
-                accessibilityRole="button"
-                accessibilityState={{ selected }}
+              accessibilityLabel={`Filter by muscle group: ${option}`}
+              accessibilityRole="button"
+              accessibilityState={{ selected }}
               key={option}
               onPress={() => setMuscleGroup(option)}
               style={[
@@ -197,9 +285,9 @@ export function ExercisePicker({
 
           return (
             <Pressable
-                accessibilityLabel={`Filter by equipment: ${option}`}
-                accessibilityRole="button"
-                accessibilityState={{ selected }}
+              accessibilityLabel={`Filter by equipment: ${option}`}
+              accessibilityRole="button"
+              accessibilityState={{ selected }}
               key={option}
               onPress={() => setEquipment(option)}
               style={[
@@ -221,20 +309,20 @@ export function ExercisePicker({
       </ScrollView>
 
       <Text style={styles.resultCount}>
-          {displayedExercises.length < filteredExercises.length
-            ? `Showing ${displayedExercises.length} of ${filteredExercises.length} exercises`
-            : `${filteredExercises.length} ${
-                filteredExercises.length === 1
-                  ? "exercise"
-                  : "exercises"
-              }`}
-        </Text>
+        {displayedExercises.length < filteredExercises.length
+          ? `Showing ${displayedExercises.length} of ${filteredExercises.length} exercises`
+          : `${filteredExercises.length} ${
+              filteredExercises.length === 1
+                ? "exercise"
+                : "exercises"
+            }`}
+      </Text>
 
       {filteredExercises.length === 0 ? (
         <View style={styles.emptyCard}>
           <Text style={styles.emptyTitle}>No exercises found</Text>
           <Text style={styles.emptyText}>
-            Try another search or change the active filters.
+            Try another search or create a custom exercise.
           </Text>
         </View>
       ) : (
@@ -244,16 +332,16 @@ export function ExercisePicker({
 
             return (
               <Pressable
-                  accessibilityHint="Selects this exercise"
-                  accessibilityLabel={`${exercise.name}, ${exercise.muscle_group}${
-                    exercise.equipment
-                      ? `, ${exercise.equipment}`
-                      : ""
-                  }${exercise.is_unilateral ? ", unilateral" : ""}`}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected }}
+                accessibilityHint="Selects this exercise"
+                accessibilityLabel={`${exercise.name}, ${exercise.muscle_group}${
+                  exercise.equipment
+                    ? `, ${exercise.equipment}`
+                    : ""
+                }${exercise.is_unilateral ? ", unilateral" : ""}`}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
                 key={exercise.id}
-                  onPress={() => {
+                onPress={() => {
                   onSelect(exercise.id);
                   setIsExpanded(false);
                 }}
@@ -303,6 +391,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingHorizontal: 14,
     paddingVertical: 12,
+  },
+  createButton: {
+    alignItems: "center",
+    borderColor: "#F97316",
+    borderRadius: 10,
+    borderWidth: 1,
+    marginTop: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+  },
+  createButtonText: {
+    color: "#F97316",
+    fontSize: 13,
+    fontWeight: "800",
   },
   filterLabel: {
     color: "#9CA3AF",
