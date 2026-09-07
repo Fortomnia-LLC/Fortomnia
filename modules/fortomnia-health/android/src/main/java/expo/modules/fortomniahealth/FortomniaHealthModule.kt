@@ -21,7 +21,6 @@ import expo.modules.kotlin.activityresult.AppContextActivityResultContract
 import expo.modules.kotlin.activityresult.AppContextActivityResultLauncher
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
-import java.io.Serializable
 import java.time.Instant
 import kotlin.reflect.KClass
 
@@ -39,16 +38,16 @@ class FortomniaHealthModule : Module() {
       HealthConnectClient.getSdkStatus(requireContext()) == HealthConnectClient.SDK_AVAILABLE
     }
 
-    AsyncFunction("getAuthorizationRequestStatus") Coroutine { read: List<String>, write: List<String> ->
-      if (!isAvailable()) return@Coroutine "unavailable"
+    AsyncFunction("getAuthorizationRequestStatus") { read: List<String>, write: List<String> ->
+      if (!isAvailable()) return@AsyncFunction "unavailable"
       val requested = permissions(read, write)
       val granted = client().permissionController.getGrantedPermissions()
       if (granted.containsAll(requested)) "unnecessary" else "should_request"
     }
 
-    AsyncFunction("requestAuthorization") Coroutine { read: List<String>, write: List<String> ->
+    AsyncFunction("requestAuthorization") { read: List<String>, write: List<String> ->
       if (!isAvailable()) {
-        return@Coroutine mapOf("available" to false, "requestCompleted" to false, "grantedRead" to emptyList<String>(), "grantedWrite" to emptyList<String>(), "deniedWrite" to emptyList<String>())
+        return@AsyncFunction mapOf("available" to false, "requestCompleted" to false, "grantedRead" to emptyList<String>(), "grantedWrite" to emptyList<String>(), "deniedWrite" to emptyList<String>())
       }
       val requested = permissions(read, write)
       permissionLauncher.launch(ArrayList(requested))
@@ -59,7 +58,7 @@ class FortomniaHealthModule : Module() {
       mapOf("available" to true, "requestCompleted" to true, "grantedRead" to grantedRead, "grantedWrite" to grantedWrite, "deniedWrite" to deniedWrite)
     }
 
-    AsyncFunction("readSamples") Coroutine { metrics: List<String>, startAt: String, endAt: String ->
+    AsyncFunction("readSamples") { metrics: List<String>, startAt: String, endAt: String ->
       val start = Instant.parse(startAt)
       val end = Instant.parse(endAt)
       val granted = client().permissionController.getGrantedPermissions()
