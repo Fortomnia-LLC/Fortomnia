@@ -13,6 +13,10 @@ import {
 
 import { type MealType } from "../hooks/useDailyNutrition";
 import { getLocalDateKey } from "../lib/dates";
+import {
+  buildRememberedFoods,
+  type RememberedFood,
+} from "../lib/nutritionHistory";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
 
@@ -78,6 +82,10 @@ export default function AddNutritionEntryScreen() {
   const [fiber, setFiber] = useState(initialFiber ?? "");
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [rememberedFoods, setRememberedFoods] = useState<RememberedFood[]>([]);
+  const [isLoadingRememberedFoods, setIsLoadingRememberedFoods] = useState(
+    !isEditing,
+  );
 
   useEffect(() => {
     setMealType(initialMealType ?? "breakfast");
@@ -100,6 +108,57 @@ export default function AddNutritionEntryScreen() {
     initialProtein,
     initialServing,
   ]);
+
+  useEffect(() => {
+    if (!session?.user.id || isEditing) {
+      setRememberedFoods([]);
+      setIsLoadingRememberedFoods(false);
+      return;
+    }
+
+    let isCancelled = false;
+
+    async function loadRememberedFoods() {
+      setIsLoadingRememberedFoods(true);
+
+      const { data, error } = await supabase
+        .from("nutrition_entries")
+        .select(
+          "food_name, serving_description, calories, protein_g, carbs_g, fat_g, fiber_g",
+        )
+        .eq("user_id", session!.user.id)
+        .order("consumed_at", { ascending: false })
+        .limit(75);
+
+      if (isCancelled) {
+        return;
+      }
+
+      if (error) {
+        setRememberedFoods([]);
+      } else {
+        setRememberedFoods(buildRememberedFoods(data ?? []));
+      }
+      setIsLoadingRememberedFoods(false);
+    }
+
+    void loadRememberedFoods();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [isEditing, session?.user.id]);
+
+  function applyRememberedFood(food: RememberedFood) {
+    setFoodName(food.food_name);
+    setServing(food.serving_description ?? "");
+    setCalories(String(food.calories));
+    setProtein(String(food.protein_g));
+    setCarbs(String(food.carbs_g));
+    setFat(String(food.fat_g));
+    setFiber(String(food.fiber_g));
+    setErrorMessage(null);
+  }
 
   async function handleSave() {
     const trimmedName = foodName.trim();
@@ -235,6 +294,54 @@ export default function AddNutritionEntryScreen() {
         ? "Correct the meal, serving, calories, or macros."
         : "Record calories and macros for today."}
      </Text>
+
+        {!isEditing ? (
+          <View style={styles.rememberedSection}>
+            <View style={styles.rememberedHeader}>
+              <Text style={styles.label}>Recent foods</Text>
+              {isLoadingRememberedFoods ? (
+                <ActivityIndicator color="#F97316" size="small" />
+              ) : null}
+            </View>
+            {rememberedFoods.length > 0 ? (
+              <ScrollView
+                horizontal
+                keyboardShouldPersistTaps="handled"
+                showsHorizontalScrollIndicator={false}
+                style={styles.rememberedList}
+              >
+                {rememberedFoods.map((food) => {
+                  const key = `${food.food_name}::${food.serving_description ?? ""}`;
+
+                  return (
+                    <Pressable
+                      accessibilityHint="Fills in the saved serving and nutrition facts"
+                      accessibilityLabel={`Use saved food ${food.food_name}`}
+                      accessibilityRole="button"
+                      key={key}
+                      onPress={() => applyRememberedFood(food)}
+                      style={styles.rememberedFoodButton}
+                    >
+                      <Text style={styles.rememberedFoodName}>
+                        {food.food_name}
+                      </Text>
+                      <Text style={styles.rememberedFoodDetails}>
+                        {food.serving_description
+                          ? `${food.serving_description} • `
+                          : ""}
+                        {food.calories} cal
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            ) : !isLoadingRememberedFoods ? (
+              <Text style={styles.rememberedEmpty}>
+                Foods you log will appear here for quick reuse.
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
 
         <Text style={styles.label}>Meal</Text>
         <View style={styles.mealRow}>
@@ -403,6 +510,43 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     marginBottom: 28,
     marginTop: 8,
+  },
+  rememberedSection: {
+    marginBottom: 24,
+  },
+  rememberedHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
+  },
+  rememberedList: {
+    marginHorizontal: -20,
+    paddingHorizontal: 20,
+  },
+  rememberedFoodButton: {
+    backgroundColor: "#171717",
+    borderColor: "#333333",
+    borderRadius: 12,
+    borderWidth: 1,
+    marginRight: 10,
+    minWidth: 140,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  rememberedFoodName: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  rememberedFoodDetails: {
+    color: "#9CA3AF",
+    fontSize: 12,
+    marginTop: 4,
+  },
+  rememberedEmpty: {
+    color: "#727885",
+    fontSize: 13,
+    lineHeight: 19,
   },
   label: {
     color: "#D1D5DB",
