@@ -44,7 +44,7 @@ export default function TrainingScreen() {
           <Link href="/new-workout" asChild><Pressable style={styles.startButton}><Text style={styles.startButtonText}>Start workout</Text></Pressable></Link>
 
           {templates.length > 0 ? (
-            <Link href="/(tabs)/recovery-workout" asChild>
+            <Link href="/(tabs)/recovery" asChild>
               <Pressable style={styles.intelligenceCard}>
                 <View style={styles.intelligenceHeader}>
                   <Text style={styles.intelligenceBadge}>TRAINING INTELLIGENCE</Text>
