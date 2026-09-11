@@ -4,6 +4,35 @@ This is the authoritative product objective ledger. Before starting an objective
 
 Status legend: **Complete foundation** = usable groundwork exists but may still need production hardening; **In progress** = partially implemented; **Required** = accepted objective not yet implemented; **Conditional** = desired only if a measured validation gate is met; **Later** = intentionally outside the current milestone.
 
+## Portfolio priority — Architecture and scalability
+
+Scalability is a cross-cutting product priority, not a separate rewrite. New work should strengthen the shared Fortomnia domain, local-data, synchronization, security, and server-side boundaries below. Existing features should migrate incrementally when touched; do not pause useful releases for a speculative platform migration.
+
+Priority legend: **P0** = foundation required before dependent feature work expands; **P1** = build alongside the next feature that needs it; **P2** = document now and revisit only when measured usage justifies it.
+
+| Objective | Priority | Status | Existing foundation | Remaining acceptance target |
+|---|---|---|---|---|
+| Central domain and repository layer | P0 | Required | Source organization already separates components, hooks, libraries, providers, and screens | Define typed domain models and repository/service interfaces; route all new data access through them; migrate direct Supabase calls incrementally; keep UI unaware of local-versus-remote persistence |
+| Offline-first workout data | P0 | Required | AsyncStorage and versioned workout-transfer contracts provide partial local persistence patterns | Introduce a durable local working copy for active workouts and queued mutations; survive app restarts, airplane mode, poor gym connectivity, and process termination without losing sets; synchronize when connectivity returns |
+| Shared synchronization and conflict model | P0 | Required | Watch transfer already uses versioned, idempotent offline actions; health work includes freshness and normalization concepts | Standardize stable IDs, `created_at`, `updated_at`, sync version/revision, tombstones such as `deleted_at`, retry state, idempotency, conflict policy, and reconciliation across phone, Watch, and Supabase; prevent deleted records from being resurrected |
+| Database ownership, RLS, constraints, and indexes | P0 | In progress | User-owned workout and equipment tables already use ownership, foreign keys, indexes, and RLS | Require RLS and explicit ownership on every user-owned table; add automated cross-user isolation tests, constraint/index review, least-privilege API exposure, and migration checks for sensitive health and nutrition data |
+| Backward-compatible schema and API evolution | P0 | Required | Supabase migrations are version controlled | Use additive migrations first; support old and new mobile clients during rollout; backfill before enforcing new constraints; version sync payloads and server contracts; remove old fields only after an explicit compatibility window |
+| Provider-neutral health and wearable domain | P0 | In progress | `modules/fortomnia-health`, normalized summaries, `health_connect` types, and shared Watch transfer contracts exist | Define a Fortomnia-owned health model and provider interface; keep Apple Health, Health Connect, Watch, and future Garmin/Fitbit/Oura/WHOOP payloads behind adapters; preserve provider/source metadata without leaking vendor objects into screens or coaching logic |
+| Server-side trust boundary | P1 | In progress | `supabase/functions`, RLS, and premium-AI architecture provide an initial server-side path | Move secrets, subscription verification, third-party integrations, scheduled jobs, AI execution, expensive aggregates, and privileged mutations to protected server-side functions; keep simple user-owned CRUD direct only where RLS is sufficient |
+| Data-model discipline for evolving integrations | P1 | In progress | Core workout data is relational and provider metadata can be normalized | Keep authoritative user/workout relationships normalized; use constrained `jsonb` for vendor payloads and rapidly changing metadata; document provenance, retention, indexes, and promotion rules for fields that become query-critical |
+| Architecture and synchronization test suite | P0 | In progress | Unit tests, TypeScript validation, Expo Doctor, migration checks, and milestone quality workflows exist | Add automated coverage for repository contracts, RLS isolation, offline edits, process restart, conflict resolution, tombstones, auth/session recovery, backward-compatible migrations, wearable normalization, and deterministic fallback |
+| Observability, capacity, and cost controls | P1 | In progress | PostHog and existing sync freshness/error states provide a starting point | Track redacted sync failures, queue age, query latency, error rates, function duration, storage/egress, realtime connections, and cost thresholds; establish alerts and measured upgrade triggers without sending sensitive health content to analytics |
+| Legacy identity and native configuration map | P2 | Complete foundation | Published app identifiers are stable while some original IronForge package/slug values may remain intentionally frozen | Document which bundle IDs, package IDs, Expo project identifiers, slugs, app groups, and signing relationships are immutable; rename only safe display/package metadata through tested migrations and never change published identifiers blindly |
+
+### Scalability-first sequencing rules
+
+1. Build the repository/service boundary first and require all new features to use it; migrate existing direct Supabase access only when that area is changed.
+2. Pilot offline-first storage and the shared sync model with workouts before expanding the same contracts to nutrition, supplements, forms, or collaboration.
+3. Build Apple Health, Health Connect, Watch, and widgets on the provider-neutral domain and shared sync contracts rather than adding platform-specific business logic to screens.
+4. Put secrets, privileged writes, AI, subscriptions, scheduled processing, and third-party integrations behind the server-side trust boundary from their first release.
+5. Treat RLS tests, backward compatibility, migration rollback/forward-fix plans, observability, and data deletion as release requirements for every new data-bearing feature.
+6. Do not add Kubernetes, Kafka, Redis, microservices, a separate custom backend, or full native rewrites until measured load or reliability data identifies a specific limitation.
+
 ## Milestone 15 — Health, Apple Watch, and AI coaching
 
 ### Completed increments — 2026-09-01
@@ -58,18 +87,23 @@ Status legend: **Complete foundation** = usable groundwork exists but may still 
 6. Treat Apple Health ingestion, the Fortomnia Apple Watch app, and WidgetKit extensions as separate deliverables with shared contracts rather than duplicate storage or business logic.
 7. Keep deterministic safety, progression, equipment compatibility, and recovery logic authoritative. AI may explain and personalize within those constraints.
 8. Every schema change must include migration, RLS review, backfill/compatibility plan, and tests.
+9. Reuse the central repository/service layer and shared sync metadata; do not let screens, Watch code, widgets, or AI create parallel persistence paths.
+10. Keep vendor-specific health and wearable payloads inside adapters; Fortomnia domain models remain authoritative.
+11. Keep simple RLS-protected CRUD direct where appropriate, but route secrets, privileged mutations, integrations, subscriptions, scheduled jobs, and AI through the server-side trust boundary.
 
 ### Milestone 15 delivery order
 
 1. **Complete:** Reconcile the Milestone 14 branch delta and freeze shared data contracts.
-2. Harden HealthKit ingestion, persistence, privacy, and recovery tests.
-3. Build the Fortomnia Apple Watch app and offline/idempotent synchronization.
-4. Add privacy-safe iPhone and Lock Screen widgets using shared app data and deep links.
-5. Unify equipment catalog concepts and add gym profiles without replacing current tables.
-6. Expand and quality-audit exercise/equipment mappings using licensed or original data.
-7. Add deterministic substitution ranking.
-8. Ship the protected premium AI runtime on top of existing deterministic systems.
-9. Run end-to-end release tests: permissions denied/partial, offline Watch, duplicate samples, time-zone changes, background sync, widget stale/locked states, RLS, entitlement loss/restore, unsafe AI prompts, and deterministic fallback.
+2. Establish typed repository/service contracts, RLS isolation tests, backward-compatible migration rules, and the initial observability baseline.
+3. Pilot the durable offline-first store and shared conflict/tombstone model with active workouts.
+4. Finish the provider-neutral health/wearable domain, then harden HealthKit ingestion, persistence, privacy, and recovery tests through that boundary.
+5. Build the Fortomnia Apple Watch app on the shared domain and offline/idempotent synchronization contracts.
+6. Add privacy-safe iPhone and Lock Screen widgets using minimal shared snapshots and deep links.
+7. Connect Android Health through the same provider-neutral domain and validate on physical devices.
+8. Unify equipment catalog concepts and add gym profiles without replacing current tables.
+9. Expand and quality-audit exercise/equipment mappings using licensed or original data, then add deterministic substitution ranking.
+10. Ship the protected premium AI runtime through the server-side trust boundary and on top of existing deterministic systems.
+11. Run end-to-end release tests: repository contracts, RLS isolation, backward compatibility, process restart, permissions denied/partial, offline Watch, conflicts/tombstones, duplicate samples, time-zone changes, background sync, widget stale/locked states, entitlement loss/restore, unsafe AI prompts, and deterministic fallback.
 
 The Watch companion must satisfy the physical-device and reliability gates in [WATCH_COMPANION_ACCEPTANCE.md](./WATCH_COMPANION_ACCEPTANCE.md); compiling or passing simulator tests alone is not completion evidence.
 
