@@ -1,0 +1,42 @@
+name: Submit Android 1.0.1 to Google Play
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone/15-health-wearables
+    paths:
+      - .github/workflows/submit-android-1.0.1.yml
+
+concurrency:
+  group: submit-android-1-0-1
+  cancel-in-progress: true
+
+jobs:
+  submit:
+    name: Submit Android 1.0.1 (6) to Google Play
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Fortomnia
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set up Expo and EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Verify Expo authentication
+        run: eas whoami
+
+      - name: Submit verified AAB to Google Play production
+        run: eas submit --platform android --profile android-production --id 0ed9608d-291f-4fed-9968-a8afa0e5a971 --non-interactive --no-wait
