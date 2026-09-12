@@ -8,6 +8,7 @@ on:
       - milestone/15-health-wearables
     paths:
       - .github/workflows/eas-ios-watch-build.yml
+      - targets/fortomnia-watch/**
 
 concurrency:
   group: eas-ios-watch-build
