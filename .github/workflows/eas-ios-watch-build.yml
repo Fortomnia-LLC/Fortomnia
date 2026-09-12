@@ -42,6 +42,4 @@ jobs:
       - name: Link Watch provisioning profile and start build
         env:
           EXPO_NO_CAPABILITY_SYNC: "1"
-        run: |
-          unset CI
-          printf 'n\n' | script -q -e -c "eas build --platform ios --profile production --no-wait" /dev/null
+        run: eas build --platform ios --profile production --non-interactive --no-wait
