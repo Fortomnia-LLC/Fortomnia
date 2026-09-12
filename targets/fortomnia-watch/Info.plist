@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>NSHealthShareUsageDescription</key>
+    <string>Fortomnia reads health and activity data you choose to share to display workout and recovery information on Apple Watch.</string>
+    <key>NSHealthUpdateUsageDescription</key>
+    <string>Fortomnia saves workouts to Apple Health when you choose to enable it.</string>
+  </dict>
+</plist>
