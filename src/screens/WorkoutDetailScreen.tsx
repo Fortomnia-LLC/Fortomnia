@@ -633,6 +633,9 @@ export default function WorkoutDetailScreen() {
                   "Saved offline",
                   "Your workout is complete. Fortomnia will sync it when your connection returns.",
                 );
+                router.replace("/training");
+                setIsCompleting(false);
+                return;
               }
             } catch (error) {
               setIsCompleting(false);
