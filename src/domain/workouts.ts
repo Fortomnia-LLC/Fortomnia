@@ -30,6 +30,7 @@ export type LoggedSet = {
   reps_in_reserve: number | null;
   set_number: number;
   set_type: "warmup" | "working";
+  sync_revision?: number;
   weight: number;
   weight_unit: "lb" | "kg";
 };

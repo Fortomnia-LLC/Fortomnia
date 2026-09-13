@@ -66,6 +66,7 @@ export function useWorkoutRecommendations(
           "exercise_id, session_id, performance_type, duration_seconds, metric_value, metric_unit, reps, reps_in_reserve, weight, weight_unit, performed_at",
         )
         .in("exercise_id", exerciseIds)
+        .is("deleted_at", null)
         .neq("session_id", currentWorkoutId)
         .eq("set_type", "working")
         .eq("set_variant", "standard")

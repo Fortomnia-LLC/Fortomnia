@@ -118,6 +118,7 @@ export function useWeeklyAnalytics(today: string) {
       supabase
         .from("workout_sessions")
         .select("id, completed_at")
+        .is("deleted_at", null)
         .not("completed_at", "is", null)
         .gte("completed_at", startIso)
         .lte("completed_at", endIso),
@@ -125,6 +126,7 @@ export function useWeeklyAnalytics(today: string) {
       supabase
         .from("workout_sets")
         .select("id, performed_at")
+        .is("deleted_at", null)
         .gte("performed_at", startIso)
         .lte("performed_at", endIso),
 
