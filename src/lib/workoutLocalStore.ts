@@ -320,6 +320,8 @@ function storageKey(userId: string): string {
 }
 
 export function createWorkoutLocalStore(storage: KeyValueStorage) {
+  const writes = new Map<string, Promise<unknown>>();
+
   return {
     async clear(userId: string): Promise<void> {
       await storage.removeItem(storageKey(userId));
@@ -340,6 +342,34 @@ export function createWorkoutLocalStore(storage: KeyValueStorage) {
     async save(state: WorkoutLocalState): Promise<void> {
       const normalized = normalizeWorkoutLocalState(state, state.userId);
       await storage.setItem(storageKey(state.userId), JSON.stringify(normalized));
+    },
+
+    async update(
+      userId: string,
+      updater: (state: WorkoutLocalState) => WorkoutLocalState,
+    ): Promise<WorkoutLocalState> {
+      const previous = writes.get(userId) ?? Promise.resolve();
+      const operation = previous.catch(() => undefined).then(async () => {
+        const key = storageKey(userId);
+        const stored = await storage.getItem(key);
+        let current = emptyWorkoutLocalState(userId);
+        if (stored) {
+          try {
+            current = normalizeWorkoutLocalState(JSON.parse(stored), userId);
+          } catch {
+            await storage.removeItem(key);
+          }
+        }
+        const next = normalizeWorkoutLocalState(updater(current), userId);
+        await storage.setItem(key, JSON.stringify(next));
+        return next;
+      });
+      writes.set(userId, operation);
+      try {
+        return await operation;
+      } finally {
+        if (writes.get(userId) === operation) writes.delete(userId);
+      }
     },
   };
 }
