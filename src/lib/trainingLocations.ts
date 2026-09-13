@@ -36,3 +36,12 @@ export function validateTrainingLocation(input: { name: string; notes: string; e
   if (input.equipment.length === 0) return "Choose at least one available equipment option.";
   return null;
 }
+
+export function replacementLocationId(
+  locations: readonly TrainingLocation[],
+  deletedLocationId: string,
+): string | null {
+  return (
+    locations.find((location) => location.id !== deletedLocationId)?.id ?? null
+  );
+}
