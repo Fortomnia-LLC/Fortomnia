@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   submit:
-    name: Submit Android 1.0.1 (6) to Google Play
+    name: Submit Android 1.0.1 (7) to Google Play
     runs-on: ubuntu-latest
     steps:
       - name: Check out Fortomnia
@@ -39,4 +39,4 @@ jobs:
         run: eas whoami
 
       - name: Submit verified AAB to Google Play production
-        run: eas submit --platform android --profile android-production --id 0ed9608d-291f-4fed-9968-a8afa0e5a971 --non-interactive --no-wait
+        run: eas submit --platform android --profile android-production --id 59d27b2b-b366-43ae-9df5-f844bf5cb681 --non-interactive --no-wait
