@@ -126,6 +126,53 @@ test("applies queued set deletion to the cached workout", () => {
   assert.deepEqual(updated.activeWorkouts["workout-1"]?.detail.sets, []);
 });
 
+test("applies an idempotent set upsert to the cached workout", () => {
+  const state = cacheActiveWorkout(emptyWorkoutLocalState("user-1"), workout());
+  const upsert = {
+    ...mutation,
+    entityId: "offline-set-1",
+    id: "upsert-1",
+    kind: "upsert_set" as const,
+    set: {
+      durationSeconds: null,
+      exerciseId: "exercise-1",
+      exerciseName: "Bench Press",
+      intensityRpe: null,
+      metricUnit: null,
+      metricValue: null,
+      parentSetId: null,
+      performanceType: "reps" as const,
+      performedAt: "2026-09-13T18:05:00.000Z",
+      reps: 8,
+      repsInReserve: 2,
+      setNumber: 1,
+      setType: "working" as const,
+      setVariant: "standard" as const,
+      weight: 225,
+      weightUnit: "lb" as const,
+    },
+  };
+
+  const inserted = applyWorkoutMutationLocally(state, upsert);
+  const updated = applyWorkoutMutationLocally(inserted, {
+    ...upsert,
+    set: { ...upsert.set, reps: 9 },
+  });
+  assert.equal(updated.activeWorkouts["workout-1"]?.detail.sets.length, 1);
+  assert.equal(updated.activeWorkouts["workout-1"]?.detail.sets[0]?.reps, 9);
+});
+
+test("rejects malformed queued set upserts during restore", () => {
+  const state = normalizeWorkoutLocalState({
+    activeWorkouts: {},
+    pendingMutations: [{ ...mutation, kind: "upsert_set", set: { reps: 8 } }],
+    userId: "user-1",
+    version: 1,
+  }, "user-1");
+
+  assert.deepEqual(state.pendingMutations, []);
+});
+
 test("drops corrupt, cross-user, and completed workout data", () => {
   const completed = workout("completed");
   completed.workout.completed_at = "2026-09-13T19:00:00.000Z";
