@@ -48,6 +48,7 @@ export function usePreviousExerciseSet(
           "session_id, weight, weight_unit, reps, reps_in_reserve, performed_at, set_type, set_variant, performance_type, duration_seconds, metric_value, metric_unit",
         )
         .eq("exercise_id", exerciseId)
+        .is("deleted_at", null)
         .eq("set_type", "working")
         .eq("set_variant", "standard")
         .eq("performance_type", performanceType)

@@ -32,6 +32,7 @@ export type OfflineWorkoutSet = {
 export type PendingWorkoutMutation = {
   createdAt: string;
   entityId: string;
+  expectedRevision?: number;
   id: string;
   kind: WorkoutMutationKind;
   lastAttemptAt: string | null;
@@ -85,6 +86,9 @@ function isPendingMutation(value: unknown): value is PendingWorkoutMutation {
     (mutation.lastAttemptAt === null || validDate(mutation.lastAttemptAt)) &&
     Number.isSafeInteger(mutation.retryCount) &&
     (mutation.retryCount as number) >= 0 &&
+    (mutation.expectedRevision === undefined ||
+      (Number.isSafeInteger(mutation.expectedRevision) &&
+        (mutation.expectedRevision as number) >= 0)) &&
     (mutation.kind !== "upsert_set" || isOfflineWorkoutSet(mutation.set))
   );
 }
@@ -261,6 +265,7 @@ export function applyWorkoutMutationLocally(
       set_number: mutation.set.setNumber,
       set_type: mutation.set.setType,
       set_variant: mutation.set.setVariant,
+      sync_revision: (mutation.expectedRevision ?? 0) + 1,
       weight: mutation.set.weight,
       weight_unit: mutation.set.weightUnit,
     };
