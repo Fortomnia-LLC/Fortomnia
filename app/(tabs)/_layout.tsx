@@ -37,6 +37,7 @@ export default function TabLayout() {
       <Tabs.Screen name="recovery" options={{ href: null }} />
       <Tabs.Screen name="recovery-check-in" options={{ href: null }} />
       <Tabs.Screen name="notification-settings" options={{ href: null }} />
+      <Tabs.Screen name="training-locations" options={{ href: null }} />
       <Tabs.Screen name="legal" options={{ href: null }} />
     </Tabs>
   );

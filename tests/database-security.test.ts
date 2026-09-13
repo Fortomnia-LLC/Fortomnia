@@ -35,6 +35,7 @@ const ownershipContracts: Record<string, OwnershipContract> = {
   user_entitlements: { column: "user_id", operations: ["select"] },
   water_entries: { column: "user_id", operations: [...crud] },
   user_specialty_equipment: { column: "user_id", operations: [...crud] },
+  training_locations: { column: "user_id", operations: [...crud] },
 };
 
 function escapeRegex(value: string) {

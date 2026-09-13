@@ -417,6 +417,21 @@ function handleDeleteAccount() {
           )}
         </Pressable>
          <Pressable
+            accessibilityHint="Manage training locations and their available equipment"
+            accessibilityLabel="Training locations"
+            accessibilityRole="button"
+            onPress={() => router.push("/training-locations")}
+            style={styles.legalButton}
+          >
+            <View style={styles.legalButtonContent}>
+              <Text style={styles.legalButtonTitle}>Training locations</Text>
+              <Text style={styles.legalButtonDescription}>
+                Save equipment at home, gyms, hotels, and outdoor locations
+              </Text>
+            </View>
+            <Text accessibilityElementsHidden style={styles.legalButtonArrow}>›</Text>
+          </Pressable>
+         <Pressable
             accessibilityHint="Configure workout, nutrition, supplement, and daily reminders"
             accessibilityLabel="Notification and reminder settings"
             accessibilityRole="button"
