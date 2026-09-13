@@ -8,8 +8,10 @@ import {
   createWorkoutLocalStore,
   emptyWorkoutLocalState,
   enqueueWorkoutMutation,
+  MAX_PENDING_WORKOUT_MUTATIONS,
   normalizeWorkoutLocalState,
   recordWorkoutMutationAttempt,
+  WorkoutMutationQueueFullError,
 } from "../src/lib/workoutLocalStore.ts";
 
 function workout(id = "workout-1"): WorkoutSessionDetail {
@@ -129,6 +131,34 @@ test("drops corrupt, cross-user, and completed workout data", () => {
   );
 
   assert.deepEqual(normalized, emptyWorkoutLocalState("user-1"));
+});
+
+test("evicts a cached workout when its latest snapshot is completed", () => {
+  let state = cacheActiveWorkout(emptyWorkoutLocalState("user-1"), workout());
+  const completed = workout();
+  completed.workout.completed_at = "2026-09-13T19:00:00.000Z";
+
+  state = cacheActiveWorkout(state, completed);
+  assert.equal(state.activeWorkouts["workout-1"], undefined);
+});
+
+test("rejects new mutations when full without dropping queued work", () => {
+  let state = emptyWorkoutLocalState("user-1");
+  state.pendingMutations = Array.from(
+    { length: MAX_PENDING_WORKOUT_MUTATIONS },
+    (_, index) => ({
+      ...mutation,
+      id: `mutation-${index}`,
+      createdAt: new Date(Date.UTC(2026, 8, 13, 18, 0, index)).toISOString(),
+    }),
+  );
+
+  assert.throws(
+    () => enqueueWorkoutMutation(state, { ...mutation, id: "overflow" }),
+    WorkoutMutationQueueFullError,
+  );
+  assert.equal(state.pendingMutations.length, MAX_PENDING_WORKOUT_MUTATIONS);
+  assert.equal(state.pendingMutations[0]?.id, "mutation-0");
 });
 
 test("clears invalid JSON instead of failing app startup", async () => {
