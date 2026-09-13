@@ -12,7 +12,7 @@ Priority legend: **P0** = foundation required before dependent feature work expa
 
 | Objective | Priority | Status | Existing foundation | Remaining acceptance target |
 |---|---|---|---|---|
-| Central domain and repository layer | P0 | Required | Source organization already separates components, hooks, libraries, providers, and screens | Define typed domain models and repository/service interfaces; route all new data access through them; migrate direct Supabase calls incrementally; keep UI unaware of local-versus-remote persistence |
+| Central domain and repository layer | P0 | In progress | Typed workout domain models and repository contracts now isolate session creation, recent-session listing, detail loading, and database-row normalization from screens and hooks | Route all new data access through repository/service interfaces; migrate remaining direct Supabase calls incrementally; keep UI unaware of local-versus-remote persistence |
 | Offline-first workout data | P0 | Required | AsyncStorage and versioned workout-transfer contracts provide partial local persistence patterns | Introduce a durable local working copy for active workouts and queued mutations; survive app restarts, airplane mode, poor gym connectivity, and process termination without losing sets; synchronize when connectivity returns |
 | Shared synchronization and conflict model | P0 | Required | Watch transfer already uses versioned, idempotent offline actions; health work includes freshness and normalization concepts | Standardize stable IDs, `created_at`, `updated_at`, sync version/revision, tombstones such as `deleted_at`, retry state, idempotency, conflict policy, and reconciliation across phone, Watch, and Supabase; prevent deleted records from being resurrected |
 | Database ownership, RLS, constraints, and indexes | P0 | In progress | User-owned workout and equipment tables already use ownership, foreign keys, indexes, and RLS | Require RLS and explicit ownership on every user-owned table; add automated cross-user isolation tests, constraint/index review, least-privilege API exposure, and migration checks for sensitive health and nutrition data |
@@ -47,6 +47,11 @@ Priority legend: **P0** = foundation required before dependent feature work expa
 - Reconciled the three Milestone 14 readiness commits and preserved their Android, device-test, and release-gate evidence.
 - Corrected Apple Health authorization reporting so read access is never falsely claimed and partial write permissions remain explicit.
 - Replaced raw HealthKit failure text with tested, actionable error states that do not expose unexpected native details in the UI or console logs.
+
+### Completed increments — 2026-09-13
+
+- Established the first typed workout domain and repository boundary for session creation, recent-session listing, and complete workout-detail loading.
+- Moved Supabase relation-shape normalization out of React hooks and added regression coverage for numeric values, joined exercise names, missing relations, and repository error context.
 
 ### Objective ledger
 

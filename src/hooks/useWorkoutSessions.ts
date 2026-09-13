@@ -1,17 +1,11 @@
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 
+import type { WorkoutSession } from "../domain/workouts";
 import { supabase } from "../lib/supabase";
+import { workoutRepository } from "../repositories/supabaseWorkoutRepository";
 
-export type WorkoutSession = {
-  completed_at: string | null;
-  created_at: string;
-  id: string;
-  name: string;
-  notes: string | null;
-  started_at: string;
-  user_id: string;
-};
+export type { WorkoutSession } from "../domain/workouts";
 
 export function useWorkoutSessions() {
   const [workoutSessions, setWorkoutSessions] = useState<
@@ -42,20 +36,16 @@ export function useWorkoutSessions() {
       return;
     }
 
-    const { data, error } = await supabase
-      .from("workout_sessions")
-      .select(
-        "id, user_id, name, started_at, completed_at, notes, created_at",
-      )
-      .eq("user_id", session.user.id)
-      .order("started_at", { ascending: false })
-      .limit(5);
-
-    if (error) {
+    try {
+      const workouts = await workoutRepository.listRecentWorkouts(
+        session.user.id,
+      );
+      setWorkoutSessions(workouts);
+    } catch (error) {
       setWorkoutSessions([]);
-      setErrorMessage(error.message);
-    } else {
-      setWorkoutSessions((data ?? []) as WorkoutSession[]);
+      setErrorMessage(
+        error instanceof Error ? error.message : "Unable to load workouts.",
+      );
     }
 
     setIsLoading(false);
