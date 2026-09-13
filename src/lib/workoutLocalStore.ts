@@ -5,7 +5,7 @@ import type { WorkoutSessionDetail } from "../domain/workouts";
 export const WORKOUT_LOCAL_STORE_VERSION = 1 as const;
 const STORAGE_KEY_PREFIX = "fortomnia.workouts.local.v1";
 const MAX_ACTIVE_WORKOUTS = 20;
-const MAX_PENDING_MUTATIONS = 1_000;
+export const MAX_PENDING_WORKOUT_MUTATIONS = 1_000;
 
 export type WorkoutMutationKind = "complete_workout" | "delete_set";
 
@@ -36,6 +36,13 @@ export type KeyValueStorage = {
   removeItem(key: string): Promise<void>;
   setItem(key: string, value: string): Promise<void>;
 };
+
+export class WorkoutMutationQueueFullError extends Error {
+  constructor() {
+    super("Offline workout changes are full. Reconnect before logging more changes.");
+    this.name = "WorkoutMutationQueueFullError";
+  }
+}
 
 function validId(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0 && value.length <= 128;
@@ -121,8 +128,7 @@ export function normalizeWorkoutLocalState(
       .sort(
         (a, b) =>
           a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id),
-      )
-      .slice(-MAX_PENDING_MUTATIONS),
+      ),
     userId,
     version: WORKOUT_LOCAL_STORE_VERSION,
   };
@@ -133,7 +139,12 @@ export function cacheActiveWorkout(
   detail: WorkoutSessionDetail,
   updatedAt = new Date().toISOString(),
 ): WorkoutLocalState {
-  if (detail.workout.completed_at !== null || !validDate(updatedAt)) return state;
+  if (!validDate(updatedAt)) return state;
+  if (detail.workout.completed_at !== null) {
+    const activeWorkouts = { ...state.activeWorkouts };
+    delete activeWorkouts[detail.workout.id];
+    return { ...state, activeWorkouts };
+  }
   return normalizeWorkoutLocalState(
     {
       ...state,
@@ -150,6 +161,15 @@ export function enqueueWorkoutMutation(
   state: WorkoutLocalState,
   mutation: PendingWorkoutMutation,
 ): WorkoutLocalState {
+  const alreadyQueued = state.pendingMutations.some(
+    ({ id }) => id === mutation.id,
+  );
+  if (
+    !alreadyQueued &&
+    state.pendingMutations.length >= MAX_PENDING_WORKOUT_MUTATIONS
+  ) {
+    throw new WorkoutMutationQueueFullError();
+  }
   return normalizeWorkoutLocalState(
     { ...state, pendingMutations: [...state.pendingMutations, mutation] },
     state.userId,
