@@ -4,6 +4,7 @@ import test from "node:test";
 import type { WorkoutSessionDetail } from "../src/domain/workouts.ts";
 import {
   acknowledgeWorkoutMutations,
+  applyWorkoutMutationLocally,
   cacheActiveWorkout,
   createWorkoutLocalStore,
   emptyWorkoutLocalState,
@@ -110,6 +111,19 @@ test("records retries and removes only acknowledged mutations", () => {
 
   state = acknowledgeWorkoutMutations(state, [mutation.id]);
   assert.deepEqual(state.pendingMutations, []);
+});
+
+test("applies queued set deletion to the cached workout", () => {
+  const detail = workout();
+  detail.sets = [{
+    duration_seconds: null, exercise_id: "exercise-1", exercise_name: "Squat",
+    id: "set-1", parent_set_id: null, performance_type: "reps", reps: 5,
+    reps_in_reserve: 2, set_number: 1, set_type: "working",
+    set_variant: "standard", weight: 225, weight_unit: "lb",
+  }];
+  const state = cacheActiveWorkout(emptyWorkoutLocalState("user-1"), detail);
+  const updated = applyWorkoutMutationLocally(state, mutation);
+  assert.deepEqual(updated.activeWorkouts["workout-1"]?.detail.sets, []);
 });
 
 test("drops corrupt, cross-user, and completed workout data", () => {
