@@ -71,6 +71,7 @@ class SupabaseWorkoutRepository implements WorkoutRepository {
         parent_set_id: mutation.set.parentSetId,
         performance_type: mutation.set.performanceType,
         performed_at: mutation.set.performedAt,
+        updated_at: mutation.createdAt,
         set_type: mutation.set.setType,
         set_variant: mutation.set.setVariant,
       }, { onConflict: "id" });
@@ -80,7 +81,10 @@ class SupabaseWorkoutRepository implements WorkoutRepository {
 
     const { error } = await supabase
       .from("workout_sets")
-      .delete()
+      .update({
+        deleted_at: mutation.createdAt,
+        updated_at: mutation.createdAt,
+      })
       .eq("id", mutation.entityId)
       .eq("session_id", mutation.sessionId)
       .eq("user_id", userId);
@@ -93,15 +97,14 @@ class SupabaseWorkoutRepository implements WorkoutRepository {
     operation: "complete" | "delete-set" | "save-set",
   ): Promise<WorkoutMutationResult> {
     const endSyncActivity = beginWorkoutSyncActivity(userId);
-    await workoutLocalStore.update(
-      userId,
-      (state) => applyWorkoutMutationLocally(
-        enqueueWorkoutMutation(state, mutation),
-        mutation,
-      ),
-    );
-
     try {
+      await workoutLocalStore.update(
+        userId,
+        (state) => applyWorkoutMutationLocally(
+          enqueueWorkoutMutation(state, mutation),
+          mutation,
+        ),
+      );
       await this.performMutation(mutation, userId);
       await workoutLocalStore.update(
         userId,
@@ -295,6 +298,7 @@ class SupabaseWorkoutRepository implements WorkoutRepository {
         `)
         .eq("session_id", workoutId)
         .eq("user_id", userId)
+        .is("deleted_at", null)
         .order("performed_at"),
       supabase
         .from("workout_session_exercises")

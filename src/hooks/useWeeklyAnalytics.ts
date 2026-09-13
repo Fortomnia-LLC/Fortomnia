@@ -125,6 +125,7 @@ export function useWeeklyAnalytics(today: string) {
       supabase
         .from("workout_sets")
         .select("id, performed_at")
+        .is("deleted_at", null)
         .gte("performed_at", startIso)
         .lte("performed_at", endIso),
 

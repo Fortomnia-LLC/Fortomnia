@@ -86,6 +86,7 @@ export function useExerciseHistory(exerciseId: string | undefined) {
           `,
         )
         .eq("exercise_id", exerciseId)
+        .is("deleted_at", null)
         .order("performed_at", { ascending: false }),
     ]);
 
