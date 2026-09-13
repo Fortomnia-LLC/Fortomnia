@@ -27,6 +27,7 @@ import {
   type WorkoutSetRow,
 } from "./workoutRowMappers";
 import { beginWorkoutSyncActivity } from "../lib/workoutSyncActivity";
+import { workoutMutationScheduler } from "../lib/workoutMutationScheduler";
 
 class SupabaseWorkoutRepository implements WorkoutRepository {
   private mutationId(kind: string, entityId: string): string {
@@ -96,7 +97,6 @@ class SupabaseWorkoutRepository implements WorkoutRepository {
     userId: string,
     operation: "complete" | "delete-set" | "save-set",
   ): Promise<WorkoutMutationResult> {
-    const endSyncActivity = beginWorkoutSyncActivity(userId);
     await workoutLocalStore.update(
       userId,
       (state) => applyWorkoutMutationLocally(
@@ -105,28 +105,31 @@ class SupabaseWorkoutRepository implements WorkoutRepository {
       ),
     );
 
-    try {
-      await this.performMutation(mutation, userId);
-      await workoutLocalStore.update(
-        userId,
-        (state) => acknowledgeWorkoutMutations(state, [mutation.id]),
-      );
-      return "synced";
-    } catch (error) {
-      if (this.isRetryable(error)) return "queued";
-      await workoutLocalStore.update(userId, (state) => {
-        const acknowledged = acknowledgeWorkoutMutations(state, [mutation.id]);
-        const activeWorkouts = { ...acknowledged.activeWorkouts };
-        delete activeWorkouts[mutation.sessionId];
-        return { ...acknowledged, activeWorkouts };
-      });
-      throw new WorkoutRepositoryError(
-        error instanceof Error ? error.message : "The workout was not updated.",
-        operation,
-      );
-    } finally {
-      endSyncActivity();
-    }
+    return workoutMutationScheduler.schedule(userId, async () => {
+      const endSyncActivity = beginWorkoutSyncActivity(userId);
+      try {
+        await this.performMutation(mutation, userId);
+        await workoutLocalStore.update(
+          userId,
+          (state) => acknowledgeWorkoutMutations(state, [mutation.id]),
+        );
+        return "synced";
+      } catch (error) {
+        if (this.isRetryable(error)) return "queued";
+        await workoutLocalStore.update(userId, (state) => {
+          const acknowledged = acknowledgeWorkoutMutations(state, [mutation.id]);
+          const activeWorkouts = { ...acknowledged.activeWorkouts };
+          delete activeWorkouts[mutation.sessionId];
+          return { ...acknowledged, activeWorkouts };
+        });
+        throw new WorkoutRepositoryError(
+          error instanceof Error ? error.message : "The workout was not updated.",
+          operation,
+        );
+      } finally {
+        endSyncActivity();
+      }
+    });
   }
 
   async completeWorkout(workoutId: string, userId: string) {
