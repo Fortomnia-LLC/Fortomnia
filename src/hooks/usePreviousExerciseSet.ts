@@ -51,6 +51,7 @@ export function usePreviousExerciseSet(
         .eq("set_type", "working")
         .eq("set_variant", "standard")
         .eq("performance_type", performanceType)
+        .is("deleted_at", null)
         .neq("session_id", currentWorkoutId)
         .order("performed_at", { ascending: false })
         .limit(12);
