@@ -13,8 +13,8 @@ import {
   TextInput,
 } from "react-native";
 
-import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
+import { workoutRepository } from "../repositories/supabaseWorkoutRepository";
 
 export default function NewWorkoutScreen() {
   const router = useRouter();
@@ -39,19 +39,20 @@ export default function NewWorkoutScreen() {
     setIsCreating(true);
     setErrorMessage(null);
 
-    const { error } = await supabase
-      .from("workout_sessions")
-      .insert({
+    try {
+      await workoutRepository.createWorkout({
         name: trimmedName,
-        user_id: session.user.id,
+        userId: session.user.id,
       });
-
-    setIsCreating(false);
-
-    if (error) {
-      setErrorMessage(error.message);
+    } catch (error) {
+      setIsCreating(false);
+      setErrorMessage(
+        error instanceof Error ? error.message : "Unable to start workout.",
+      );
       return;
     }
+
+    setIsCreating(false);
 
     Alert.alert(
       "Workout started",
