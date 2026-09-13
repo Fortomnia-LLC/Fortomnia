@@ -26,6 +26,21 @@ test("workout set tombstones preserve deletions across stale clients", () => {
   );
   assert.match(
     migration,
+    /create policy "Users can view their own active workout sets"[\s\S]*deleted_at is null/,
+    "legacy reads must hide tombstones at the server boundary",
+  );
+  assert.match(
+    migration,
+    /create trigger workout_sets_cascade_tombstone/,
+    "deleting a parent must tombstone its drop-set children",
+  );
+  assert.match(
+    migration,
+    /workout_sets_exercise_id_fkey[\s\S]*on delete cascade/,
+    "deleting an unused custom exercise must clean up its tombstones",
+  );
+  assert.match(
+    migration,
     /if pg_trigger_depth\(\) > 1 then\s+return old/,
     "workout and account deletion cascades must remain physical",
   );
