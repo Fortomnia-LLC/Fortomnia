@@ -43,6 +43,8 @@ import {
 } from "../lib/restTimer";
 import { useEffect, useRef, useState } from "react";
 import { useWatchWorkoutSync } from "../hooks/useWatchWorkoutSync";
+import { useWorkoutSync } from "../components/WorkoutMutationSync";
+import { getWorkoutSyncPresentation } from "../lib/workoutSyncStatus";
 
 const REST_TIMER_STORAGE_KEY = "fortomnia.restTimerDurationSeconds";
 
@@ -230,6 +232,11 @@ export default function WorkoutDetailScreen() {
   }>();
   const workoutId = Array.isArray(id) ? id[0] : id;
   const { session } = useAuth();
+  const { pendingCount, retry, status: syncStatus } = useWorkoutSync();
+  const syncPresentation = getWorkoutSyncPresentation(
+    syncStatus,
+    pendingCount,
+  );
   const [isCompleting, setIsCompleting] = useState(false);
   const [isRestPreferenceLoaded, setIsRestPreferenceLoaded] = useState(false);
   const [restDurationSeconds, setRestDurationSeconds] = useState(
@@ -787,6 +794,40 @@ if (isLoading) {
               <Text style={styles.navigationText}>‹ Training</Text>
             </Pressable>
 
+            <View
+              accessibilityLabel={
+                syncPresentation.detail
+                  ? `${syncPresentation.label}. ${syncPresentation.detail}`
+                  : syncPresentation.label
+              }
+              accessibilityLiveRegion="polite"
+              accessibilityRole="text"
+              style={[
+                styles.syncBanner,
+                syncStatus === "attention" && styles.syncBannerAttention,
+                syncStatus === "offline" && styles.syncBannerOffline,
+                syncStatus === "synced" && styles.syncBannerSynced,
+              ]}
+            >
+              <View style={styles.syncCopy}>
+                <Text style={styles.syncLabel}>{syncPresentation.label}</Text>
+                {syncPresentation.detail ? (
+                  <Text style={styles.syncDetail}>{syncPresentation.detail}</Text>
+                ) : null}
+              </View>
+              {syncPresentation.canRetry ? (
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => void retry()}
+                  style={styles.syncRetryButton}
+                >
+                  <Text style={styles.syncRetryText}>Retry</Text>
+                </Pressable>
+              ) : syncStatus === "syncing" ? (
+                <ActivityIndicator color="#60A5FA" size="small" />
+              ) : null}
+            </View>
+
             <Text style={styles.eyebrow}>
             {workout.completed_at ? "COMPLETED WORKOUT" : "ACTIVE WORKOUT"}
            </Text>
@@ -1048,6 +1089,56 @@ const styles = StyleSheet.create({
     color: "#2563EB",
     fontSize: 16,
     fontWeight: "700",
+  },
+  syncBanner: {
+    alignItems: "center",
+    backgroundColor: "#111827",
+    borderColor: "#2563EB",
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 12,
+    justifyContent: "space-between",
+    marginBottom: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  syncBannerAttention: {
+    backgroundColor: "#27140C",
+    borderColor: "#F97316",
+  },
+  syncBannerOffline: {
+    backgroundColor: "#221B0A",
+    borderColor: "#EAB308",
+  },
+  syncBannerSynced: {
+    backgroundColor: "#0D2119",
+    borderColor: "#22C55E",
+  },
+  syncCopy: {
+    flex: 1,
+  },
+  syncLabel: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  syncDetail: {
+    color: "#D1D5DB",
+    fontSize: 12,
+    marginTop: 3,
+  },
+  syncRetryButton: {
+    borderColor: "#F97316",
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  syncRetryText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "800",
   },
   eyebrow: {
     color: "#F97316",
