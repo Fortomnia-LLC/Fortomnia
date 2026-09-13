@@ -515,15 +515,18 @@ export default function WorkoutTemplateScreen() {
                 )}
               </Pressable>
             <Pressable
+              accessibilityHint="Opens the exercise library for this template"
+              accessibilityLabel="Add exercise to template"
+              accessibilityRole="button"
               onPress={() =>
                 router.push({
                   pathname: "/template/[id]/add-exercise",
                   params: { id: templateId },
                 })
               }
-              style={styles.addButton}
+              style={styles.addExerciseButton}
             >
-              <Text style={styles.addButtonText}>Add exercise</Text>
+              <Text style={styles.addExerciseButtonText}>Add exercise</Text>
             </Pressable>
             <Pressable
               disabled={isDeleting}
@@ -635,6 +638,19 @@ const styles = StyleSheet.create({
   },
   addButtonText: {
     color: "#2563EB",
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  addExerciseButton: {
+    alignItems: "center",
+    backgroundColor: "#2563EB",
+    borderRadius: 12,
+    justifyContent: "center",
+    marginBottom: 26,
+    minHeight: 52,
+  },
+  addExerciseButtonText: {
+    color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "800",
   },
