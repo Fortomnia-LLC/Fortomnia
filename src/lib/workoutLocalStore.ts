@@ -189,6 +189,37 @@ export function acknowledgeWorkoutMutations(
   };
 }
 
+export function applyWorkoutMutationLocally(
+  state: WorkoutLocalState,
+  mutation: PendingWorkoutMutation,
+): WorkoutLocalState {
+  const snapshot = state.activeWorkouts[mutation.sessionId];
+  if (!snapshot) return state;
+
+  if (mutation.kind === "complete_workout") {
+    const activeWorkouts = { ...state.activeWorkouts };
+    delete activeWorkouts[mutation.sessionId];
+    return { ...state, activeWorkouts };
+  }
+
+  return {
+    ...state,
+    activeWorkouts: {
+      ...state.activeWorkouts,
+      [mutation.sessionId]: {
+        ...snapshot,
+        detail: {
+          ...snapshot.detail,
+          sets: snapshot.detail.sets.filter(
+            ({ id }) => id !== mutation.entityId,
+          ),
+        },
+        updatedAt: mutation.createdAt,
+      },
+    },
+  };
+}
+
 export function recordWorkoutMutationAttempt(
   state: WorkoutLocalState,
   mutationId: string,
