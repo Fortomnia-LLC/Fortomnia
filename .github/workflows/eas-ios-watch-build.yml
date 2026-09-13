@@ -1,5 +1,5 @@
-# Trigger iOS production build
-name: EAS iOS Watch Build
+# Trigger the signed iOS production build containing Watch and WidgetKit extensions.
+name: EAS iOS Extensions Build
 
 on:
   workflow_dispatch:
@@ -8,15 +8,18 @@ on:
       - milestone/15-health-wearables
     paths:
       - .github/workflows/eas-ios-watch-build.yml
+      - app.json
       - targets/fortomnia-watch/**
+      - targets/fortomnia-widgets/**
+      - src/components/WidgetSnapshotSync.tsx
 
 concurrency:
-  group: eas-ios-watch-build
+  group: eas-ios-extensions-build
   cancel-in-progress: true
 
 jobs:
   build:
-    name: Submit iOS and Watch build to EAS
+    name: Submit iOS, Watch, and widgets build to EAS
     runs-on: ubuntu-latest
     steps:
       - name: Check out Fortomnia
