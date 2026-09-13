@@ -9,6 +9,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import { AnalyticsTracker } from '../src/components/AnalyticsTracker';
 import { AppleHealthBackgroundSync } from '../src/components/AppleHealthBackgroundSync';
+import { WorkoutMutationSync } from '../src/components/WorkoutMutationSync';
 import { getPostHogConfig } from '../src/lib/analytics';
 import { configureNotificationHandler } from '../src/lib/notificationService';
 import {
@@ -61,6 +62,7 @@ function AppContent({ analyticsEnabled }: { analyticsEnabled: boolean }) {
     <AuthProvider>
       {analyticsEnabled ? <AnalyticsTracker /> : null}
       <AppleHealthBackgroundSync />
+      <WorkoutMutationSync />
       <StatusBar style="light" />
       <RootNavigator />
     </AuthProvider>

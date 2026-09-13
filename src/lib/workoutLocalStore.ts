@@ -1,13 +1,33 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import type { WorkoutSessionDetail } from "../domain/workouts";
+import type { MetricUnit, PerformanceType } from "./performanceMetrics";
 
 export const WORKOUT_LOCAL_STORE_VERSION = 1 as const;
 const STORAGE_KEY_PREFIX = "fortomnia.workouts.local.v1";
 const MAX_ACTIVE_WORKOUTS = 20;
 export const MAX_PENDING_WORKOUT_MUTATIONS = 1_000;
 
-export type WorkoutMutationKind = "complete_workout" | "delete_set";
+export type WorkoutMutationKind = "complete_workout" | "delete_set" | "upsert_set";
+
+export type OfflineWorkoutSet = {
+  durationSeconds: number | null;
+  exerciseId: string;
+  exerciseName: string;
+  intensityRpe: number | null;
+  metricUnit: MetricUnit | null;
+  metricValue: number | null;
+  parentSetId: string | null;
+  performanceType: PerformanceType;
+  performedAt: string;
+  reps: number;
+  repsInReserve: number | null;
+  setNumber: number;
+  setType: "warmup" | "working";
+  setVariant: "standard" | "drop";
+  weight: number;
+  weightUnit: "lb" | "kg";
+};
 
 export type PendingWorkoutMutation = {
   createdAt: string;
@@ -17,6 +37,7 @@ export type PendingWorkoutMutation = {
   lastAttemptAt: string | null;
   retryCount: number;
   sessionId: string;
+  set?: OfflineWorkoutSet;
 };
 
 export type LocalWorkoutSnapshot = {
@@ -59,11 +80,33 @@ function isPendingMutation(value: unknown): value is PendingWorkoutMutation {
     validId(mutation.id) &&
     validId(mutation.entityId) &&
     validId(mutation.sessionId) &&
-    ["complete_workout", "delete_set"].includes(mutation.kind as string) &&
+    ["complete_workout", "delete_set", "upsert_set"].includes(mutation.kind as string) &&
     validDate(mutation.createdAt) &&
     (mutation.lastAttemptAt === null || validDate(mutation.lastAttemptAt)) &&
     Number.isSafeInteger(mutation.retryCount) &&
-    (mutation.retryCount as number) >= 0
+    (mutation.retryCount as number) >= 0 &&
+    (mutation.kind !== "upsert_set" || isOfflineWorkoutSet(mutation.set))
+  );
+}
+
+function nullableFinite(value: unknown): boolean {
+  return value === null || (typeof value === "number" && Number.isFinite(value));
+}
+
+function isOfflineWorkoutSet(value: unknown): value is OfflineWorkoutSet {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const set = value as Partial<OfflineWorkoutSet>;
+  return (
+    validId(set.exerciseId) && validId(set.exerciseName) && validDate(set.performedAt) &&
+    Number.isSafeInteger(set.setNumber) && (set.setNumber as number) > 0 &&
+    Number.isSafeInteger(set.reps) && (set.reps as number) > 0 &&
+    typeof set.weight === "number" && Number.isFinite(set.weight) && set.weight >= 0 &&
+    ["lb", "kg"].includes(set.weightUnit as string) &&
+    ["reps", "time", "distance", "calories", "rounds"].includes(set.performanceType as string) &&
+    ["warmup", "working"].includes(set.setType as string) &&
+    ["standard", "drop"].includes(set.setVariant as string) &&
+    nullableFinite(set.durationSeconds) && nullableFinite(set.metricValue) &&
+    nullableFinite(set.intensityRpe) && nullableFinite(set.repsInReserve)
   );
 }
 
@@ -189,6 +232,69 @@ export function acknowledgeWorkoutMutations(
   };
 }
 
+export function applyWorkoutMutationLocally(
+  state: WorkoutLocalState,
+  mutation: PendingWorkoutMutation,
+): WorkoutLocalState {
+  const snapshot = state.activeWorkouts[mutation.sessionId];
+  if (!snapshot) return state;
+
+  if (mutation.kind === "complete_workout") {
+    const activeWorkouts = { ...state.activeWorkouts };
+    delete activeWorkouts[mutation.sessionId];
+    return { ...state, activeWorkouts };
+  }
+
+  if (mutation.kind === "upsert_set" && mutation.set) {
+    const loggedSet = {
+      duration_seconds: mutation.set.durationSeconds,
+      exercise_id: mutation.set.exerciseId,
+      exercise_name: mutation.set.exerciseName,
+      id: mutation.entityId,
+      intensity_rpe: mutation.set.intensityRpe,
+      metric_unit: mutation.set.metricUnit,
+      metric_value: mutation.set.metricValue,
+      parent_set_id: mutation.set.parentSetId,
+      performance_type: mutation.set.performanceType,
+      reps: mutation.set.reps,
+      reps_in_reserve: mutation.set.repsInReserve,
+      set_number: mutation.set.setNumber,
+      set_type: mutation.set.setType,
+      set_variant: mutation.set.setVariant,
+      weight: mutation.set.weight,
+      weight_unit: mutation.set.weightUnit,
+    };
+    const sets = snapshot.detail.sets.filter(({ id }) => id !== mutation.entityId);
+    return {
+      ...state,
+      activeWorkouts: {
+        ...state.activeWorkouts,
+        [mutation.sessionId]: {
+          detail: { ...snapshot.detail, sets: [...sets, loggedSet] },
+          updatedAt: mutation.createdAt,
+        },
+      },
+    };
+  }
+
+  return {
+    ...state,
+    activeWorkouts: {
+      ...state.activeWorkouts,
+      [mutation.sessionId]: {
+        ...snapshot,
+        detail: {
+          ...snapshot.detail,
+          sets: snapshot.detail.sets.filter(
+            ({ id }) => id !== mutation.entityId,
+          ),
+        },
+        updatedAt: mutation.createdAt,
+      },
+    },
+  };
+}
+
 export function recordWorkoutMutationAttempt(
   state: WorkoutLocalState,
   mutationId: string,
@@ -214,6 +320,8 @@ function storageKey(userId: string): string {
 }
 
 export function createWorkoutLocalStore(storage: KeyValueStorage) {
+  const writes = new Map<string, Promise<unknown>>();
+
   return {
     async clear(userId: string): Promise<void> {
       await storage.removeItem(storageKey(userId));
@@ -234,6 +342,34 @@ export function createWorkoutLocalStore(storage: KeyValueStorage) {
     async save(state: WorkoutLocalState): Promise<void> {
       const normalized = normalizeWorkoutLocalState(state, state.userId);
       await storage.setItem(storageKey(state.userId), JSON.stringify(normalized));
+    },
+
+    async update(
+      userId: string,
+      updater: (state: WorkoutLocalState) => WorkoutLocalState,
+    ): Promise<WorkoutLocalState> {
+      const previous = writes.get(userId) ?? Promise.resolve();
+      const operation = previous.catch(() => undefined).then(async () => {
+        const key = storageKey(userId);
+        const stored = await storage.getItem(key);
+        let current = emptyWorkoutLocalState(userId);
+        if (stored) {
+          try {
+            current = normalizeWorkoutLocalState(JSON.parse(stored), userId);
+          } catch {
+            await storage.removeItem(key);
+          }
+        }
+        const next = normalizeWorkoutLocalState(updater(current), userId);
+        await storage.setItem(key, JSON.stringify(next));
+        return next;
+      });
+      writes.set(userId, operation);
+      try {
+        return await operation;
+      } finally {
+        if (writes.get(userId) === operation) writes.delete(userId);
+      }
     },
   };
 }

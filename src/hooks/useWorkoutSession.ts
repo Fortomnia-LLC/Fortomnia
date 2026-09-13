@@ -7,9 +7,11 @@ import type {
   WorkoutDetail,
 } from "../domain/workouts";
 import { workoutRepository } from "../repositories/supabaseWorkoutRepository";
+import { useAuth } from "../providers/AuthProvider";
 
 export type { LoggedSet, PlannedExercise, WorkoutDetail } from "../domain/workouts";
 export function useWorkoutSession(workoutId: string | undefined) {
+  const { session } = useAuth();
   const [workout, setWorkout] = useState<WorkoutDetail | null>(null);
   const [sets, setSets] = useState<LoggedSet[]>([]);
   const [plannedExercises, setPlannedExercises] =
@@ -18,7 +20,7 @@ export function useWorkoutSession(workoutId: string | undefined) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const loadWorkout = useCallback(async () => {
-    if (!workoutId) {
+    if (!workoutId || !session?.user.id) {
       setWorkout(null);
       setSets([]);
       setPlannedExercises([]);
@@ -30,7 +32,10 @@ export function useWorkoutSession(workoutId: string | undefined) {
     setErrorMessage(null);
 
     try {
-      const detail = await workoutRepository.getWorkoutDetail(workoutId);
+      const detail = await workoutRepository.getWorkoutDetail(
+        workoutId,
+        session.user.id,
+      );
       setWorkout(detail.workout);
       setSets(detail.sets);
       setPlannedExercises(detail.plannedExercises);
@@ -43,7 +48,7 @@ export function useWorkoutSession(workoutId: string | undefined) {
       );
     }
     setIsLoading(false);
-  }, [workoutId]);
+  }, [session?.user.id, workoutId]);
 
   useFocusEffect(
     useCallback(() => {

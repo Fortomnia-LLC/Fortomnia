@@ -33,8 +33,8 @@ import {
   getExerciseRecommendation,
   getMetricProgressionRecommendation,
 } from "../lib/progression";
-import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
+import { workoutRepository } from "../repositories/supabaseWorkoutRepository";
 
 export default function AddSetScreen() {
   const router = useRouter();
@@ -334,112 +334,39 @@ export default function AddSetScreen() {
     setIsSaving(true);
     setErrorMessage(null);
 
-    const { data: activeWorkout, error: workoutError } = await supabase
-      .from("workout_sessions")
-      .select("id")
-      .eq("id", workoutId)
-      .eq("user_id", session.user.id)
-      .is("completed_at", null)
-      .maybeSingle();
-
-    if (workoutError || !activeWorkout) {
-      setErrorMessage(
-        workoutError?.message ?? "Completed workouts cannot be changed.",
-      );
-      setIsSaving(false);
-      return;
-    }
-
-    if (isEditing && editingSetId) {
-      const { data, error } = await supabase
-        .from("workout_sets")
-        .update({
-          duration_seconds: savedDuration,
-          exercise_id: exerciseId,
-          intensity_rpe: savedIntensityRpe,
-          metric_unit: savedMetricUnit,
-          metric_value: savedMetricValue,
-          parent_set_id: setVariant === "drop" ? parentSetId : null,
-          performance_type: performanceType,
-          reps: savedReps,
-          reps_in_reserve: savedRir,
-          set_type: setType,
-          set_variant: setVariant,
-          weight: parsedWeight,
-          weight_unit: profile?.preferred_weight_unit ?? "lb",
-        })
-        .eq("id", editingSetId)
-        .eq("session_id", workoutId)
-        .eq("user_id", session.user.id)
-        .select("id")
-        .maybeSingle();
-
-      setIsSaving(false);
-
-      if (error || !data) {
-        setErrorMessage(
-          error?.message ?? "The set was not updated.",
-        );
-        return;
-      }
-
-      router.replace({
-        pathname: "/workout/[id]",
-        params: { id: workoutId },
-      });
-      return;
-    }
-
-    const { data: latestSet, error: latestSetError } = await supabase
-      .from("workout_sets")
-      .select("set_number")
-      .eq("session_id", workoutId)
-      .eq("exercise_id", exerciseId)
-      .order("set_number", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (latestSetError) {
-      setErrorMessage(latestSetError.message);
-      setIsSaving(false);
-      return;
-    }
-
-    const nextSetNumber = (latestSet?.set_number ?? 0) + 1;
-
-    const { error } = await supabase
-      .from("workout_sets")
-      .insert({
-        duration_seconds: savedDuration,
-        exercise_id: exerciseId,
-        intensity_rpe: savedIntensityRpe,
-        metric_unit: savedMetricUnit,
-        metric_value: savedMetricValue,
-        parent_set_id: setVariant === "drop" ? parentSetId : null,
-        performance_type: performanceType,
+    try {
+      await workoutRepository.saveSet({
+        durationSeconds: savedDuration,
+        exerciseId,
+        exerciseName: exercises.find(({ id }) => id === exerciseId)?.name ?? "Unknown exercise",
+        intensityRpe: savedIntensityRpe,
+        metricUnit: savedMetricUnit,
+        metricValue: savedMetricValue,
+        parentSetId: setVariant === "drop" ? parentSetId ?? null : null,
+        performanceType,
         reps: savedReps,
-        reps_in_reserve: savedRir,
-        session_id: workoutId,
-        set_number: nextSetNumber,
-        set_type: setType,
-        set_variant: setVariant,
-        user_id: session.user.id,
+        repsInReserve: savedRir,
+        sessionId: workoutId,
+        setId: editingSetId,
+        setType,
+        setVariant,
+        userId: session.user.id,
         weight: parsedWeight,
-        weight_unit: profile?.preferred_weight_unit ?? "lb",
+        weightUnit: profile?.preferred_weight_unit ?? "lb",
       });
+    } catch (error) {
+      setIsSaving(false);
+      setErrorMessage(error instanceof Error ? error.message : "The set was not saved.");
+      return;
+    }
 
     setIsSaving(false);
-
-    if (error) {
-      setErrorMessage(error.message);
-      return;
-    }
 
     router.replace({
       pathname: "/workout/[id]",
       params: {
         id: workoutId,
-        restStartedAt: String(Date.now()),
+        ...(isEditing ? {} : { restStartedAt: String(Date.now()) }),
       },
     });
   }
