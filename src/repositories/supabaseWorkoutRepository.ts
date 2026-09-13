@@ -1,6 +1,7 @@
 import { supabase } from "../lib/supabase";
 import type {
   CreateWorkoutInput,
+  SaveWorkoutSetInput,
   WorkoutDetail,
   WorkoutSession,
   WorkoutSessionDetail,
@@ -51,6 +52,31 @@ class SupabaseWorkoutRepository implements WorkoutRepository {
       return;
     }
 
+    if (mutation.kind === "upsert_set" && mutation.set) {
+      const { error } = await supabase.from("workout_sets").upsert({
+        id: mutation.entityId,
+        session_id: mutation.sessionId,
+        user_id: userId,
+        exercise_id: mutation.set.exerciseId,
+        set_number: mutation.set.setNumber,
+        reps: mutation.set.reps,
+        weight: mutation.set.weight,
+        weight_unit: mutation.set.weightUnit,
+        reps_in_reserve: mutation.set.repsInReserve,
+        duration_seconds: mutation.set.durationSeconds,
+        intensity_rpe: mutation.set.intensityRpe,
+        metric_unit: mutation.set.metricUnit,
+        metric_value: mutation.set.metricValue,
+        parent_set_id: mutation.set.parentSetId,
+        performance_type: mutation.set.performanceType,
+        performed_at: mutation.set.performedAt,
+        set_type: mutation.set.setType,
+        set_variant: mutation.set.setVariant,
+      }, { onConflict: "id" });
+      if (error) throw error;
+      return;
+    }
+
     const { error } = await supabase
       .from("workout_sets")
       .delete()
@@ -63,7 +89,7 @@ class SupabaseWorkoutRepository implements WorkoutRepository {
   private async queueAndAttempt(
     mutation: PendingWorkoutMutation,
     userId: string,
-    operation: "complete" | "delete-set",
+    operation: "complete" | "delete-set" | "save-set",
   ): Promise<WorkoutMutationResult> {
     const originalState = await workoutLocalStore.load(userId);
     let state = originalState;
@@ -143,6 +169,72 @@ class SupabaseWorkoutRepository implements WorkoutRepository {
     }
 
     return { failed, pending: state.pendingMutations.length, synced };
+  }
+
+  async saveSet(input: SaveWorkoutSetInput) {
+    let state = await workoutLocalStore.load(input.userId);
+    let snapshot = state.activeWorkouts[input.sessionId];
+    if (!snapshot) {
+      await this.getWorkoutDetail(input.sessionId, input.userId);
+      state = await workoutLocalStore.load(input.userId);
+      snapshot = state.activeWorkouts[input.sessionId];
+    }
+    if (!snapshot || snapshot.detail.workout.completed_at !== null) {
+      throw new WorkoutRepositoryError(
+        "Completed workouts cannot be changed.",
+        "save-set",
+      );
+    }
+
+    const existing = input.setId
+      ? snapshot.detail.sets.find(({ id }) => id === input.setId)
+      : undefined;
+    if (input.setId && !existing) {
+      throw new WorkoutRepositoryError("The set was not found.", "save-set");
+    }
+    const setNumber = existing?.set_number ??
+      Math.max(0, ...snapshot.detail.sets
+        .filter(({ exercise_id }) => exercise_id === input.exerciseId)
+        .map(({ set_number }) => set_number)) + 1;
+    const setId = input.setId ?? this.createUuid();
+    const createdAt = new Date().toISOString();
+    return this.queueAndAttempt({
+      createdAt,
+      entityId: setId,
+      id: this.mutationId("upsert-set", setId),
+      kind: "upsert_set",
+      lastAttemptAt: null,
+      retryCount: 0,
+      sessionId: input.sessionId,
+      set: {
+        durationSeconds: input.durationSeconds,
+        exerciseId: input.exerciseId,
+        exerciseName: input.exerciseName,
+        intensityRpe: input.intensityRpe,
+        metricUnit: input.metricUnit,
+        metricValue: input.metricValue,
+        parentSetId: input.parentSetId,
+        performanceType: input.performanceType,
+        performedAt: createdAt,
+        reps: input.reps,
+        repsInReserve: input.repsInReserve,
+        setNumber,
+        setType: input.setType,
+        setVariant: input.setVariant,
+        weight: input.weight,
+        weightUnit: input.weightUnit,
+      },
+    }, input.userId, "save-set");
+  }
+
+  private createUuid(): string {
+    if (typeof globalThis.crypto?.randomUUID === "function") {
+      return globalThis.crypto.randomUUID();
+    }
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (char) => {
+      const value = Math.floor(Math.random() * 16);
+      return (char === "x" ? value : (value & 0x3) | 0x8).toString(16);
+    });
   }
 
   async createWorkout({ name, userId }: CreateWorkoutInput) {
