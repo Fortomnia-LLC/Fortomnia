@@ -111,7 +111,10 @@ export function useWatchWorkoutSync({
       if (missing.length > 0) {
         const { error: insertError } = await supabase
           .from("workout_sets")
-          .insert(missing.map((action) => watchActionToSet(action, userId)));
+          .upsert(
+            missing.map((action) => watchActionToSet(action, userId)),
+            { onConflict: "id" },
+          );
         if (insertError) return;
       }
 
