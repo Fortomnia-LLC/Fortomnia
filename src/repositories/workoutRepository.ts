@@ -1,5 +1,6 @@
 import type {
   CreateWorkoutInput,
+  SaveWorkoutSetInput,
   WorkoutSession,
   WorkoutSessionDetail,
 } from "../domain/workouts";
@@ -10,6 +11,7 @@ export interface WorkoutRepository {
   deleteSet(setId: string, sessionId: string, userId: string): Promise<WorkoutMutationResult>;
   getWorkoutDetail(workoutId: string, userId: string): Promise<WorkoutSessionDetail>;
   listRecentWorkouts(userId: string, limit?: number): Promise<WorkoutSession[]>;
+  saveSet(input: SaveWorkoutSetInput): Promise<WorkoutMutationResult>;
   syncPendingMutations(userId: string): Promise<WorkoutSyncResult>;
 }
 
@@ -22,11 +24,11 @@ export type WorkoutSyncResult = {
 };
 
 export class WorkoutRepositoryError extends Error {
-  readonly operation: "complete" | "create" | "delete-set" | "detail" | "list";
+  readonly operation: "complete" | "create" | "delete-set" | "detail" | "list" | "save-set";
 
   constructor(
     message: string,
-    operation: "complete" | "create" | "delete-set" | "detail" | "list",
+    operation: "complete" | "create" | "delete-set" | "detail" | "list" | "save-set",
   ) {
     super(message);
     this.name = "WorkoutRepositoryError";
