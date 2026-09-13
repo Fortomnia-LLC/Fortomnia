@@ -127,7 +127,8 @@ export default function ExerciseHistoryScreen() {
         .from("workout_sets")
         .select("id", { count: "exact", head: true })
         .eq("exercise_id", exercise.id)
-        .eq("user_id", session.user.id),
+        .eq("user_id", session.user.id)
+        .is("deleted_at", null),
       supabase
         .from("workout_template_exercises")
         .select("id", { count: "exact", head: true })

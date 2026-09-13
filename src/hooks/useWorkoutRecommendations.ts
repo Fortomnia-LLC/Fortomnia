@@ -69,6 +69,7 @@ export function useWorkoutRecommendations(
         .neq("session_id", currentWorkoutId)
         .eq("set_type", "working")
         .eq("set_variant", "standard")
+        .is("deleted_at", null)
         .order("performed_at", { ascending: false })
         .limit(100);
 

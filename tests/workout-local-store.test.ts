@@ -6,6 +6,7 @@ import {
   acknowledgeWorkoutMutations,
   applyWorkoutMutationLocally,
   cacheActiveWorkout,
+  compactWorkoutMutations,
   createWorkoutLocalStore,
   emptyWorkoutLocalState,
   enqueueWorkoutMutation,
@@ -97,6 +98,62 @@ test("deduplicates queued mutations and keeps stable creation order", () => {
     ["mutation-0", "mutation-1"],
   );
   assert.equal(state.pendingMutations[1]?.entityId, "set-1-updated");
+});
+
+test("compacts repeated offline edits to the newest set value", () => {
+  const upsert = {
+    ...mutation,
+    id: "upsert-1",
+    kind: "upsert_set" as const,
+    set: {
+      durationSeconds: null, exerciseId: "exercise-1", exerciseName: "Squat",
+      intensityRpe: null, metricUnit: null, metricValue: null,
+      parentSetId: null, performanceType: "reps" as const,
+      performedAt: mutation.createdAt, reps: 5, repsInReserve: 2,
+      setNumber: 1, setType: "working" as const,
+      setVariant: "standard" as const, weight: 225, weightUnit: "lb" as const,
+    },
+  };
+  const latest = {
+    ...upsert,
+    createdAt: "2026-09-13T18:06:00.000Z",
+    id: "upsert-2",
+    set: { ...upsert.set, reps: 6 },
+  };
+
+  assert.deepEqual(compactWorkoutMutations([upsert, latest]), [latest]);
+});
+
+test("keeps deletion ahead of stale offline set upserts", () => {
+  const staleUpsert = {
+    ...mutation,
+    createdAt: "2026-09-13T18:07:00.000Z",
+    id: "stale-upsert",
+    kind: "upsert_set" as const,
+    set: {
+      durationSeconds: null, exerciseId: "exercise-1", exerciseName: "Squat",
+      intensityRpe: null, metricUnit: null, metricValue: null,
+      parentSetId: null, performanceType: "reps" as const,
+      performedAt: mutation.createdAt, reps: 5, repsInReserve: 2,
+      setNumber: 1, setType: "working" as const,
+      setVariant: "standard" as const, weight: 225, weightUnit: "lb" as const,
+    },
+  };
+
+  assert.deepEqual(compactWorkoutMutations([mutation, staleUpsert]), [mutation]);
+});
+
+test("preserves workout completion alongside compacted set changes", () => {
+  const completion = {
+    ...mutation,
+    entityId: "workout-1",
+    id: "complete-1",
+    kind: "complete_workout" as const,
+  };
+  assert.deepEqual(
+    compactWorkoutMutations([mutation, completion]).map(({ id }) => id),
+    ["complete-1", "mutation-1"],
+  );
 });
 
 test("records retries and removes only acknowledged mutations", () => {
