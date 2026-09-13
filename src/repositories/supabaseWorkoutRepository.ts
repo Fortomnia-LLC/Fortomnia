@@ -97,15 +97,14 @@ class SupabaseWorkoutRepository implements WorkoutRepository {
     operation: "complete" | "delete-set" | "save-set",
   ): Promise<WorkoutMutationResult> {
     const endSyncActivity = beginWorkoutSyncActivity(userId);
-    await workoutLocalStore.update(
-      userId,
-      (state) => applyWorkoutMutationLocally(
-        enqueueWorkoutMutation(state, mutation),
-        mutation,
-      ),
-    );
-
     try {
+      await workoutLocalStore.update(
+        userId,
+        (state) => applyWorkoutMutationLocally(
+          enqueueWorkoutMutation(state, mutation),
+          mutation,
+        ),
+      );
       await this.performMutation(mutation, userId);
       await workoutLocalStore.update(
         userId,
