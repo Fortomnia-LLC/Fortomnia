@@ -230,3 +230,22 @@ test("clears invalid JSON instead of failing app startup", async () => {
   assert.deepEqual(state, emptyWorkoutLocalState("user-1"));
   assert.equal(storage.values.size, 0);
 });
+
+test("serializes concurrent local updates without losing mutations", async () => {
+  const storage = memoryStorage();
+  const store = createWorkoutLocalStore(storage);
+  await Promise.all([
+    store.update("user-1", (state) => enqueueWorkoutMutation(state, mutation)),
+    store.update("user-1", (state) => enqueueWorkoutMutation(state, {
+      ...mutation,
+      entityId: "set-2",
+      id: "mutation-2",
+    })),
+  ]);
+
+  const restored = await store.load("user-1");
+  assert.deepEqual(
+    restored.pendingMutations.map(({ id }) => id),
+    ["mutation-1", "mutation-2"],
+  );
+});
