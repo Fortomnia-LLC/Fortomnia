@@ -157,6 +157,8 @@ The Watch companion must satisfy the physical-device and reliability gates in [W
 
 ## Quality gates
 
+- Keep shared workout behavior and release-critical status UX at feature parity on iOS and Android; sync state and manual retry now use one platform-neutral implementation.
+
 - Tests cover domain logic, migrations, RLS, permission states, synchronization, and critical UI flows.
 - Accessibility labels, dynamic type, contrast, and reduced-motion behavior are required for phone and Watch.
 - Analytics must exclude sensitive health content and respect consent.
