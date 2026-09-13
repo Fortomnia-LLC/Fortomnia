@@ -46,6 +46,8 @@ export default function ProgramBuilderScreen() {
   const { errorMessage: profileError, profile } = useProfile();
   const [daysPerWeek, setDaysPerWeek] = useState(3);
   const [availableEquipment, setAvailableEquipment] = useState<EquipmentOption[]>(["full_gym"]);
+  const [activeLocationId, setActiveLocationId] = useState<string | null>(null);
+  const [activeLocationName, setActiveLocationName] = useState<string | null>(null);
   const [specialtyImplementSlugs, setSpecialtyImplementSlugs] = useState<string[]>([]);
   const [hasLoadedEquipment, setHasLoadedEquipment] = useState(false);
   const [hasLoadedSpecialtyEquipment, setHasLoadedSpecialtyEquipment] = useState(false);
@@ -53,14 +55,25 @@ export default function ProgramBuilderScreen() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (profile && !hasLoadedEquipment) {
-      setAvailableEquipment(profile.available_equipment.length > 0 ? profile.available_equipment : ["full_gym"]);
-      if (profile.coach_weekly_training_days && profile.coach_weekly_training_days >= 2 && profile.coach_weekly_training_days <= 5) {
-        setDaysPerWeek(profile.coach_weekly_training_days);
+    if (!profile || !session?.user.id || hasLoadedEquipment) return;
+    let active = true;
+    const currentProfile = profile;
+    const userId = session.user.id;
+    async function loadEquipment() {
+      const { data } = await supabase.from("training_locations").select("id, name, equipment").eq("user_id", userId).eq("is_active", true).maybeSingle();
+      if (!active) return;
+      const locationEquipment = (data?.equipment ?? []) as EquipmentOption[];
+      setAvailableEquipment(locationEquipment.length > 0 ? locationEquipment : currentProfile.available_equipment.length > 0 ? currentProfile.available_equipment : ["full_gym"]);
+      setActiveLocationId(data?.id ?? null);
+      setActiveLocationName(data?.name ?? null);
+      if (currentProfile.coach_weekly_training_days && currentProfile.coach_weekly_training_days >= 2 && currentProfile.coach_weekly_training_days <= 5) {
+        setDaysPerWeek(currentProfile.coach_weekly_training_days);
       }
       setHasLoadedEquipment(true);
     }
-  }, [hasLoadedEquipment, profile]);
+    void loadEquipment();
+    return () => { active = false; };
+  }, [hasLoadedEquipment, profile, session?.user.id]);
 
   useEffect(() => {
     if (!session?.user.id || hasLoadedSpecialtyEquipment) return;
@@ -132,10 +145,10 @@ export default function ProgramBuilderScreen() {
     setErrorMessage(null);
     const createdTemplateIds: string[] = [];
 
-    const { error: equipmentSaveError } = await supabase
-      .from("profiles")
-      .update({ available_equipment: availableEquipment, updated_at: new Date().toISOString() })
-      .eq("id", session.user.id);
+    const equipmentSave = activeLocationId
+      ? supabase.from("training_locations").update({ equipment: availableEquipment, updated_at: new Date().toISOString() }).eq("id", activeLocationId).eq("user_id", session.user.id)
+      : supabase.from("profiles").update({ available_equipment: availableEquipment, updated_at: new Date().toISOString() }).eq("id", session.user.id);
+    const { error: equipmentSaveError } = await equipmentSave;
 
     if (equipmentSaveError) {
       setIsCreating(false);
@@ -194,7 +207,7 @@ export default function ProgramBuilderScreen() {
     );
   }
 
-  if (isLoading || !profile || !hasLoadedSpecialtyEquipment) {
+  if (isLoading || !profile || !hasLoadedEquipment || !hasLoadedSpecialtyEquipment) {
     return <SafeAreaView style={styles.loadingScreen}><ActivityIndicator color="#F97316" size="large" /></SafeAreaView>;
   }
 
@@ -210,7 +223,7 @@ export default function ProgramBuilderScreen() {
         <View style={styles.dayRow}>{DAY_OPTIONS.map((days) => { const selected = daysPerWeek === days; return <Pressable accessibilityRole="button" accessibilityState={{ selected }} key={days} onPress={() => setDaysPerWeek(days)} style={[styles.dayButton, selected && styles.dayButtonSelected]}><Text style={[styles.dayText, selected && styles.dayTextSelected]}>{days}</Text></Pressable>; })}</View>
 
         <Text style={styles.sectionTitle}>Available equipment</Text>
-        <Text style={styles.sectionHint}>General equipment is adjustable here. Specialty implements come from your Athletic Profile.</Text>
+        <Text style={styles.sectionHint}>{activeLocationName ? `Using ${activeLocationName}. Changes here update that location.` : "Using your general profile equipment."} Specialty implements come from your Athletic Profile.</Text>
         <View style={styles.equipmentWrap}>{EQUIPMENT_OPTIONS.map((option) => { const selected = availableEquipment.includes(option); return <Pressable accessibilityRole="button" accessibilityState={{ selected }} key={option} onPress={() => toggleEquipment(option)} style={[styles.equipmentButton, selected && styles.equipmentButtonSelected]}><Text style={[styles.equipmentText, selected && styles.equipmentTextSelected]}>{EQUIPMENT_LABELS[option]}</Text></Pressable>; })}</View>
 
         <View style={styles.profileCard}>
