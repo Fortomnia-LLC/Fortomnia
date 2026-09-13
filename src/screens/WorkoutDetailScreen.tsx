@@ -33,8 +33,8 @@ import {
 } from "../lib/workoutSets";
 import { getSetTargetFeedback } from "../lib/performanceFeedback";
 import { buildWorkoutRecap } from "../lib/workoutRecap";
-import { supabase } from "../lib/supabase";
 import { useAuth } from "../providers/AuthProvider";
+import { workoutRepository } from "../repositories/supabaseWorkoutRepository";
 import {
   DEFAULT_REST_DURATION_SECONDS,
   adjustRestDuration,
@@ -623,27 +623,23 @@ export default function WorkoutDetailScreen() {
           onPress: async () => {
             setIsCompleting(true);
 
-            const { data, error } = await supabase
-              .from("workout_sessions")
-              .update({
-                completed_at: new Date().toISOString(),
-              })
-              .eq("id", workoutId)
-              .eq("user_id", session.user.id)
-              .is("completed_at", null)
-              .select("id")
-              .maybeSingle();
-
-            setIsCompleting(false);
-
-            if (error || !data) {
+            try {
+              await workoutRepository.completeWorkout(
+                workoutId,
+                session.user.id,
+              );
+            } catch (error) {
+              setIsCompleting(false);
               Alert.alert(
                 "Unable to complete workout",
-                error?.message ?? "The workout was not updated.",
+                error instanceof Error
+                  ? error.message
+                  : "The workout was not updated.",
               );
               return;
             }
 
+            setIsCompleting(false);
             await refreshWorkout();
           },
         },
@@ -671,14 +667,15 @@ export default function WorkoutDetailScreen() {
           style: "destructive",
           text: "Delete",
           onPress: async () => {
-            const { error } = await supabase
-              .from("workout_sets")
-              .delete()
-              .eq("id", set.id)
-              .eq("user_id", session.user.id);
-
-            if (error) {
-              Alert.alert("Unable to delete set", error.message);
+            try {
+              await workoutRepository.deleteSet(set.id, session.user.id);
+            } catch (error) {
+              Alert.alert(
+                "Unable to delete set",
+                error instanceof Error
+                  ? error.message
+                  : "The set was not deleted.",
+              );
               return;
             }
 

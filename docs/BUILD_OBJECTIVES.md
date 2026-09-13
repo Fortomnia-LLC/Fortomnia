@@ -52,6 +52,8 @@ Priority legend: **P0** = foundation required before dependent feature work expa
 
 - Established the first typed workout domain and repository boundary for session creation, recent-session listing, and complete workout-detail loading.
 - Moved Supabase relation-shape normalization out of React hooks and added regression coverage for numeric values, joined exercise names, missing relations, and repository error context.
+- Routed workout completion and set deletion through ownership-aware repository methods so screens no longer own those persistence mutations.
+- Added a versioned, per-user active-workout cache and idempotent pending-mutation queue with corruption recovery, retry metadata, bounded storage, and process-restart coverage.
 
 ### Objective ledger
 

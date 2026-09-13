@@ -80,3 +80,14 @@ test("repository errors preserve the failed operation", () => {
   assert.equal(error.operation, "detail");
   assert.equal(error.message, "Request failed");
 });
+
+test("repository errors identify workout mutation failures", () => {
+  assert.equal(
+    new WorkoutRepositoryError("Completion failed", "complete").operation,
+    "complete",
+  );
+  assert.equal(
+    new WorkoutRepositoryError("Deletion failed", "delete-set").operation,
+    "delete-set",
+  );
+});
