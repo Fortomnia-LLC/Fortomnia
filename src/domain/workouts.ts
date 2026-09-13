@@ -7,12 +7,24 @@ export type WorkoutSession = {
   name: string;
   notes: string | null;
   started_at: string;
+  training_location_equipment?: string[] | null;
+  training_location_id?: string | null;
+  training_location_name?: string | null;
+  training_location_type?: string | null;
   user_id: string;
 };
 
 export type WorkoutDetail = Pick<
   WorkoutSession,
-  "completed_at" | "id" | "name" | "notes" | "started_at"
+  | "completed_at"
+  | "id"
+  | "name"
+  | "notes"
+  | "started_at"
+  | "training_location_equipment"
+  | "training_location_id"
+  | "training_location_name"
+  | "training_location_type"
 >;
 
 export type LoggedSet = {
