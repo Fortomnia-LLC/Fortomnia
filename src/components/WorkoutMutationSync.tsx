@@ -94,7 +94,21 @@ export function WorkoutSyncProvider({ children }: PropsWithChildren) {
       userId,
       (isActive) => {
         if (!active || generation !== accountGenerationRef.current) return;
-        if (isActive) setStatus("syncing");
+        if (isActive) {
+          setStatus("syncing");
+          return;
+        }
+        void workoutLocalStore.load(userId).then((state) => {
+          if (!active || generation !== accountGenerationRef.current) return;
+          setPendingCount(state.pendingMutations.length);
+          setStatus((current) =>
+            current === "syncing"
+              ? state.pendingMutations.length > 0
+                ? "offline"
+                : "synced"
+              : current,
+          );
+        });
       },
     );
 
