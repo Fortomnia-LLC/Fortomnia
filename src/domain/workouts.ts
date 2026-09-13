@@ -60,3 +60,23 @@ export type CreateWorkoutInput = {
   name: string;
   userId: string;
 };
+
+export type SaveWorkoutSetInput = {
+  durationSeconds: number | null;
+  exerciseId: string;
+  exerciseName: string;
+  intensityRpe: number | null;
+  metricUnit: MetricUnit | null;
+  metricValue: number | null;
+  parentSetId: string | null;
+  performanceType: PerformanceType;
+  reps: number;
+  repsInReserve: number | null;
+  sessionId: string;
+  setId?: string;
+  setType: "warmup" | "working";
+  setVariant: "standard" | "drop";
+  userId: string;
+  weight: number;
+  weightUnit: "lb" | "kg";
+};
