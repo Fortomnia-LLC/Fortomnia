@@ -30,3 +30,11 @@ test("the app publishes only a minimal widget snapshot", () => {
   assert.match(sync, /healthLastSyncedAt/);
   assert.doesNotMatch(sync, /sleep|heartRate|hrv|weight/i);
 });
+
+test("widget changes trigger the signed iOS extensions build", () => {
+  const workflow = readFileSync(".github/workflows/eas-ios-watch-build.yml", "utf8");
+
+  assert.match(workflow, /targets\/fortomnia-widgets\/\*\*/);
+  assert.match(workflow, /src\/components\/WidgetSnapshotSync\.tsx/);
+  assert.match(workflow, /app\.json/);
+});
