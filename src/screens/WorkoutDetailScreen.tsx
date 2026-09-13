@@ -624,10 +624,16 @@ export default function WorkoutDetailScreen() {
             setIsCompleting(true);
 
             try {
-              await workoutRepository.completeWorkout(
+              const result = await workoutRepository.completeWorkout(
                 workoutId,
                 session.user.id,
               );
+              if (result === "queued") {
+                Alert.alert(
+                  "Saved offline",
+                  "Your workout is complete. Fortomnia will sync it when your connection returns.",
+                );
+              }
             } catch (error) {
               setIsCompleting(false);
               Alert.alert(
@@ -668,7 +674,17 @@ export default function WorkoutDetailScreen() {
           text: "Delete",
           onPress: async () => {
             try {
-              await workoutRepository.deleteSet(set.id, session.user.id);
+              const result = await workoutRepository.deleteSet(
+                set.id,
+                workoutId,
+                session.user.id,
+              );
+              if (result === "queued") {
+                Alert.alert(
+                  "Saved offline",
+                  "The set was removed locally and will sync when your connection returns.",
+                );
+              }
             } catch (error) {
               Alert.alert(
                 "Unable to delete set",
