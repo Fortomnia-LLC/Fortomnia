@@ -19,6 +19,7 @@ export type WorkoutMutationResult = "queued" | "synced";
 
 export type WorkoutSyncResult = {
   failed: number;
+  failure: "attention" | "offline" | null;
   pending: number;
   synced: number;
 };

@@ -9,7 +9,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import { AnalyticsTracker } from '../src/components/AnalyticsTracker';
 import { AppleHealthBackgroundSync } from '../src/components/AppleHealthBackgroundSync';
-import { WorkoutMutationSync } from '../src/components/WorkoutMutationSync';
+import { WorkoutSyncProvider } from '../src/components/WorkoutMutationSync';
 import { getPostHogConfig } from '../src/lib/analytics';
 import { configureNotificationHandler } from '../src/lib/notificationService';
 import {
@@ -60,11 +60,12 @@ function ErrorFallback(_props: PostHogErrorBoundaryFallbackProps) {
 function AppContent({ analyticsEnabled }: { analyticsEnabled: boolean }) {
   return (
     <AuthProvider>
-      {analyticsEnabled ? <AnalyticsTracker /> : null}
-      <AppleHealthBackgroundSync />
-      <WorkoutMutationSync />
-      <StatusBar style="light" />
-      <RootNavigator />
+      <WorkoutSyncProvider>
+        {analyticsEnabled ? <AnalyticsTracker /> : null}
+        <AppleHealthBackgroundSync />
+        <StatusBar style="light" />
+        <RootNavigator />
+      </WorkoutSyncProvider>
     </AuthProvider>
   );
 }

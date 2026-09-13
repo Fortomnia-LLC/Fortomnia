@@ -26,6 +26,7 @@ import {
   type PlannedExerciseRow,
   type WorkoutSetRow,
 } from "./workoutRowMappers";
+import { beginWorkoutSyncActivity } from "../lib/workoutSyncActivity";
 
 class SupabaseWorkoutRepository implements WorkoutRepository {
   private mutationId(kind: string, entityId: string): string {
@@ -91,6 +92,7 @@ class SupabaseWorkoutRepository implements WorkoutRepository {
     userId: string,
     operation: "complete" | "delete-set" | "save-set",
   ): Promise<WorkoutMutationResult> {
+    const endSyncActivity = beginWorkoutSyncActivity(userId);
     await workoutLocalStore.update(
       userId,
       (state) => applyWorkoutMutationLocally(
@@ -118,6 +120,8 @@ class SupabaseWorkoutRepository implements WorkoutRepository {
         error instanceof Error ? error.message : "The workout was not updated.",
         operation,
       );
+    } finally {
+      endSyncActivity();
     }
   }
 
@@ -156,29 +160,36 @@ class SupabaseWorkoutRepository implements WorkoutRepository {
   }
 
   async syncPendingMutations(userId: string) {
+    const endSyncActivity = beginWorkoutSyncActivity(userId);
     let state = await workoutLocalStore.load(userId);
     let failed = 0;
+    let failure: "attention" | "offline" | null = null;
     let synced = 0;
 
-    for (const mutation of state.pendingMutations) {
-      state = await workoutLocalStore.update(
-        userId,
-        (current) => recordWorkoutMutationAttempt(current, mutation.id),
-      );
-      try {
-        await this.performMutation(mutation, userId);
+    try {
+      for (const mutation of state.pendingMutations) {
         state = await workoutLocalStore.update(
           userId,
-          (current) => acknowledgeWorkoutMutations(current, [mutation.id]),
+          (current) => recordWorkoutMutationAttempt(current, mutation.id),
         );
-        synced += 1;
-      } catch (error) {
-        failed += 1;
-        break;
+        try {
+          await this.performMutation(mutation, userId);
+          state = await workoutLocalStore.update(
+            userId,
+            (current) => acknowledgeWorkoutMutations(current, [mutation.id]),
+          );
+          synced += 1;
+        } catch (error) {
+          failed += 1;
+          failure = this.isRetryable(error) ? "offline" : "attention";
+          break;
+        }
       }
-    }
 
-    return { failed, pending: state.pendingMutations.length, synced };
+      return { failed, failure, pending: state.pendingMutations.length, synced };
+    } finally {
+      endSyncActivity();
+    }
   }
 
   async saveSet(input: SaveWorkoutSetInput) {
