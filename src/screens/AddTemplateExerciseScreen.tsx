@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -27,6 +27,10 @@ import {
   usesRepsInReserve,
 } from "../lib/performanceMetrics";
 import { supabase } from "../lib/supabase";
+import {
+  availableTemplateExercises,
+  nextTemplateExercisePosition,
+} from "../lib/templateExercises";
 import { useAuth } from "../providers/AuthProvider";
 
 export default function AddTemplateExerciseScreen() {
@@ -93,6 +97,9 @@ export default function AddTemplateExerciseScreen() {
   const { session } = useAuth();
   const { exercises, isLoading } = useExercises();
   const { profile } = useProfile();
+  const [existingExerciseIds, setExistingExerciseIds] = useState<string[]>([]);
+  const [isLoadingTemplateExercises, setIsLoadingTemplateExercises] =
+    useState(true);
 
     const [exerciseId, setExerciseId] = useState<string | null>(
     initialExerciseId ?? null,
@@ -126,6 +133,59 @@ export default function AddTemplateExerciseScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const selectableExercises = useMemo(
+    () =>
+      availableTemplateExercises(
+        exercises,
+        existingExerciseIds,
+        isEditing ? initialExerciseId : undefined,
+      ),
+    [exercises, existingExerciseIds, initialExerciseId, isEditing],
+  );
+
+  useEffect(() => {
+    let isActive = true;
+
+    async function loadExistingExercises() {
+      if (!session?.user.id || !templateId) {
+        if (isActive) {
+          setExistingExerciseIds([]);
+          setIsLoadingTemplateExercises(false);
+        }
+        return;
+      }
+
+      setIsLoadingTemplateExercises(true);
+      const { data, error } = await supabase
+        .from("workout_template_exercises")
+        .select("exercise_id")
+        .eq("template_id", templateId)
+        .eq("user_id", session.user.id);
+
+      if (!isActive) {
+        return;
+      }
+
+      setIsLoadingTemplateExercises(false);
+
+      if (error) {
+        setExistingExerciseIds([]);
+        setErrorMessage(error.message);
+        return;
+      }
+
+      setExistingExerciseIds(
+        (data ?? []).map((item) => item.exercise_id as string),
+      );
+    }
+
+    void loadExistingExercises();
+
+    return () => {
+      isActive = false;
+    };
+  }, [session?.user.id, templateId]);
+
   useEffect(() => {
     if (
       profile &&
@@ -153,10 +213,10 @@ export default function AddTemplateExerciseScreen() {
   ]);
 
   useEffect(() => {
-    if (!exerciseId && exercises.length > 0) {
-      setExerciseId(exercises[0].id);
+    if (!exerciseId && selectableExercises.length > 0) {
+      setExerciseId(selectableExercises[0].id);
     }
-  }, [exerciseId, exercises]);
+  }, [exerciseId, selectableExercises]);
 
   useEffect(() => {
     if (isEditing || performanceTypeParam !== undefined || !exerciseId) {
@@ -186,6 +246,14 @@ export default function AddTemplateExerciseScreen() {
   async function handleSave() {
     if (!session?.user.id || !templateId || !exerciseId) {
       setErrorMessage("Template, user, or exercise is missing.");
+      return;
+    }
+
+    if (
+      !isEditing &&
+      existingExerciseIds.includes(exerciseId)
+    ) {
+      setErrorMessage("This exercise is already in the template.");
       return;
     }
 
@@ -317,7 +385,9 @@ export default function AddTemplateExerciseScreen() {
       return;
     }
 
-    const nextPosition = (latestExercise?.position ?? 0) + 1;
+    const nextPosition = nextTemplateExercisePosition([
+      latestExercise?.position,
+    ]);
 
     const { error } = await supabase
       .from("workout_template_exercises")
@@ -353,7 +423,14 @@ export default function AddTemplateExerciseScreen() {
     });
   }
 
-  if (isLoading) {
+  function handleCancel() {
+    router.replace({
+      pathname: "/template/[id]",
+      params: { id: templateId },
+    });
+  }
+
+  if (isLoading || isLoadingTemplateExercises) {
     return (
       <SafeAreaView style={styles.loadingScreen}>
         <ActivityIndicator color="#F97316" size="large" />
@@ -374,12 +451,9 @@ export default function AddTemplateExerciseScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <Pressable
-          onPress={() =>
-            router.replace({
-              pathname: "/template/[id]",
-              params: { id: templateId },
-            })
-          }
+          accessibilityLabel="Cancel exercise changes"
+          accessibilityRole="button"
+          onPress={handleCancel}
           style={styles.navigation}
         >
           <Text style={styles.navigationText}>‹ Template</Text>
@@ -398,10 +472,16 @@ export default function AddTemplateExerciseScreen() {
         <Text style={styles.label}>Exercise</Text>
 
         <ExercisePicker
-            exercises={exercises}
+            exercises={selectableExercises}
             onSelect={setExerciseId}
             selectedExerciseId={exerciseId}
           />
+
+        {!isEditing && selectableExercises.length === 0 ? (
+          <Text style={styles.emptyTemplateMessage}>
+            Every available exercise is already in this template.
+          </Text>
+        ) : null}
 
         {profile && !isEditing ? (
           <View style={styles.coachDefaultCard}>
@@ -547,9 +627,14 @@ export default function AddTemplateExerciseScreen() {
         ) : null}
 
         <Pressable
-          disabled={isSaving}
+          accessibilityLabel={isEditing ? "Save exercise changes" : "Add exercise to template"}
+          accessibilityRole="button"
+          disabled={isSaving || !exerciseId}
           onPress={handleSave}
-          style={[styles.saveButton, isSaving && styles.disabled]}
+          style={[
+            styles.saveButton,
+            (isSaving || !exerciseId) && styles.disabled,
+          ]}
         >
           {isSaving ? (
             <ActivityIndicator color="#0B0B0B" />
@@ -558,6 +643,16 @@ export default function AddTemplateExerciseScreen() {
   {isEditing ? "Save changes" : "Add to template"}
 </Text>
           )}
+        </Pressable>
+
+        <Pressable
+          accessibilityLabel="Cancel exercise changes"
+          accessibilityRole="button"
+          disabled={isSaving}
+          onPress={handleCancel}
+          style={styles.cancelButton}
+        >
+          <Text style={styles.cancelText}>Cancel</Text>
         </Pressable>
       </ScrollView>
       </KeyboardAvoidingView>
@@ -692,6 +787,11 @@ const styles = StyleSheet.create({
     color: "#F87171",
     marginBottom: 14,
   },
+  emptyTemplateMessage: {
+    color: "#9CA3AF",
+    marginBottom: 20,
+    marginTop: 8,
+  },
   saveButton: {
     alignItems: "center",
     backgroundColor: "#2563EB",
@@ -706,5 +806,19 @@ const styles = StyleSheet.create({
     color: "#0B0B0B",
     fontSize: 16,
     fontWeight: "800",
+  },
+  cancelButton: {
+    alignItems: "center",
+    borderColor: "#4B5563",
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: "center",
+    marginTop: 12,
+    minHeight: 52,
+  },
+  cancelText: {
+    color: "#D1D5DB",
+    fontSize: 16,
+    fontWeight: "700",
   },
 });
