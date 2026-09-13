@@ -158,6 +158,7 @@ class SupabaseWorkoutRepository implements WorkoutRepository {
   async syncPendingMutations(userId: string) {
     let state = await workoutLocalStore.load(userId);
     let failed = 0;
+    let failure: "attention" | "offline" | null = null;
     let synced = 0;
 
     for (const mutation of state.pendingMutations) {
@@ -174,11 +175,12 @@ class SupabaseWorkoutRepository implements WorkoutRepository {
         synced += 1;
       } catch (error) {
         failed += 1;
+        failure = this.isRetryable(error) ? "offline" : "attention";
         break;
       }
     }
 
-    return { failed, pending: state.pendingMutations.length, synced };
+    return { failed, failure, pending: state.pendingMutations.length, synced };
   }
 
   async saveSet(input: SaveWorkoutSetInput) {
