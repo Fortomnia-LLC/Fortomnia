@@ -12,6 +12,53 @@ create unique index if not exists workout_sets_active_session_exercise_number_id
 create index if not exists workout_sets_user_deleted_updated_idx
   on public.workout_sets (user_id, deleted_at, updated_at desc);
 
+drop policy if exists "Users can view their own workout sets"
+  on public.workout_sets;
+
+create policy "Users can view their own active workout sets"
+  on public.workout_sets
+  for select
+  to authenticated
+  using (
+    user_id = (select auth.uid())
+    and deleted_at is null
+  );
+
+alter table public.workout_sets
+  drop constraint if exists workout_sets_exercise_id_fkey,
+  add constraint workout_sets_exercise_id_fkey
+    foreign key (exercise_id)
+    references public.exercises (id)
+    on delete cascade;
+
+create or replace function public.cascade_workout_set_tombstone()
+returns trigger
+language plpgsql
+security invoker
+set search_path = pg_catalog, public
+as $$
+begin
+  if old.deleted_at is null and new.deleted_at is not null then
+    update public.workout_sets
+    set deleted_at = new.deleted_at,
+        updated_at = greatest(updated_at, new.updated_at)
+    where parent_set_id = new.id
+      and session_id = new.session_id
+      and user_id = new.user_id
+      and deleted_at is null;
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists workout_sets_cascade_tombstone
+  on public.workout_sets;
+
+create trigger workout_sets_cascade_tombstone
+after update of deleted_at on public.workout_sets
+for each row execute function public.cascade_workout_set_tombstone();
+
 create or replace function public.soft_delete_workout_set()
 returns trigger
 language plpgsql
