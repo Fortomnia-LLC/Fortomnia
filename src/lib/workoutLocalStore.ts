@@ -321,10 +321,15 @@ function storageKey(userId: string): string {
 
 export function createWorkoutLocalStore(storage: KeyValueStorage) {
   const writes = new Map<string, Promise<unknown>>();
+  const listeners = new Map<string, Set<(state: WorkoutLocalState) => void>>();
+  const notify = (state: WorkoutLocalState) => {
+    for (const listener of listeners.get(state.userId) ?? []) listener(state);
+  };
 
   return {
     async clear(userId: string): Promise<void> {
       await storage.removeItem(storageKey(userId));
+      notify(emptyWorkoutLocalState(userId));
     },
 
     async load(userId: string): Promise<WorkoutLocalState> {
@@ -342,6 +347,20 @@ export function createWorkoutLocalStore(storage: KeyValueStorage) {
     async save(state: WorkoutLocalState): Promise<void> {
       const normalized = normalizeWorkoutLocalState(state, state.userId);
       await storage.setItem(storageKey(state.userId), JSON.stringify(normalized));
+      notify(normalized);
+    },
+
+    subscribe(
+      userId: string,
+      listener: (state: WorkoutLocalState) => void,
+    ): () => void {
+      const userListeners = listeners.get(userId) ?? new Set();
+      userListeners.add(listener);
+      listeners.set(userId, userListeners);
+      return () => {
+        userListeners.delete(listener);
+        if (userListeners.size === 0) listeners.delete(userId);
+      };
     },
 
     async update(
@@ -362,6 +381,7 @@ export function createWorkoutLocalStore(storage: KeyValueStorage) {
         }
         const next = normalizeWorkoutLocalState(updater(current), userId);
         await storage.setItem(key, JSON.stringify(next));
+        notify(next);
         return next;
       });
       writes.set(userId, operation);
