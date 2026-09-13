@@ -159,6 +159,7 @@ The Watch companion must satisfy the physical-device and reliability gates in [W
 
 - Keep shared workout behavior and release-critical status UX at feature parity on iOS and Android; sync state and manual retry now use one platform-neutral implementation.
 - Workout-set deletion uses durable server tombstones and all shared product reads exclude deleted rows, preventing stale phone or Watch mutations from resurrecting deleted sets.
+- The durable workout queue compacts repeated set edits and gives deletion precedence over stale upserts before replay, reducing redundant network work without weakening completion ordering.
 
 - Tests cover domain logic, migrations, RLS, permission states, synchronization, and critical UI flows.
 - Accessibility labels, dynamic type, contrast, and reduced-motion behavior are required for phone and Watch.
