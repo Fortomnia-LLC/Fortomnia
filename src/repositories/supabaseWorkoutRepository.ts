@@ -91,23 +91,29 @@ class SupabaseWorkoutRepository implements WorkoutRepository {
     userId: string,
     operation: "complete" | "delete-set" | "save-set",
   ): Promise<WorkoutMutationResult> {
-    const originalState = await workoutLocalStore.load(userId);
-    let state = originalState;
-    state = applyWorkoutMutationLocally(
-      enqueueWorkoutMutation(state, mutation),
-      mutation,
+    await workoutLocalStore.update(
+      userId,
+      (state) => applyWorkoutMutationLocally(
+        enqueueWorkoutMutation(state, mutation),
+        mutation,
+      ),
     );
-    await workoutLocalStore.save(state);
 
     try {
       await this.performMutation(mutation, userId);
-      await workoutLocalStore.save(originalState);
+      await workoutLocalStore.update(
+        userId,
+        (state) => acknowledgeWorkoutMutations(state, [mutation.id]),
+      );
       return "synced";
     } catch (error) {
       if (this.isRetryable(error)) return "queued";
-      await workoutLocalStore.save(
-        acknowledgeWorkoutMutations(state, [mutation.id]),
-      );
+      await workoutLocalStore.update(userId, (state) => {
+        const acknowledged = acknowledgeWorkoutMutations(state, [mutation.id]);
+        const activeWorkouts = { ...acknowledged.activeWorkouts };
+        delete activeWorkouts[mutation.sessionId];
+        return { ...acknowledged, activeWorkouts };
+      });
       throw new WorkoutRepositoryError(
         error instanceof Error ? error.message : "The workout was not updated.",
         operation,
@@ -155,17 +161,21 @@ class SupabaseWorkoutRepository implements WorkoutRepository {
     let synced = 0;
 
     for (const mutation of state.pendingMutations) {
-      state = recordWorkoutMutationAttempt(state, mutation.id);
-      await workoutLocalStore.save(state);
+      state = await workoutLocalStore.update(
+        userId,
+        (current) => recordWorkoutMutationAttempt(current, mutation.id),
+      );
       try {
         await this.performMutation(mutation, userId);
-        state = acknowledgeWorkoutMutations(state, [mutation.id]);
+        state = await workoutLocalStore.update(
+          userId,
+          (current) => acknowledgeWorkoutMutations(current, [mutation.id]),
+        );
         synced += 1;
       } catch (error) {
         failed += 1;
         break;
       }
-      await workoutLocalStore.save(state);
     }
 
     return { failed, pending: state.pendingMutations.length, synced };
@@ -301,9 +311,26 @@ class SupabaseWorkoutRepository implements WorkoutRepository {
         mapPlannedExerciseRow,
       ),
     };
-    const state = cacheActiveWorkout(await workoutLocalStore.load(userId), detail);
-    await workoutLocalStore.save(state);
-    return detail;
+    let pendingCompletionAt: string | null = null;
+    const state = await workoutLocalStore.update(userId, (current) => {
+      let next = cacheActiveWorkout(current, detail);
+      for (const mutation of current.pendingMutations) {
+        if (mutation.sessionId === workoutId) {
+          if (mutation.kind === "complete_workout") {
+            pendingCompletionAt = mutation.createdAt;
+          }
+          next = applyWorkoutMutationLocally(next, mutation);
+        }
+      }
+      return next;
+    });
+    if (pendingCompletionAt) {
+      return {
+        ...detail,
+        workout: { ...detail.workout, completed_at: pendingCompletionAt },
+      };
+    }
+    return state.activeWorkouts[workoutId]?.detail ?? detail;
   }
 }
 
