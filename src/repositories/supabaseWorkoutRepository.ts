@@ -17,12 +17,47 @@ import {
 } from "./workoutRowMappers";
 
 class SupabaseWorkoutRepository implements WorkoutRepository {
+  async completeWorkout(workoutId: string, userId: string) {
+    const { data, error } = await supabase
+      .from("workout_sessions")
+      .update({ completed_at: new Date().toISOString() })
+      .eq("id", workoutId)
+      .eq("user_id", userId)
+      .is("completed_at", null)
+      .select("id")
+      .maybeSingle();
+
+    if (error || !data) {
+      throw new WorkoutRepositoryError(
+        error?.message ?? "The workout was not updated.",
+        "complete",
+      );
+    }
+  }
+
   async createWorkout({ name, userId }: CreateWorkoutInput) {
     const { error } = await supabase.from("workout_sessions").insert({
       name,
       user_id: userId,
     });
     if (error) throw new WorkoutRepositoryError(error.message, "create");
+  }
+
+  async deleteSet(setId: string, userId: string) {
+    const { data, error } = await supabase
+      .from("workout_sets")
+      .delete()
+      .eq("id", setId)
+      .eq("user_id", userId)
+      .select("id")
+      .maybeSingle();
+
+    if (error || !data) {
+      throw new WorkoutRepositoryError(
+        error?.message ?? "The set was not deleted.",
+        "delete-set",
+      );
+    }
   }
 
   async listRecentWorkouts(userId: string, limit = 5) {
