@@ -55,6 +55,7 @@ Priority legend: **P0** = foundation required before dependent feature work expa
 - Routed workout completion and set deletion through ownership-aware repository methods so screens no longer own those persistence mutations.
 - Added a versioned, per-user active-workout cache and idempotent pending-mutation queue with corruption recovery, retry metadata, bounded storage, and process-restart coverage.
 - Connected active-workout read caching, offline fallback, queued completion/deletion, and foreground replay through the shared repository boundary.
+- Routed set creation and editing through stable client IDs and idempotent local-first upserts so logged work survives reconnect and replay without duplication.
 
 ### Objective ledger
 
