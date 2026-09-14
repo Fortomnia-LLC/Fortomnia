@@ -1,16 +1,19 @@
-export type AppleHealthAuthorizationRequestStatus =
+export type HealthAuthorizationRequestStatus =
   | "should_request"
   | "unnecessary"
   | "unknown"
   | "unavailable";
 
-export function shouldRestoreAppleHealth(
+export function shouldRestoreHealthConnection(
   available: boolean,
-  requestStatus: AppleHealthAuthorizationRequestStatus,
+  requestStatus: HealthAuthorizationRequestStatus,
   hasStoredConnection: boolean,
 ): boolean {
   return available && hasStoredConnection && requestStatus === "unnecessary";
 }
+
+export type AppleHealthAuthorizationRequestStatus = HealthAuthorizationRequestStatus;
+export const shouldRestoreAppleHealth = shouldRestoreHealthConnection;
 
 export type StoredHealthConnection = {
   connected: true;
@@ -44,7 +47,7 @@ export function createHealthConnection(
 ): StoredHealthConnection {
   if (lastSyncedAt === null) return { connected: true, lastSyncedAt: null };
   const parsed = Date.parse(lastSyncedAt);
-  if (!Number.isFinite(parsed)) throw new TypeError("A valid Apple Health sync time is required.");
+  if (!Number.isFinite(parsed)) throw new TypeError("A valid health sync time is required.");
   return { connected: true, lastSyncedAt: new Date(parsed).toISOString() };
 }
 

@@ -10,13 +10,25 @@ export type HealthErrorPresentation = {
   message: string;
 };
 
-const PRESENTATIONS: Record<HealthErrorKind, string> = {
-  authorization:
-    "Review Fortomnia's Health permissions in the Health app or iPhone Settings, then try again.",
-  invalid_range: "Fortomnia could not read that Apple Health date range. Try again.",
-  protected_data: "Unlock this iPhone, then try Apple Health again.",
-  unavailable: "Apple Health is not available on this device.",
-  unknown: "Apple Health could not complete the request. Try again.",
+export type HealthErrorProvider = "apple_health" | "health_connect";
+
+const PRESENTATIONS: Record<HealthErrorProvider, Record<HealthErrorKind, string>> = {
+  apple_health: {
+    authorization:
+      "Review Fortomnia's Health permissions in the Health app or iPhone Settings, then try again.",
+    invalid_range: "Fortomnia could not read that Apple Health date range. Try again.",
+    protected_data: "Unlock this iPhone, then try Apple Health again.",
+    unavailable: "Apple Health is not available on this device.",
+    unknown: "Apple Health could not complete the request. Try again.",
+  },
+  health_connect: {
+    authorization:
+      "Review Fortomnia's permissions in Health Connect, then try again.",
+    invalid_range: "Fortomnia could not read that Health Connect date range. Try again.",
+    protected_data: "Unlock this Android device, then try Health Connect again.",
+    unavailable: "Health Connect is not available on this device.",
+    unknown: "Health Connect could not complete the request. Try again.",
+  },
 };
 
 function errorSignature(error: unknown) {
@@ -30,7 +42,10 @@ function errorSignature(error: unknown) {
     .toLowerCase();
 }
 
-export function getHealthErrorPresentation(error: unknown): HealthErrorPresentation {
+export function getHealthErrorPresentation(
+  error: unknown,
+  provider: HealthErrorProvider = "apple_health",
+): HealthErrorPresentation {
   const signature = errorSignature(error);
   let kind: HealthErrorKind = "unknown";
 
@@ -44,5 +59,5 @@ export function getHealthErrorPresentation(error: unknown): HealthErrorPresentat
     kind = "unavailable";
   }
 
-  return { kind, message: PRESENTATIONS[kind] };
+  return { kind, message: PRESENTATIONS[provider][kind] };
 }

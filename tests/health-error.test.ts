@@ -46,3 +46,24 @@ test("handles non-error rejection values without exposing them", () => {
   assert.equal(result.kind, "unknown");
   assert.equal(result.message.includes("private provider response"), false);
 });
+
+test("maps Health Connect failures without showing Apple-specific guidance", () => {
+  assert.deepEqual(
+    getHealthErrorPresentation({ code: "permission_denied" }, "health_connect"),
+    {
+      kind: "authorization",
+      message: "Review Fortomnia's permissions in Health Connect, then try again.",
+    },
+  );
+  assert.deepEqual(
+    getHealthErrorPresentation(new Error("unsupported"), "health_connect"),
+    {
+      kind: "unavailable",
+      message: "Health Connect is not available on this device.",
+    },
+  );
+  assert.equal(
+    getHealthErrorPresentation(new Error("native failure"), "health_connect").message.includes("Apple"),
+    false,
+  );
+});

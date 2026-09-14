@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -41,7 +40,7 @@ import {
 } from "../lib/health/healthConnectionStorage";
 import {
   getHealthSyncFreshness,
-  shouldRestoreAppleHealth,
+  shouldRestoreHealthConnection,
 } from "../lib/health/healthConnection";
 import { getHealthErrorPresentation } from "../lib/health/healthError";
 import { getHealthQueryRange, summarizeHealthRange } from "../lib/health/healthNormalization";
@@ -115,6 +114,9 @@ function lastSyncLabel(value: string | null) {
 
 export default function HealthRecoveryScreen() {
   const router = useRouter();
+  const isAndroid = process.env.EXPO_OS === "android";
+  const providerKey = isAndroid ? "health_connect" : "apple_health";
+  const providerName = isAndroid ? "Health Connect" : "Apple Health";
   const [available, setAvailable] = useState<boolean | null>(null);
   const [dataMode, setDataMode] = useState<DataMode>("disconnected");
   const [loading, setLoading] = useState(true);
@@ -170,24 +172,23 @@ export default function HealthRecoveryScreen() {
         applySummaries(buildRecoveryPreview());
         return;
       }
-      if (Platform.OS !== "ios" && Platform.OS !== "android") {
+      if (process.env.EXPO_OS !== "ios" && process.env.EXPO_OS !== "android") {
         setAvailable(false);
         return;
       }
-      const provider = Platform.OS === "android" ? healthConnectProvider : appleHealthProvider;
+      const provider = isAndroid ? healthConnectProvider : appleHealthProvider;
       const isAvailable = await provider.isAvailable();
       setAvailable(isAvailable);
       if (isAvailable && dataMode === "apple_health") await loadAppleHealth();
       if (isAvailable && dataMode === "health_connect") await loadHealthConnect();
     } catch (error) {
-      const healthError = getHealthErrorPresentation(error);
-      const name = Platform.OS === "android" ? "Health Connect" : "Apple Health";
-      setErrorMessage(`${name} refresh failed: ${healthError.message}`);
-      console.warn(`Unable to refresh ${name}`, healthError.kind);
+      const healthError = getHealthErrorPresentation(error, providerKey);
+      setErrorMessage(`${providerName} refresh failed: ${healthError.message}`);
+      console.warn(`Unable to refresh ${providerName}`, healthError.kind);
     } finally {
       setLoading(false);
     }
-  }, [applySummaries, dataMode, loadAppleHealth, loadHealthConnect]);
+  }, [applySummaries, dataMode, isAndroid, loadAppleHealth, loadHealthConnect, providerKey, providerName]);
 
   useEffect(() => {
     let active = true;
@@ -195,12 +196,11 @@ export default function HealthRecoveryScreen() {
     async function restoreConnection() {
       setLoading(true);
       try {
-        if (Platform.OS !== "ios" && Platform.OS !== "android") {
+        if (process.env.EXPO_OS !== "ios" && process.env.EXPO_OS !== "android") {
           if (active) setAvailable(false);
           return;
         }
 
-        const isAndroid = Platform.OS === "android";
         const provider = isAndroid ? healthConnectProvider : appleHealthProvider;
         const isAvailable = await provider.isAvailable();
         if (!active) return;
@@ -214,7 +214,7 @@ export default function HealthRecoveryScreen() {
         const requestStatus = await (isAndroid
           ? getHealthConnectAuthorizationRequestStatus()
           : getAppleHealthAuthorizationRequestStatus());
-        if (!active || !shouldRestoreAppleHealth(isAvailable, requestStatus, Boolean(stored))) {
+        if (!active || !shouldRestoreHealthConnection(isAvailable, requestStatus, Boolean(stored))) {
           return;
         }
 
@@ -234,16 +234,15 @@ export default function HealthRecoveryScreen() {
           await loadAppleHealth();
         }
       } catch (error) {
-        void (Platform.OS === "android" ? clearHealthConnectConnection() : clearAppleHealthConnection()).catch((storageError) => {
+        void (isAndroid ? clearHealthConnectConnection() : clearAppleHealthConnection()).catch((storageError) => {
           console.warn("Unable to clear health sync metadata", storageError);
         });
         if (active) {
-          const healthError = getHealthErrorPresentation(error);
+          const healthError = getHealthErrorPresentation(error, providerKey);
           setDataMode("disconnected");
           setLastSyncedAt(null);
-          const name = Platform.OS === "android" ? "Health Connect" : "Apple Health";
-          setErrorMessage(`${name} reconnect failed: ${healthError.message}`);
-          console.warn(`Unable to reconnect ${name}`, healthError.kind);
+          setErrorMessage(`${providerName} reconnect failed: ${healthError.message}`);
+          console.warn(`Unable to reconnect ${providerName}`, healthError.kind);
         }
       } finally {
         if (active) setLoading(false);
@@ -254,10 +253,10 @@ export default function HealthRecoveryScreen() {
     return () => {
       active = false;
     };
-  }, [applySummaries, loadAppleHealth, loadHealthConnect]);
+  }, [applySummaries, isAndroid, loadAppleHealth, loadHealthConnect, providerKey, providerName]);
 
   useEffect(() => {
-    if (Platform.OS !== "ios" || dataMode !== "apple_health") return;
+    if (process.env.EXPO_OS !== "ios" || dataMode !== "apple_health") return;
     const subscription = addAppleHealthChangeListener(() => {
       void loadAppleHealth().catch((error) => {
         console.warn("Unable to process Apple Health background update", getHealthErrorPresentation(error).kind);
@@ -270,7 +269,6 @@ export default function HealthRecoveryScreen() {
     setLoading(true);
     setErrorMessage(null);
     try {
-      const isAndroid = Platform.OS === "android";
       const provider = isAndroid ? healthConnectProvider : appleHealthProvider;
       const authorization = await provider.requestAuthorization(
         DEFAULT_HEALTH_READ_METRICS,
@@ -289,22 +287,19 @@ export default function HealthRecoveryScreen() {
       setDataMode(isAndroid ? "health_connect" : "apple_health");
       await (isAndroid ? loadHealthConnect() : loadAppleHealth());
     } catch (error) {
-      const healthError = getHealthErrorPresentation(error);
-      const name = Platform.OS === "android" ? "Health Connect" : "Apple Health";
-      setErrorMessage(`${name} connection failed: ${healthError.message}`);
-      Alert.alert(name, `Connection failed: ${healthError.message}`);
-      console.warn(`Unable to connect ${name}`, healthError.kind);
+      const healthError = getHealthErrorPresentation(error, providerKey);
+      setErrorMessage(`${providerName} connection failed: ${healthError.message}`);
+      Alert.alert(providerName, `Connection failed: ${healthError.message}`);
+      console.warn(`Unable to connect ${providerName}`, healthError.kind);
     } finally {
       setLoading(false);
     }
   }
 
   function disconnect() {
-    const isAndroid = Platform.OS === "android";
-    const name = isAndroid ? "Health Connect" : "Apple Health";
     Alert.alert(
-      `Disconnect ${name}?`,
-      `Fortomnia will forget this connection and clear the health summary shown here. ${name} permissions remain under your control in device settings.`,
+      `Disconnect ${providerName}?`,
+      `Fortomnia will forget this connection and clear the health summary shown here. ${providerName} permissions remain under your control in device settings.`,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -323,9 +318,9 @@ export default function HealthRecoveryScreen() {
                 setAssessment(null);
                 setErrorMessage(null);
               } catch (error) {
-                const healthError = getHealthErrorPresentation(error);
-                setErrorMessage(`Unable to disconnect ${name}: ${healthError.message}`);
-                console.warn(`Unable to disconnect ${name}`, healthError.kind);
+                const healthError = getHealthErrorPresentation(error, providerKey);
+                setErrorMessage(`Unable to disconnect ${providerName}: ${healthError.message}`);
+                console.warn(`Unable to disconnect ${providerName}`, healthError.kind);
               } finally {
                 setLoading(false);
               }
@@ -382,9 +377,7 @@ export default function HealthRecoveryScreen() {
         ? "From authorized Apple Health data"
         : dataMode === "health_connect"
           ? "From authorized Health Connect data"
-          : `Connect ${Platform.OS === "android" ? "Health Connect" : "Apple Health"} to populate`;
-
-  const providerName = Platform.OS === "android" ? "Health Connect" : "Apple Health";
+          : `Connect ${providerName} to populate`;
   const connected = dataMode === "apple_health" || dataMode === "health_connect";
 
   return (
@@ -475,9 +468,9 @@ export default function HealthRecoveryScreen() {
           <View style={styles.dataNotice}>
             <Ionicons name="information-circle-outline" size={20} color="#FBBF24" />
             <Text style={styles.dataNoticeText}>
-              Apple Health is connected, but no recent samples were returned. Apple does
-              not reveal whether read access was declined or data is unavailable. Check
-              Health access in Settings and confirm your watch has synced, then refresh.
+              {isAndroid
+                ? "Health Connect is connected, but no recent samples were returned. Review Fortomnia's permissions and confirm a connected health app has synced, then refresh."
+                : "Apple Health is connected, but no recent samples were returned. Apple does not reveal whether read access was declined or data is unavailable. Check Health access in Settings and confirm your watch has synced, then refresh."}
             </Text>
           </View>
         ) : null}
@@ -570,8 +563,8 @@ export default function HealthRecoveryScreen() {
         )}
 
         <Text style={styles.privacy}>
-          Recovery guidance supports training decisions and is not medical advice.
-          Apple controls Health authorization, which you can change at any time.
+          Recovery guidance supports training decisions and is not medical advice.{" "}
+          {providerName} authorization remains under your control and can be changed at any time.
         </Text>
       </ScrollView>
     </SafeAreaView>
