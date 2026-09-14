@@ -420,7 +420,7 @@ function handleDeleteAccount() {
             accessibilityHint="Manage training locations and their available equipment"
             accessibilityLabel="Training locations"
             accessibilityRole="button"
-            onPress={() => router.push("/(tabs)/training-locations")}
+            onPress={() => router.push("./training-locations")}
             style={styles.legalButton}
           >
             <View style={styles.legalButtonContent}>
