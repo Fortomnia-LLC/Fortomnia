@@ -6,10 +6,12 @@ import {
   getHealthSyncFreshness,
   parseAppleHealthConnection,
   shouldRestoreAppleHealth,
+  shouldRestoreHealthConnection,
 } from "../src/lib/health/healthConnection.ts";
 
 test("restores Apple Health after the authorization decision was handled", () => {
   assert.equal(shouldRestoreAppleHealth(true, "unnecessary", true), true);
+  assert.equal(shouldRestoreHealthConnection(true, "unnecessary", true), true);
 });
 
 test("keeps Connect visible when HealthKit still needs to request authorization", () => {
