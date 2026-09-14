@@ -15,6 +15,12 @@ test("app and widget share one narrowly scoped App Group", () => {
   assert.match(widget, new RegExp(group.replaceAll(".", "\\.")));
 });
 
+test("Apple extensions inherit the next App Store build number", () => {
+  const expoConfig = JSON.parse(app).expo;
+
+  assert.equal(expoConfig.ios.buildNumber, "27");
+});
+
 test("widget supports Home and Lock Screen families with privacy-safe links", () => {
   assert.match(widget, /\.systemSmall/);
   assert.match(widget, /\.systemMedium/);
