@@ -7,4 +7,10 @@ export type NativeHealthChanges = {
   anchors: NativeHealthAnchors;
 };
 export type NativeHealthDataChangedEvent = { metrics: NativeHealthMetric[] };
-
+export type NativeDailyHealthAggregate = {
+  date: string;
+  steps?: number | null;
+  activeEnergyKcal?: number | null;
+  sleepMinutes?: number | null;
+  workoutMinutes?: number | null;
+};

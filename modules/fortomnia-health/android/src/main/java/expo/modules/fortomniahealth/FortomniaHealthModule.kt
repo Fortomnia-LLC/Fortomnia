@@ -15,6 +15,7 @@ import androidx.health.connect.client.records.RestingHeartRateRecord
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.records.WeightRecord
+import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import expo.modules.kotlin.activityresult.AppContextActivityResultContract
@@ -78,6 +79,39 @@ class FortomniaHealthModule : Module() {
       metrics
         .filter { metric -> readPermission(metric)?.let(granted::contains) == true }
         .flatMap { readMetric(it, start, end) }
+    }
+
+    AsyncFunction("readDailyAggregates") Coroutine { dates: List<String>, startAts: List<String>, endAts: List<String> ->
+      require(dates.size == startAts.size && dates.size == endAts.size) {
+        "Health aggregate dates and ranges must have matching lengths"
+      }
+
+      val granted = client().permissionController.getGrantedPermissions()
+      val canReadSteps = granted.contains(HealthPermission.getReadPermission(StepsRecord::class))
+      val canReadActiveEnergy = granted.contains(HealthPermission.getReadPermission(ActiveCaloriesBurnedRecord::class))
+      val canReadSleep = granted.contains(HealthPermission.getReadPermission(SleepSessionRecord::class))
+      val canReadExercise = granted.contains(HealthPermission.getReadPermission(ExerciseSessionRecord::class))
+      val metrics = setOfNotNull(
+        StepsRecord.COUNT_TOTAL.takeIf { canReadSteps },
+        ActiveCaloriesBurnedRecord.ACTIVE_CALORIES_TOTAL.takeIf { canReadActiveEnergy },
+        SleepSessionRecord.SLEEP_DURATION_TOTAL.takeIf { canReadSleep },
+        ExerciseSessionRecord.EXERCISE_DURATION_TOTAL.takeIf { canReadExercise },
+      )
+
+      dates.indices.map { index ->
+        val start = Instant.parse(startAts[index])
+        val end = Instant.parse(endAts[index])
+        val aggregate = if (metrics.isEmpty()) null else client().aggregate(
+          AggregateRequest(metrics = metrics, timeRangeFilter = TimeRangeFilter.between(start, end)),
+        )
+        mapOf(
+          "date" to dates[index],
+          "steps" to aggregate?.get(StepsRecord.COUNT_TOTAL)?.toDouble(),
+          "activeEnergyKcal" to aggregate?.get(ActiveCaloriesBurnedRecord.ACTIVE_CALORIES_TOTAL)?.inKilocalories,
+          "sleepMinutes" to aggregate?.get(SleepSessionRecord.SLEEP_DURATION_TOTAL)?.toMinutes()?.toDouble(),
+          "workoutMinutes" to aggregate?.get(ExerciseSessionRecord.EXERCISE_DURATION_TOTAL)?.toMinutes()?.toDouble(),
+        )
+      }
     }
   }
 

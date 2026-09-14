@@ -2,8 +2,12 @@ import FortomniaHealth from "../../../modules/fortomnia-health";
 import type { NativeHealthMetric } from "../../../modules/fortomnia-health/src/FortomniaHealth.types";
 import { DEFAULT_HEALTH_READ_METRICS, type FortomniaHealthProvider, type HealthQuery } from "./healthProvider";
 import type { DailyHealthSummary, HealthAuthorization, HealthMetric, HealthSample } from "./healthTypes";
-import { getHealthQueryRange, summarizeHealthDay, summarizeHealthRange } from "./healthNormalization";
+import { getHealthQueryRange, summarizeHealthRange } from "./healthNormalization";
 import { saveHealthConnectSampleCache } from "./healthConnectStorage";
+import {
+  applyHealthConnectAggregates,
+  getLocalHealthDayRange,
+} from "./healthConnectAggregation";
 
 const nativeMetrics = (metrics: HealthMetric[]) => metrics as NativeHealthMetric[];
 export const HEALTH_CONNECT_RECOVERY_METRICS = DEFAULT_HEALTH_READ_METRICS;
@@ -21,6 +25,21 @@ export async function syncHealthConnectSamples(query: HealthQuery): Promise<Heal
   const samples = await healthConnectProvider.readSamples(query);
   await saveHealthConnectSampleCache(samples);
   return samples;
+}
+
+export async function summarizeHealthConnectRange(
+  startDate: string,
+  endDate: string,
+  samples: HealthSample[],
+): Promise<DailyHealthSummary[]> {
+  const summaries = summarizeHealthRange(startDate, endDate, samples);
+  const ranges = summaries.map(({ date }) => getLocalHealthDayRange(date));
+  const aggregates = await FortomniaHealth.readDailyAggregates(
+    summaries.map(({ date }) => date),
+    ranges.map(({ startAt }) => startAt),
+    ranges.map(({ endAt }) => endAt),
+  );
+  return applyHealthConnectAggregates(summaries, aggregates);
 }
 
 export const healthConnectProvider: FortomniaHealthProvider = {
@@ -47,11 +66,20 @@ export const healthConnectProvider: FortomniaHealthProvider = {
   },
   async readDailySummary(date: string): Promise<DailyHealthSummary> {
     const { startAt, endAt } = getHealthQueryRange(date, date);
-    return summarizeHealthDay(date, await this.readSamples({ metrics: HEALTH_CONNECT_RECOVERY_METRICS, startAt, endAt }));
+    const summaries = await summarizeHealthConnectRange(
+      date,
+      date,
+      await this.readSamples({ metrics: HEALTH_CONNECT_RECOVERY_METRICS, startAt, endAt }),
+    );
+    return summaries[0];
   },
   async readDailySummaries(startDate: string, endDate: string) {
     const { startAt, endAt } = getHealthQueryRange(startDate, endDate);
-    return summarizeHealthRange(startDate, endDate, await this.readSamples({ metrics: HEALTH_CONNECT_RECOVERY_METRICS, startAt, endAt }));
+    return summarizeHealthConnectRange(
+      startDate,
+      endDate,
+      await this.readSamples({ metrics: HEALTH_CONNECT_RECOVERY_METRICS, startAt, endAt }),
+    );
   },
   async writeSamples() { throw new Error("Health Connect writes are not enabled yet."); },
 };

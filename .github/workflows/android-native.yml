@@ -1,0 +1,57 @@
+name: Android native compile
+
+on:
+  pull_request:
+    paths:
+      - "modules/fortomnia-health/**"
+      - "app.json"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/android-native.yml"
+  push:
+    branches:
+      - "milestone/**"
+    paths:
+      - "modules/fortomnia-health/**"
+      - "app.json"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/android-native.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-native-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compile:
+    name: Compile Android release Kotlin
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate the Android project
+        run: npx expo prebuild --platform android --clean
+
+      - name: Compile release Kotlin
+        run: ./android/gradlew :app:compileReleaseKotlin --no-daemon
