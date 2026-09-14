@@ -6,7 +6,7 @@ import {
   type StoredHealthConnection,
 } from "./healthConnection";
 import type { HealthSample } from "./healthTypes";
-import { normalizeAppleHealthSampleCache } from "./healthSampleReconciliation";
+import { normalizeHealthSampleCache } from "./healthSampleReconciliation";
 
 const CONNECTION_KEY = "fortomnia.health-connect.connection";
 const SAMPLE_CACHE_KEY = "fortomnia.health-connect.samples.v1";
@@ -30,7 +30,7 @@ export async function loadHealthConnectSampleCache(): Promise<HealthSample[]> {
   const stored = await AsyncStorage.getItem(SAMPLE_CACHE_KEY);
   if (!stored) return [];
   try {
-    return normalizeAppleHealthSampleCache(JSON.parse(stored));
+    return normalizeHealthSampleCache(JSON.parse(stored), "health_connect");
   } catch {
     await AsyncStorage.removeItem(SAMPLE_CACHE_KEY);
     return [];
@@ -38,7 +38,10 @@ export async function loadHealthConnectSampleCache(): Promise<HealthSample[]> {
 }
 
 export async function saveHealthConnectSampleCache(samples: HealthSample[]): Promise<void> {
-  await AsyncStorage.setItem(SAMPLE_CACHE_KEY, JSON.stringify(normalizeAppleHealthSampleCache(samples)));
+  await AsyncStorage.setItem(
+    SAMPLE_CACHE_KEY,
+    JSON.stringify(normalizeHealthSampleCache(samples, "health_connect")),
+  );
 }
 
 export async function clearHealthConnectConnection(): Promise<void> {

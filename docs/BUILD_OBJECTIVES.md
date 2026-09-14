@@ -62,6 +62,11 @@ Priority legend: **P0** = foundation required before dependent feature work expa
 - Built the first iPhone and Lock Screen widget target with a shared App Group, minimal workout/health snapshot, privacy redaction, stale/empty handling, and deep links back into Fortomnia.
 - Added ownership-safe training locations with per-location equipment and notes, active-location selection, and equipment-aware program generation that follows the active location.
 
+### Completed increments — 2026-09-14
+
+- Made Recovery connection, refresh, empty-data, disconnect, privacy, and error states provider-correct for Apple Health and Health Connect.
+- Replaced Apple-only sample-cache validation with provider-keyed normalization and reconciliation so valid Health Connect samples persist without cross-provider contamination.
+
 ### Objective ledger
 
 | Objective | Status on `milestone/15-health-wearables` | Existing foundation | Remaining acceptance target |
