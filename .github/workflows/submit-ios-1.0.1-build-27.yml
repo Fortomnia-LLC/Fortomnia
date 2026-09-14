@@ -1,0 +1,42 @@
+name: Submit iOS 1.0.1 Build 27 to App Store Connect
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - milestone/15-health-wearables
+    paths:
+      - .github/workflows/submit-ios-1.0.1-build-27.yml
+
+concurrency:
+  group: submit-ios-1-0-1-build-27
+  cancel-in-progress: true
+
+jobs:
+  submit:
+    name: Submit iOS 1.0.1 (27) to App Store Connect
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Fortomnia
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set up Expo and EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Verify Expo authentication
+        run: eas whoami
+
+      - name: Upload build 27 to App Store Connect
+        run: eas submit --platform ios --profile production --id 816fd25c-e926-453d-a618-6a6a8c6636c6 --non-interactive --no-wait
