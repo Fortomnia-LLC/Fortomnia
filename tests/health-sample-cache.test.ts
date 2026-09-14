@@ -100,3 +100,28 @@ test("reconciles Health Connect changes through the shared provider contract", (
     { id: "new", value: 1 },
   ]);
 });
+
+test("invalid cross-provider additions cannot evict valid cached samples", () => {
+  const validStored = sample(
+    "shared-id",
+    "2026-09-01T12:00:00.000Z",
+    1,
+    "health_connect",
+  );
+  const collidingAppleSample = sample(
+    "shared-id",
+    "2026-09-01T13:00:00.000Z",
+    2,
+    "apple_health",
+  );
+
+  const result = reconcileHealthSamples(
+    "health_connect",
+    [validStored],
+    [collidingAppleSample],
+    [],
+    "2026-09-01T00:00:00.000Z",
+  );
+
+  assert.deepEqual(result, [validStored]);
+});

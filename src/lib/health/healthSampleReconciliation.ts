@@ -42,15 +42,19 @@ export function reconcileHealthSamples(
   stored: HealthSample[], additions: HealthSample[], deletedIds: string[], retainFrom: string,
 ): HealthSample[] {
   const deleted = new Set(deletedIds.filter((id) => typeof id === "string" && id.length > 0));
+  const normalizedStored = normalizeHealthSampleCache(stored, provider);
+  const normalizedAdditions = normalizeHealthSampleCache(additions, provider);
   const replaced = new Set(
-    additions.flatMap((sample) => [sample.id, sample.externalId ?? ""]).filter(Boolean),
+    normalizedAdditions
+      .flatMap((sample) => [sample.id, sample.externalId ?? ""])
+      .filter(Boolean),
   );
-  const retained = stored.filter(
+  const retained = normalizedStored.filter(
     (sample) => !deleted.has(sample.id) && !deleted.has(sample.externalId ?? "") &&
       !replaced.has(sample.id) && !replaced.has(sample.externalId ?? "") &&
       (sample.endAt ?? sample.startAt) >= retainFrom,
   );
-  return normalizeHealthSampleCache([...retained, ...additions], provider)
+  return normalizeHealthSampleCache([...retained, ...normalizedAdditions], provider)
     .filter((sample) => (sample.endAt ?? sample.startAt) >= retainFrom)
     .sort((a, b) => a.startAt.localeCompare(b.startAt) || a.id.localeCompare(b.id));
 }
