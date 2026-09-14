@@ -64,6 +64,11 @@ Priority legend: **P0** = foundation required before dependent feature work expa
 
 ### Completed increments — 2026-09-14
 
+- Made the shared health sample cache provider-aware so valid Health Connect records survive reconciliation without accepting cross-provider entries.
+- Added Health Connect privacy-rationale routing for Android 13-and-earlier and Android 14+, backed by a public Fortomnia health-data policy link and manifest regression coverage.
+
+### Completed increments — 2026-09-14
+
 - Made Recovery connection, refresh, empty-data, disconnect, privacy, and error states provider-correct for Apple Health and Health Connect.
 - Replaced Apple-only sample-cache validation with provider-keyed normalization and reconciliation so valid Health Connect samples persist without cross-provider contamination.
 
@@ -79,7 +84,7 @@ Priority legend: **P0** = foundation required before dependent feature work expa
 | iPhone and Lock Screen widgets | In progress | WidgetKit Home Screen and Lock Screen target, shared App Group, minimal workout/health snapshot, privacy redaction, stale/empty states, system-limited refresh, and Fortomnia deep links are implemented | Validate signing and rendering on physical iPhone/Lock Screen, then expand the snapshot to next-workout and reminder states |
 | Workout recording and HealthKit write-back | In progress | Native module declares workout/body write types, but the current product flow is read-oriented | Implement workout-session lifecycle, permission UX, write-back, duplicate prevention, and—where architecture permits—Watch/iPhone workout mirroring |
 | Reliable health sync | Complete foundation | Anchored/incremental queries, background observer delivery, stable sample IDs, deletion reconciliation, idempotent bounded caching, and observable last-sync state are implemented | Validate long-running delivery and retry behavior on hardware; finalize source priority and server retention rules |
-| Android health | In progress | Cross-provider types include `health_connect`; the existing `fortomnia-health` module includes availability, permissions, and normalized reads, while the Recovery UI now restores durable connection/cache state and presents provider-correct refresh, permission, empty-data, disconnect, and privacy guidance | Add incremental changes, background ingestion, source precedence, privacy-rationale routing, write-back, and physical-device validation |
+| Android health | In progress | Cross-provider types include `health_connect`; the existing `fortomnia-health` module includes availability, permissions, normalized reads, provider-aware cache reconciliation, Recovery UI integration, and Health Connect privacy-rationale routing across supported Android versions | Add incremental changes, background ingestion, aggregate reads that honor user-selected source precedence, write-back, and physical-device validation |
 | AI coach profile/onboarding | In progress | Existing questionnaire/profile migrations and deterministic training intelligence | Extend the existing profile; do not create a second onboarding or coach-profile store |
 | AI coaching runtime | Required | Premium AI design and `user_entitlements` architecture are documented in [PREMIUM_AI_COACH.md](./PREMIUM_AI_COACH.md) | Add protected server-side model execution, structured training/recovery context, consent, rate limits, cost controls, auditability, data deletion, and graceful deterministic fallback |
 | AI coaching behaviors | Required | Deterministic progression and recovery guidance already provide safe inputs | Add weekly review, readiness-aware recommendations, exercise substitutions, explanations and confidence, explicit user confirmation before plan changes, and conversational history boundaries |
