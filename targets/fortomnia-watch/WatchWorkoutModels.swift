@@ -23,6 +23,7 @@ struct WatchWorkoutSnapshot: Codable, Equatable {
   let startedAt: String
   let completedSetsByExercise: [String: Int]
   let currentExerciseId: String?
+  let restEndsAt: String?
   let exercises: [WatchPlannedExercise]
 }
 

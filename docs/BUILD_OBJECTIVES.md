@@ -75,7 +75,7 @@ Priority legend: **P0** = foundation required before dependent feature work expa
 - Added the native ActivityKit foundation for an active workout, including current exercise, completed-set progress, rest countdown, Dynamic Island presentation, and workout deep links.
 - Made phone-to-Watch snapshots identify the current exercise and per-exercise completed-set counts, and routed Watch-originated sets through the same durable, idempotent workout repository used by the phone.
 - Persisted Watch actions on both devices until acknowledgement so a temporary disconnect or app restart does not silently lose a logged set.
-- Moved rest-timer completion to a local system notification with sound and workout deep linking so it can alert while Fortomnia is backgrounded or closed.
+- Moved rest-timer completion to independent local system notifications on iPhone and Apple Watch, with sound and workout deep linking on the phone, so alerts can fire while Fortomnia is backgrounded or closed.
 
 ### Completed increments — 2026-09-14
 

@@ -6,7 +6,7 @@ module.exports = {
   bundleIdentifier: ".watch",
   deploymentTarget: "10.0",
   icon: "../../assets/icon.png",
-  frameworks: ["SwiftUI", "WatchConnectivity", "HealthKit", "WatchKit"],
+  frameworks: ["SwiftUI", "WatchConnectivity", "HealthKit", "WatchKit", "UserNotifications"],
   colors: {
     $accent: "#FF6B35",
   },

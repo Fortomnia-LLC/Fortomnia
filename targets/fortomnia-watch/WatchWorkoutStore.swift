@@ -1,4 +1,5 @@
 import Foundation
+import UserNotifications
 import WatchConnectivity
 import WatchKit
 
@@ -21,6 +22,7 @@ final class WatchWorkoutStore: NSObject, ObservableObject {
   private let storedSnapshotKey = "fortomnia.watch.snapshot.v1"
   private let storedActionsKey = "fortomnia.watch.pending-actions.v1"
   private let storedSetCountsKey = "fortomnia.watch.completed-set-counts.v1"
+  private let restTimerNotificationId = "fortomnia.watch.rest-timer"
   private let encoder = JSONEncoder()
   private let decoder = JSONDecoder()
   private let defaults: UserDefaults
@@ -31,6 +33,7 @@ final class WatchWorkoutStore: NSObject, ObservableObject {
     super.init()
     restore()
     activateConnectivity()
+    requestNotificationAuthorization()
     loadExerciseDefaults()
   }
 
@@ -148,6 +151,7 @@ final class WatchWorkoutStore: NSObject, ObservableObject {
     }
     if let encoded = try? encoder.encode(incoming) { defaults.set(encoded, forKey: storedSnapshotKey) }
     persistActions()
+    scheduleRestTimerNotification(incoming.restEndsAt)
     loadExerciseDefaults()
   }
 
@@ -163,7 +167,48 @@ final class WatchWorkoutStore: NSObject, ObservableObject {
     exerciseIndex = 0
     completedSetCounts = [:]
     defaults.removeObject(forKey: storedSnapshotKey)
+    UNUserNotificationCenter.current().removePendingNotificationRequests(
+      withIdentifiers: [restTimerNotificationId]
+    )
     persistActions()
+  }
+
+  private func requestNotificationAuthorization() {
+    UNUserNotificationCenter.current().requestAuthorization(
+      options: [.alert, .sound]
+    ) { _, _ in }
+  }
+
+  private func scheduleRestTimerNotification(_ restEndsAt: String?) {
+    let center = UNUserNotificationCenter.current()
+    center.removePendingNotificationRequests(withIdentifiers: [restTimerNotificationId])
+    guard let restEndsAt,
+          let date = parseISO8601Date(restEndsAt) else { return }
+    let delay = date.timeIntervalSinceNow
+    guard delay > 0 else { return }
+
+    let content = UNMutableNotificationContent()
+    content.title = "Rest complete"
+    content.body = "Time for your next set."
+    content.sound = .default
+    content.categoryIdentifier = "rest_timer"
+    let trigger = UNTimeIntervalNotificationTrigger(
+      timeInterval: max(1, delay),
+      repeats: false
+    )
+    center.add(
+      UNNotificationRequest(
+        identifier: restTimerNotificationId,
+        content: content,
+        trigger: trigger
+      )
+    )
+  }
+
+  private func parseISO8601Date(_ value: String) -> Date? {
+    let fractional = ISO8601DateFormatter()
+    fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    return fractional.date(from: value) ?? ISO8601DateFormatter().date(from: value)
   }
 
   private func sendPendingActions() {

@@ -120,4 +120,23 @@ test("phone snapshot tells the watch the current exercise and set counts", () =>
   assert.equal(snapshot.version, WATCH_WORKOUT_CONTRACT_VERSION);
   assert.equal(snapshot.currentExerciseId, "row");
   assert.deepEqual(snapshot.completedSetsByExercise, { bench: 2 });
+  assert.equal(snapshot.restEndsAt, null);
+});
+
+test("phone snapshot carries the active rest deadline to the watch", () => {
+  const endsAt = Date.parse("2026-09-15T12:02:00.000Z");
+  const snapshot = buildWatchWorkoutSnapshot(
+    {
+      completed_at: null,
+      id: "workout-1",
+      name: "Push Pull",
+      notes: null,
+      started_at: "2026-09-15T12:00:00.000Z",
+    },
+    [],
+    [],
+    endsAt,
+  );
+
+  assert.equal(snapshot.restEndsAt, "2026-09-15T12:02:00.000Z");
 });

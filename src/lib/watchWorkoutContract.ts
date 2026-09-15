@@ -30,6 +30,7 @@ export type WatchWorkoutSnapshot = {
   startedAt: string;
   completedSetsByExercise: Record<string, number>;
   currentExerciseId: string | null;
+  restEndsAt: string | null;
   exercises: WatchPlannedExercise[];
 };
 
@@ -60,6 +61,7 @@ export function buildWatchWorkoutSnapshot(
   workout: WorkoutDetail,
   plannedExercises: PlannedExercise[],
   sets: LoggedSet[],
+  restEndsAt: number | null = null,
 ): WatchWorkoutSnapshot {
   const completedSetsByExercise = sets.reduce<Record<string, number>>(
     (counts, set) => {
@@ -80,6 +82,7 @@ export function buildWatchWorkoutSnapshot(
     startedAt: workout.started_at,
     completedSetsByExercise,
     currentExerciseId,
+    restEndsAt: restEndsAt === null ? null : new Date(restEndsAt).toISOString(),
     exercises: plannedExercises.map((exercise) => ({
       exerciseId: exercise.exercise_id,
       name: exercise.exercise_name,

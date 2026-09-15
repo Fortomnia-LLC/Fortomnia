@@ -22,6 +22,7 @@ import { workoutRepository } from "../repositories/supabaseWorkoutRepository";
 type WatchWorkoutSyncOptions = {
   plannedExercises: PlannedExercise[];
   refreshWorkout(): Promise<void>;
+  restEndsAt: number | null;
   sets: LoggedSet[];
   userId: string | undefined;
   workout: WorkoutDetail | null;
@@ -56,6 +57,7 @@ function watchActionToSet(
 export function useWatchWorkoutSync({
   plannedExercises,
   refreshWorkout,
+  restEndsAt,
   sets,
   userId,
   workout,
@@ -121,7 +123,12 @@ export function useWatchWorkoutSync({
 
     void transferWorkoutSnapshot(
       FortomniaWatch,
-      buildWatchWorkoutSnapshot(activeWorkout, plannedExercises, sets),
+      buildWatchWorkoutSnapshot(
+        activeWorkout,
+        plannedExercises,
+        sets,
+        restEndsAt,
+      ),
     );
     }).catch((error: unknown) => {
       console.warn(
@@ -134,5 +141,5 @@ export function useWatchWorkoutSync({
       disposed = true;
       subscription?.remove();
     };
-  }, [plannedExercises, refreshWorkout, sets, userId, workout]);
+  }, [plannedExercises, refreshWorkout, restEndsAt, sets, userId, workout]);
 }

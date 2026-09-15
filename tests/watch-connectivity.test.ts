@@ -47,6 +47,7 @@ test("serializes the versioned workout snapshot for the native transport", async
     startedAt: "2026-09-03T12:00:00.000Z",
     completedSetsByExercise: {},
     currentExerciseId: null,
+    restEndsAt: null,
     exercises: [],
   };
   const state = await transferWorkoutSnapshot(mock.value, snapshot);

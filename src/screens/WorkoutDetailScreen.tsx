@@ -273,6 +273,7 @@ export default function WorkoutDetailScreen() {
   useWatchWorkoutSync({
     plannedExercises,
     refreshWorkout,
+    restEndsAt,
     sets,
     userId: session?.user.id,
     workout,
