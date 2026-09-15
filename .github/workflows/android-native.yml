@@ -54,4 +54,5 @@ jobs:
         run: npx expo prebuild --platform android --clean
 
       - name: Compile release Kotlin
-        run: ./android/gradlew :app:compileReleaseKotlin --no-daemon
+        working-directory: android
+        run: ./gradlew :app:compileReleaseKotlin --no-daemon
