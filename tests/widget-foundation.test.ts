@@ -6,6 +6,7 @@ const app = readFileSync("app.json", "utf8");
 const config = readFileSync("targets/fortomnia-widgets/expo-target.config.js", "utf8");
 const widget = readFileSync("targets/fortomnia-widgets/FortomniaWidgets.swift", "utf8");
 const sync = readFileSync("src/components/WidgetSnapshotSync.tsx", "utf8");
+const repository = readFileSync("src/repositories/widget-snapshot-repository.ts", "utf8");
 
 test("app and widget share one narrowly scoped App Group", () => {
   const group = "group.com.grc0830source.fortomnia.widgets";
@@ -33,8 +34,22 @@ test("widget supports Home and Lock Screen families with privacy-safe links", ()
 test("the app publishes only a minimal widget snapshot", () => {
   assert.match(sync, /activeWorkoutName/);
   assert.match(sync, /activeWorkoutSets/);
+  assert.match(sync, /activeWorkoutPlannedSets/);
   assert.match(sync, /healthLastSyncedAt/);
+  assert.match(sync, /nextWorkoutName/);
+  assert.match(sync, /nextWorkoutExerciseCount/);
+  assert.match(sync, /nextWorkoutLocationName/);
   assert.doesNotMatch(sync, /sleep|heartRate|hrv|weight/i);
+});
+
+test("next-workout widget data uses the existing templates and active location", () => {
+  assert.match(repository, /from\("workout_templates"\)/);
+  assert.match(repository, /order\("updated_at", \{ ascending: false \}\)/);
+  assert.match(repository, /from\("workout_template_exercises"\)/);
+  assert.match(repository, /from\("training_locations"\)/);
+  assert.match(repository, /eq\("is_active", true\)/);
+  assert.match(widget, /fortomnia:\/\/template\//);
+  assert.match(widget, /Workout ready/);
 });
 
 test("widget changes trigger the signed iOS extensions build", () => {

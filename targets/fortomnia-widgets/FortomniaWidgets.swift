@@ -8,12 +8,19 @@ struct FortomniaSnapshot: Codable {
   let activeWorkoutId: String
   let activeWorkoutName: String
   let activeWorkoutSets: Int
+  let activeWorkoutPlannedSets: Int?
   let healthLastSyncedAt: String
+  let nextWorkoutExerciseCount: Int?
+  let nextWorkoutId: String?
+  let nextWorkoutLocationName: String?
+  let nextWorkoutName: String?
   let updatedAt: String
 
   static let empty = FortomniaSnapshot(
     activeWorkoutId: "", activeWorkoutName: "", activeWorkoutSets: 0,
-    healthLastSyncedAt: "", updatedAt: ""
+    activeWorkoutPlannedSets: 0, healthLastSyncedAt: "",
+    nextWorkoutExerciseCount: 0, nextWorkoutId: "",
+    nextWorkoutLocationName: "", nextWorkoutName: "", updatedAt: ""
   )
 }
 
@@ -57,26 +64,65 @@ struct FortomniaStatusView: View {
     return "Health updated"
   }
 
+  private var hasActiveWorkout: Bool {
+    !entry.snapshot.activeWorkoutName.isEmpty
+  }
+
+  private var nextWorkoutName: String {
+    entry.snapshot.nextWorkoutName ?? ""
+  }
+
+  private var hasNextWorkout: Bool {
+    !nextWorkoutName.isEmpty
+  }
+
+  private var destination: URL? {
+    if hasActiveWorkout {
+      return URL(string: "fortomnia://workout/\(entry.snapshot.activeWorkoutId)")
+    }
+    if hasNextWorkout, let id = entry.snapshot.nextWorkoutId, !id.isEmpty {
+      return URL(string: "fortomnia://template/\(id)")
+    }
+    return URL(string: "fortomnia://health-recovery")
+  }
+
+  private var workoutProgressLabel: String {
+    let planned = entry.snapshot.activeWorkoutPlannedSets ?? 0
+    return planned > 0
+      ? "\(entry.snapshot.activeWorkoutSets) of \(planned) sets"
+      : "\(entry.snapshot.activeWorkoutSets) sets logged"
+  }
+
+  private var nextWorkoutDetail: String {
+    let count = entry.snapshot.nextWorkoutExerciseCount ?? 0
+    let location = entry.snapshot.nextWorkoutLocationName ?? ""
+    let exerciseLabel = count == 1 ? "1 exercise" : "\(count) exercises"
+    if !location.isEmpty && count > 0 { return "\(exerciseLabel) • \(location)" }
+    if !location.isEmpty { return location }
+    if count > 0 { return exerciseLabel }
+    return "Workout ready"
+  }
+
   var body: some View {
     if family == .accessoryRectangular {
       VStack(alignment: .leading, spacing: 2) {
-        Text(entry.snapshot.activeWorkoutName.isEmpty ? "Fortomnia" : entry.snapshot.activeWorkoutName)
+        Text(hasActiveWorkout ? entry.snapshot.activeWorkoutName : (hasNextWorkout ? nextWorkoutName : "Fortomnia"))
           .font(.headline).lineLimit(1)
-        Text(entry.snapshot.activeWorkoutName.isEmpty ? healthLabel : "\(entry.snapshot.activeWorkoutSets) sets logged")
+        Text(hasActiveWorkout ? workoutProgressLabel : (hasNextWorkout ? nextWorkoutDetail : healthLabel))
           .font(.caption).privacySensitive()
       }
-      .widgetURL(URL(string: entry.snapshot.activeWorkoutName.isEmpty ? "fortomnia://health-recovery" : "fortomnia://workout/\(entry.snapshot.activeWorkoutId)"))
+      .widgetURL(destination)
     } else {
       VStack(alignment: .leading, spacing: 8) {
         Label("FORTOMNIA", systemImage: "bolt.heart.fill")
           .font(.caption.bold()).foregroundStyle(.orange)
         Spacer()
-        Text(entry.snapshot.activeWorkoutName.isEmpty ? "Ready when you are" : entry.snapshot.activeWorkoutName)
+        Text(hasActiveWorkout ? entry.snapshot.activeWorkoutName : (hasNextWorkout ? nextWorkoutName : "Ready when you are"))
           .font(.headline).lineLimit(2)
-        Text(entry.snapshot.activeWorkoutName.isEmpty ? healthLabel : "\(entry.snapshot.activeWorkoutSets) sets logged")
+        Text(hasActiveWorkout ? workoutProgressLabel : (hasNextWorkout ? nextWorkoutDetail : healthLabel))
           .font(.caption).foregroundStyle(.secondary).privacySensitive()
       }
-      .widgetURL(URL(string: entry.snapshot.activeWorkoutName.isEmpty ? "fortomnia://health-recovery" : "fortomnia://workout/\(entry.snapshot.activeWorkoutId)"))
+      .widgetURL(destination)
       .containerBackground(Color(red: 0.043, green: 0.043, blue: 0.043), for: .widget)
     }
   }
