@@ -31,6 +31,7 @@ export type SupplementFrequency =
 export type SupplementDoseSlot = "single" | "morning" | "evening";
 
 export type SupplementProtocol = {
+  barcode: string | null;
   category: SupplementCategory;
   dose_amount: number;
   dose_unit: string;
@@ -41,6 +42,10 @@ export type SupplementProtocol = {
   is_active: boolean;
   name: string;
   notes: string | null;
+  product_ingredients: string | null;
+  product_serving: string | null;
+  product_source: string | null;
+  product_source_url: string | null;
   route: SupplementRoute;
   scheduled_days: number[];
   scheduled_time: string | null;
@@ -91,6 +96,7 @@ export function useSupplements(logDate: string) {
         .select(
           `
             id,
+            barcode,
             name,
             category,
             dose_amount,
@@ -104,7 +110,11 @@ export function useSupplements(logDate: string) {
             start_date,
             end_date,
             is_active,
-            notes
+            notes,
+            product_ingredients,
+            product_serving,
+            product_source,
+            product_source_url
           `,
         )
         .order("is_active", { ascending: false })
