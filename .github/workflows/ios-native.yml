@@ -4,8 +4,10 @@ on:
   pull_request:
     paths:
       - "modules/fortomnia-health/**"
+      - "modules/fortomnia-live-activity/**"
       - "modules/fortomnia-watch/**"
       - "targets/fortomnia-watch/**"
+      - "targets/fortomnia-widgets/**"
       - "app.json"
       - "package.json"
       - "package-lock.json"
@@ -15,8 +17,10 @@ on:
       - "milestone/**"
     paths:
       - "modules/fortomnia-health/**"
+      - "modules/fortomnia-live-activity/**"
       - "modules/fortomnia-watch/**"
       - "targets/fortomnia-watch/**"
+      - "targets/fortomnia-widgets/**"
       - "app.json"
       - "package.json"
       - "package-lock.json"

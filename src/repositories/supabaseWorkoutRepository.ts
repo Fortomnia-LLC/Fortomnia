@@ -224,6 +224,13 @@ class SupabaseWorkoutRepository implements WorkoutRepository {
       );
     }
 
+    if (
+      input.clientSetId &&
+      snapshot.detail.sets.some(({ id }) => id === input.clientSetId)
+    ) {
+      return "synced";
+    }
+
     const existing = input.setId
       ? snapshot.detail.sets.find(({ id }) => id === input.setId)
       : undefined;
@@ -234,7 +241,7 @@ class SupabaseWorkoutRepository implements WorkoutRepository {
       Math.max(0, ...snapshot.detail.sets
         .filter(({ exercise_id }) => exercise_id === input.exerciseId)
         .map(({ set_number }) => set_number)) + 1;
-    const setId = input.setId ?? this.createUuid();
+    const setId = input.setId ?? input.clientSetId ?? this.createUuid();
     const createdAt = new Date().toISOString();
     return this.queueAndAttempt({
       createdAt,

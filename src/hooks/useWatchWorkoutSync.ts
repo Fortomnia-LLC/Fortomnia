@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { Platform } from "react-native";
 
 import type {
+  LoggedSet,
   PlannedExercise,
   WorkoutDetail,
 } from "./useWorkoutSession";
@@ -11,69 +12,53 @@ import {
   transferWorkoutSnapshot,
 } from "../lib/watchConnectivity";
 import {
+  buildWatchWorkoutSnapshot,
   WATCH_WORKOUT_CONTRACT_VERSION,
   type WatchWorkoutAction,
   type WatchWorkoutSnapshot,
 } from "../lib/watchWorkoutContract";
-import { supabase } from "../lib/supabase";
+import { workoutRepository } from "../repositories/supabaseWorkoutRepository";
 
 type WatchWorkoutSyncOptions = {
   plannedExercises: PlannedExercise[];
   refreshWorkout(): Promise<void>;
+  restEndsAt: number | null;
+  sets: LoggedSet[];
   userId: string | undefined;
   workout: WorkoutDetail | null;
 };
 
-function buildSnapshot(
-  workout: WorkoutDetail,
-  plannedExercises: PlannedExercise[],
-): WatchWorkoutSnapshot {
+function watchActionToSet(
+  action: WatchWorkoutAction,
+  exerciseName: string,
+  userId: string,
+) {
   return {
-    version: WATCH_WORKOUT_CONTRACT_VERSION,
-    sessionId: workout.id,
-    name: workout.name,
-    startedAt: workout.started_at,
-    exercises: plannedExercises.map((exercise) => ({
-      exerciseId: exercise.exercise_id,
-      name: exercise.exercise_name,
-      performanceType: exercise.performance_type,
-      position: exercise.position,
-      repMin: exercise.rep_min,
-      repMax: exercise.rep_max,
-      targetDurationSeconds: exercise.target_duration_seconds,
-      targetMetricValue: exercise.target_metric_value ?? null,
-      targetMetricUnit: exercise.target_metric_unit ?? null,
-      targetRir: exercise.target_rir,
-      targetSets: exercise.target_sets,
-    })),
-  };
-}
-
-function watchActionToSet(action: WatchWorkoutAction, userId: string) {
-  return {
-    id: action.actionId,
-    duration_seconds: action.payload.durationSeconds,
-    exercise_id: action.payload.exerciseId,
-    metric_unit: action.payload.metricUnit,
-    metric_value: action.payload.metricValue,
-    parent_set_id: null,
-    performance_type: action.payload.performanceType,
-    performed_at: action.createdAt,
+    clientSetId: action.actionId,
+    durationSeconds: action.payload.durationSeconds,
+    exerciseId: action.payload.exerciseId,
+    exerciseName,
+    intensityRpe: null,
+    metricUnit: action.payload.metricUnit,
+    metricValue: action.payload.metricValue,
+    parentSetId: null,
+    performanceType: action.payload.performanceType,
     reps: action.payload.reps ?? 0,
-    reps_in_reserve: action.payload.rir,
-    session_id: action.sessionId,
-    set_number: action.payload.setNumber,
-    set_type: "working" as const,
-    set_variant: "standard" as const,
-    user_id: userId,
+    repsInReserve: action.payload.rir,
+    sessionId: action.sessionId,
+    setType: "working" as const,
+    setVariant: "standard" as const,
+    userId,
     weight: action.payload.weight,
-    weight_unit: action.payload.weightUnit,
+    weightUnit: action.payload.weightUnit,
   };
 }
 
 export function useWatchWorkoutSync({
   plannedExercises,
   refreshWorkout,
+  restEndsAt,
+  sets,
   userId,
   workout,
 }: WatchWorkoutSyncOptions): void {
@@ -95,27 +80,23 @@ export function useWatchWorkoutSync({
       );
       if (actions.length === 0) return;
 
-      const actionIds = actions.map((action) => action.actionId);
-      const { data: existing, error: lookupError } = await supabase
-        .from("workout_sets")
-        .select("id")
-        .eq("session_id", activeWorkout.id)
-        .eq("user_id", userId)
-        .in("id", actionIds);
-
-      if (lookupError) return;
-
-      const existingIds = new Set((existing ?? []).map(({ id }) => id));
-      const missing = actions.filter(({ actionId }) => !existingIds.has(actionId));
-
-      if (missing.length > 0) {
-        const { error: insertError } = await supabase
-          .from("workout_sets")
-          .insert(missing.map((action) => watchActionToSet(action, userId)));
-        if (insertError) return;
+      const processed: WatchWorkoutAction[] = [];
+      for (const action of actions) {
+        const exercise = plannedExercises.find(
+          ({ exercise_id }) => exercise_id === action.payload.exerciseId,
+        );
+        if (!exercise) continue;
+        try {
+          await workoutRepository.saveSet(
+            watchActionToSet(action, exercise.exercise_name, userId),
+          );
+          processed.push(action);
+        } catch {
+          break;
+        }
       }
 
-      await acknowledgeProcessedWatchActions(FortomniaWatch, actions);
+      await acknowledgeProcessedWatchActions(FortomniaWatch, processed);
       if (!disposed) await refreshWorkout();
     };
 
@@ -142,7 +123,12 @@ export function useWatchWorkoutSync({
 
     void transferWorkoutSnapshot(
       FortomniaWatch,
-      buildSnapshot(activeWorkout, plannedExercises),
+      buildWatchWorkoutSnapshot(
+        activeWorkout,
+        plannedExercises,
+        sets,
+        restEndsAt,
+      ),
     );
     }).catch((error: unknown) => {
       console.warn(
@@ -155,5 +141,5 @@ export function useWatchWorkoutSync({
       disposed = true;
       subscription?.remove();
     };
-  }, [plannedExercises, refreshWorkout, userId, workout]);
+  }, [plannedExercises, refreshWorkout, restEndsAt, sets, userId, workout]);
 }

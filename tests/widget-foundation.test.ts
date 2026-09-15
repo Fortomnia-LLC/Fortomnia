@@ -7,6 +7,11 @@ const config = readFileSync("targets/fortomnia-widgets/expo-target.config.js", "
 const widget = readFileSync("targets/fortomnia-widgets/FortomniaWidgets.swift", "utf8");
 const sync = readFileSync("src/components/WidgetSnapshotSync.tsx", "utf8");
 const repository = readFileSync("src/repositories/widget-snapshot-repository.ts", "utf8");
+const liveActivityModule = readFileSync(
+  "modules/fortomnia-live-activity/ios/FortomniaLiveActivityModule.swift",
+  "utf8",
+);
+const liveActivityHook = readFileSync("src/hooks/use-workout-live-activity.ts", "utf8");
 
 test("app and widget share one narrowly scoped App Group", () => {
   const group = "group.com.grc0830source.fortomnia.widgets";
@@ -72,4 +77,23 @@ test("widget changes trigger the signed iOS extensions build", () => {
   assert.match(workflow, /targets\/fortomnia-widgets\/\*\*/);
   assert.match(workflow, /src\/components\/WidgetSnapshotSync\.tsx/);
   assert.match(workflow, /app\.json/);
+});
+
+test("active workouts drive one native Live Activity", () => {
+  assert.match(app, /NSSupportsLiveActivities/);
+  assert.match(widget, /ActivityConfiguration\(for: FortomniaWorkoutAttributes\.self\)/);
+  assert.match(widget, /FortomniaWorkoutLiveActivity\(\)/);
+  assert.match(liveActivityModule, /Activity<FortomniaWorkoutAttributes>\.activities/);
+  assert.match(liveActivityModule, /Activity\.request/);
+  assert.match(liveActivityModule, /activity\.update/);
+  assert.match(liveActivityModule, /activity\.end/);
+  assert.match(liveActivityHook, /getNextWorkoutSet/);
+  assert.match(liveActivityHook, /restEndsAt/);
+});
+
+test("Live Activity changes trigger the signed extensions build", () => {
+  const workflow = readFileSync(".github/workflows/eas-ios-watch-build.yml", "utf8");
+
+  assert.match(workflow, /modules\/fortomnia-live-activity\/\*\*/);
+  assert.match(workflow, /src\/hooks\/use-workout-live-activity\.ts/);
 });

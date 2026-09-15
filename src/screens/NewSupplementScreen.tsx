@@ -1,3 +1,8 @@
+import {
+  type BarcodeScanningResult,
+  CameraView,
+  useCameraPermissions,
+} from "expo-camera";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -13,6 +18,7 @@ import {
   View,
 } from "react-native";
 import { getLocalDateKey } from "../lib/dates";
+import { lookupSupplementBarcode } from "../lib/supplementBarcode";
 import { WEEKDAY_OPTIONS } from "../lib/supplementSchedule";
 import {
   type SupplementCategory,
@@ -71,6 +77,7 @@ function isValidDateKey(value: string) {
 export default function NewSupplementScreen() {
   const router = useRouter();
   const {
+    barcode: barcodeParam,
     category: categoryParam,
     doseAmount: doseAmountParam,
     doseUnit: doseUnitParam,
@@ -79,6 +86,10 @@ export default function NewSupplementScreen() {
     name: nameParam,
     notes: notesParam,
     protocolId: protocolIdParam,
+    productIngredients: productIngredientsParam,
+    productServing: productServingParam,
+    productSource: productSourceParam,
+    productSourceUrl: productSourceUrlParam,
     route: routeParam,
     scheduledDays: scheduledDaysParam,
     scheduledTime: scheduledTimeParam,
@@ -86,6 +97,7 @@ export default function NewSupplementScreen() {
     endDate: endDateParam,
 startDate: startDateParam,
   } = useLocalSearchParams<{
+    barcode?: string;
     category?: string;
     doseAmount?: string;
     doseUnit?: string;
@@ -94,6 +106,10 @@ startDate: startDateParam,
     name?: string;
     notes?: string;
     protocolId?: string;
+    productIngredients?: string;
+    productServing?: string;
+    productSource?: string;
+    productSourceUrl?: string;
     route?: string;
     scheduledDays?: string;
     scheduledTime?: string;
@@ -103,6 +119,7 @@ startDate: startDateParam,
   }>();
 
   const editingProtocolId = firstParam(protocolIdParam);
+  const initialBarcode = firstParam(barcodeParam);
   const initialName = firstParam(nameParam);
   const initialCategory = firstParam(categoryParam) as
     | SupplementCategory
@@ -126,8 +143,14 @@ startDate: startDateParam,
   const initialStartDate = firstParam(startDateParam);
   const initialEndDate = firstParam(endDateParam);
   const initialNotes = firstParam(notesParam);
+  const initialProductIngredients = firstParam(productIngredientsParam);
+  const initialProductServing = firstParam(productServingParam);
+  const initialProductSource = firstParam(productSourceParam);
+  const initialProductSourceUrl = firstParam(productSourceUrlParam);
   const isEditing = Boolean(editingProtocolId);
   const { session } = useAuth();
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+  const [barcode, setBarcode] = useState(initialBarcode ?? "");
   const [name, setName] = useState(initialName ?? "");
   const [category, setCategory] = useState<SupplementCategory>(
     initialCategory ?? "other",
@@ -160,10 +183,27 @@ startDate: startDateParam,
   );
   const [endDate, setEndDate] = useState(initialEndDate ?? "");
   const [notes, setNotes] = useState(initialNotes ?? "");
+  const [productIngredients, setProductIngredients] = useState(
+    initialProductIngredients ?? "",
+  );
+  const [productServing, setProductServing] = useState(
+    initialProductServing ?? "",
+  );
+  const [productSource, setProductSource] = useState(
+    initialProductSource ?? "",
+  );
+  const [productSourceUrl, setProductSourceUrl] = useState(
+    initialProductSourceUrl ?? "",
+  );
+  const [isLookingUpBarcode, setIsLookingUpBarcode] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [scanLocked, setScanLocked] = useState(false);
+  const [scanMessage, setScanMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    setBarcode(initialBarcode ?? "");
     setName(initialName ?? "");
     setCategory(initialCategory ?? "other");
     setDoseAmount(initialDoseAmount ?? "");
@@ -177,9 +217,15 @@ startDate: startDateParam,
     setScheduledTime(initialScheduledTime ?? "");
     setSecondScheduledTime(initialSecondScheduledTime ?? "");
     setNotes(initialNotes ?? "");
+    setProductIngredients(initialProductIngredients ?? "");
+    setProductServing(initialProductServing ?? "");
+    setProductSource(initialProductSource ?? "");
+    setProductSourceUrl(initialProductSourceUrl ?? "");
+    setScanMessage(null);
     setErrorMessage(null);
   }, [
     editingProtocolId,
+    initialBarcode,
     initialCategory,
     initialDoseAmount,
     initialDoseUnit,
@@ -187,6 +233,10 @@ startDate: startDateParam,
     initialFrequency,
     initialName,
     initialNotes,
+    initialProductIngredients,
+    initialProductServing,
+    initialProductSource,
+    initialProductSourceUrl,
     initialRoute,
     initialEndDate,
     initialStartDate,
@@ -195,7 +245,61 @@ startDate: startDateParam,
     initialSecondScheduledTime,
   ]);
 
+  async function handleOpenScanner() {
+    setErrorMessage(null);
+    setScanMessage(null);
+    const permission = cameraPermission?.granted
+      ? cameraPermission
+      : await requestCameraPermission();
+    if (!permission.granted) {
+      setErrorMessage(
+        "Camera access is required to scan a supplement barcode. You can still enter the supplement manually.",
+      );
+      return;
+    }
+    setScanLocked(false);
+    setScannerOpen(true);
+  }
+
+  async function handleBarcodeScanned(result: BarcodeScanningResult) {
+    if (scanLocked || isLookingUpBarcode) return;
+    setScanLocked(true);
+    setIsLookingUpBarcode(true);
+    setErrorMessage(null);
+    try {
+      const product = await lookupSupplementBarcode(result.data);
+      if (!product) {
+        setScanMessage(
+          "That product was not found. Enter it manually or scan another barcode.",
+        );
+        setScannerOpen(false);
+        return;
+      }
+      setBarcode(product.barcode);
+      setName(product.name);
+      setProductIngredients(product.ingredients);
+      setProductServing(product.serving);
+      setProductSource(product.source);
+      setProductSourceUrl(product.sourceUrl);
+      if (product.doseAmount !== null) setDoseAmount(String(product.doseAmount));
+      if (product.doseUnit !== null) setDoseUnit(product.doseUnit);
+      setScanMessage("Product found. Review every field before saving.");
+      setScannerOpen(false);
+    } catch (error) {
+      setScanMessage(
+        error instanceof Error
+          ? error.message
+          : "The barcode could not be looked up.",
+      );
+      setScannerOpen(false);
+    } finally {
+      setIsLookingUpBarcode(false);
+      setScanLocked(false);
+    }
+  }
+
   async function handleSave() {
+    const trimmedBarcode = barcode.trim() || null;
     const trimmedName = name.trim();
     const trimmedStartDate = startDate.trim();
     const trimmedEndDate = endDate.trim();
@@ -278,10 +382,43 @@ if (frequency === "selected_days" && scheduledDays.length === 0) {
     setIsSaving(true);
     setErrorMessage(null);
 
+    if (trimmedBarcode) {
+      let duplicateQuery = supabase
+        .from("supplement_protocols")
+        .select("id, name")
+        .eq("user_id", session.user.id)
+        .eq("barcode", trimmedBarcode);
+      if (editingProtocolId) duplicateQuery = duplicateQuery.neq("id", editingProtocolId);
+      const { data: duplicate, error: duplicateError } = await duplicateQuery
+        .limit(1)
+        .maybeSingle();
+      if (duplicateError) {
+        setIsSaving(false);
+        setErrorMessage("The barcode could not be checked. Try again.");
+        return;
+      }
+      if (duplicate) {
+        setIsSaving(false);
+        setErrorMessage(
+          `${duplicate.name} already uses this barcode. Edit that protocol instead.`,
+        );
+        return;
+      }
+    }
+
+    const productMetadata = {
+      barcode: trimmedBarcode,
+      product_ingredients: productIngredients.trim() || null,
+      product_serving: productServing.trim() || null,
+      product_source: trimmedBarcode ? productSource.trim() || "Manual entry" : null,
+      product_source_url: trimmedBarcode ? productSourceUrl.trim() || null : null,
+    };
+
     if (isEditing && editingProtocolId) {
       const { data, error } = await supabase
         .from("supplement_protocols")
         .update({
+          ...productMetadata,
           category,
           dose_amount: parsedDose,
           dose_unit: trimmedUnit,
@@ -318,9 +455,11 @@ if (frequency === "selected_days" && scheduledDays.length === 0) {
     const { error } = await supabase
       .from("supplement_protocols")
       .insert({
+        ...productMetadata,
         category,
         dose_amount: parsedDose,
         dose_unit: trimmedUnit,
+        doses_per_day: dosesPerDay,
         frequency,
         name: trimmedName,
         notes: notes.trim() || null,
@@ -370,6 +509,41 @@ if (frequency === "selected_days" && scheduledDays.length === 0) {
     ? "Update the protocol, dose, or schedule."
     : "Create a private protocol and schedule."}
 </Text>
+
+        <Pressable
+          disabled={isLookingUpBarcode}
+          onPress={() =>
+            scannerOpen ? setScannerOpen(false) : void handleOpenScanner()
+          }
+          style={[styles.scanButton, isLookingUpBarcode && styles.disabled]}
+        >
+          {isLookingUpBarcode ? (
+            <ActivityIndicator color="#2563EB" />
+          ) : (
+            <Text style={styles.scanButtonText}>
+              {scannerOpen ? "Close scanner" : "Scan supplement barcode"}
+            </Text>
+          )}
+        </Pressable>
+
+        {scannerOpen ? (
+          <View style={styles.cameraFrame}>
+            <CameraView
+              barcodeScannerSettings={{
+                barcodeTypes: ["ean13", "ean8", "upc_a", "upc_e"],
+              }}
+              onBarcodeScanned={scanLocked ? undefined : handleBarcodeScanned}
+              style={styles.camera}
+            />
+            <Text style={styles.cameraHint}>
+              Center the UPC or EAN barcode in the camera.
+            </Text>
+          </View>
+        ) : null}
+
+        {scanMessage ? (
+          <Text selectable style={styles.scanMessage}>{scanMessage}</Text>
+        ) : null}
 
         <Text style={styles.label}>Name</Text>
         <TextInput
@@ -621,6 +795,39 @@ if (frequency === "selected_days" && scheduledDays.length === 0) {
           value={notes}
         />
 
+        {barcode ? (
+          <View style={styles.productCard}>
+            <Text style={styles.productTitle}>Scanned product details</Text>
+            <Text selectable style={styles.productMeta}>
+              Barcode: {barcode}
+              {productSource ? ` • Source: ${productSource}` : ""}
+            </Text>
+            <Text style={styles.label}>Serving (editable)</Text>
+            <TextInput
+              maxLength={200}
+              onChangeText={setProductServing}
+              placeholder="1 scoop, 2 capsules..."
+              placeholderTextColor="#727885"
+              style={styles.input}
+              value={productServing}
+            />
+            <Text style={styles.label}>Ingredients (editable)</Text>
+            <TextInput
+              maxLength={4000}
+              multiline
+              onChangeText={setProductIngredients}
+              placeholder="Review the package and enter ingredients if missing."
+              placeholderTextColor="#727885"
+              style={[styles.input, styles.ingredientsInput]}
+              textAlignVertical="top"
+              value={productIngredients}
+            />
+            <Text selectable style={styles.reviewNotice}>
+              Community product data can be incomplete. Verify the label before saving.
+            </Text>
+          </View>
+        ) : null}
+
         {errorMessage ? (
           <Text style={styles.error}>{errorMessage}</Text>
         ) : null}
@@ -726,6 +933,69 @@ const styles = StyleSheet.create({
   },
   optionTextSelected: {
     color: "#2563EB",
+  },
+  scanButton: {
+    alignItems: "center",
+    borderColor: "#2563EB",
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: "center",
+    marginBottom: 20,
+    minHeight: 50,
+  },
+  scanButtonText: {
+    color: "#2563EB",
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  cameraFrame: {
+    backgroundColor: "#171717",
+    borderColor: "#333333",
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 20,
+    overflow: "hidden",
+  },
+  camera: {
+    height: 260,
+    width: "100%",
+  },
+  cameraHint: {
+    color: "#D1D5DB",
+    fontSize: 13,
+    padding: 12,
+    textAlign: "center",
+  },
+  scanMessage: {
+    color: "#9CA3AF",
+    fontSize: 13,
+    marginBottom: 18,
+  },
+  productCard: {
+    backgroundColor: "#111827",
+    borderColor: "#2563EB",
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 20,
+    padding: 16,
+  },
+  productTitle: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "800",
+    marginBottom: 6,
+  },
+  productMeta: {
+    color: "#93C5FD",
+    fontSize: 12,
+    marginBottom: 18,
+  },
+  ingredientsInput: {
+    minHeight: 90,
+  },
+  reviewNotice: {
+    color: "#9CA3AF",
+    fontSize: 12,
   },
   fieldRow: {
     flexDirection: "row",

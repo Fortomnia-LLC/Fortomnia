@@ -6,6 +6,7 @@ public final class FortomniaWatchModule: Module {
   private let actionsKey = "fortomnia.workout.actions.v1"
   private let acknowledgementsKey = "fortomnia.workout.acknowledgements.v1"
   private let clearWorkoutKey = "fortomnia.workout.clear.v1"
+  private let pendingActionsStorageKey = "fortomnia.phone.pending-watch-actions.v1"
   private var pendingActionsJson: String?
   private lazy var sessionDelegate = WatchSessionDelegate(owner: self)
 
@@ -18,6 +19,9 @@ public final class FortomniaWatchModule: Module {
     Events("onWatchActions", "onWatchStateChanged")
 
     OnCreate {
+      self.pendingActionsJson = UserDefaults.standard.string(
+        forKey: self.pendingActionsStorageKey
+      )
       self.activateSession()
     }
 
@@ -66,6 +70,7 @@ public final class FortomniaWatchModule: Module {
       let ids = Array(Set(actionIds.filter { !$0.isEmpty })).sorted()
       guard !ids.isEmpty else { return }
       self.activateSession()
+      self.removeAcknowledgedActions(ids)
 
       let payload: [String: Any] = [self.acknowledgementsKey: ids]
       if session.activationState == .activated && session.isReachable {
@@ -109,7 +114,30 @@ public final class FortomniaWatchModule: Module {
     guard let actionsJson = payload[actionsKey] as? String,
           isJSONArray(actionsJson) else { return }
     pendingActionsJson = actionsJson
+    UserDefaults.standard.set(actionsJson, forKey: pendingActionsStorageKey)
     sendEvent("onWatchActions", ["actionsJson": actionsJson])
+  }
+
+  private func removeAcknowledgedActions(_ ids: [String]) {
+    guard let value = pendingActionsJson,
+          let data = value.data(using: .utf8),
+          let object = try? JSONSerialization.jsonObject(with: data),
+          let actions = object as? [[String: Any]]
+    else { return }
+    let acknowledged = Set(ids)
+    let remaining = actions.filter { action in
+      guard let actionId = action["actionId"] as? String else { return true }
+      return !acknowledged.contains(actionId)
+    }
+    if remaining.isEmpty {
+      pendingActionsJson = nil
+      UserDefaults.standard.removeObject(forKey: pendingActionsStorageKey)
+      return
+    }
+    guard let nextData = try? JSONSerialization.data(withJSONObject: remaining),
+          let nextJson = String(data: nextData, encoding: .utf8) else { return }
+    pendingActionsJson = nextJson
+    UserDefaults.standard.set(nextJson, forKey: pendingActionsStorageKey)
   }
 
   private func isJSONArray(_ value: String) -> Bool {

@@ -8,6 +8,7 @@ function protocol(
   overrides: Partial<SupplementProtocol> = {},
 ): SupplementProtocol {
   return {
+    barcode: null,
     category: "wellness",
     dose_amount: 1,
     dose_unit: "capsule",
@@ -18,6 +19,10 @@ function protocol(
     is_active: true,
     name: "Test protocol",
     notes: null,
+    product_ingredients: null,
+    product_serving: null,
+    product_source: null,
+    product_source_url: null,
     route: "oral",
     scheduled_days: [],
     scheduled_time: "08:00:00",

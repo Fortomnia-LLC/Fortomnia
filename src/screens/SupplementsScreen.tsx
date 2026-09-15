@@ -236,6 +236,7 @@ export default function SupplementsScreen() {
       pathname: "/new-supplement",
       params: {
         category: protocol.category,
+        barcode: protocol.barcode ?? "",
         doseAmount: String(protocol.dose_amount),
         doseUnit: protocol.dose_unit,
         dosesPerDay: String(protocol.doses_per_day),
@@ -243,6 +244,10 @@ export default function SupplementsScreen() {
         frequency: protocol.frequency,
         name: protocol.name,
         notes: protocol.notes ?? "",
+        productIngredients: protocol.product_ingredients ?? "",
+        productServing: protocol.product_serving ?? "",
+        productSource: protocol.product_source ?? "",
+        productSourceUrl: protocol.product_source_url ?? "",
         protocolId: protocol.id,
         route: protocol.route,
         scheduledDays: protocol.scheduled_days.join(","),

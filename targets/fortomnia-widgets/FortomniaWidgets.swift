@@ -1,5 +1,98 @@
+import ActivityKit
 import SwiftUI
 import WidgetKit
+
+struct FortomniaWorkoutAttributes: ActivityAttributes {
+  struct ContentState: Codable, Hashable {
+    let workoutName: String
+    let currentExerciseName: String
+    let completedSets: Int
+    let totalSets: Int
+    let restEndsAt: Date?
+  }
+
+  let workoutId: String
+}
+
+private struct FortomniaLiveActivityProgress: View {
+  let completedSets: Int
+  let totalSets: Int
+  let restEndsAt: Date?
+
+  var body: some View {
+    if let restEndsAt, restEndsAt > .now {
+      Label {
+        Text(timerInterval: Date.now...restEndsAt, countsDown: true)
+          .monospacedDigit()
+      } icon: {
+        Image(systemName: "timer")
+      }
+    } else {
+      Text(totalSets > 0 ? "\(completedSets) of \(totalSets) sets" : "\(completedSets) sets")
+        .monospacedDigit()
+    }
+  }
+}
+
+struct FortomniaWorkoutLiveActivity: Widget {
+  var body: some WidgetConfiguration {
+    ActivityConfiguration(for: FortomniaWorkoutAttributes.self) { context in
+      HStack(spacing: 12) {
+        Image(systemName: "bolt.heart.fill")
+          .font(.title2)
+          .foregroundStyle(.orange)
+        VStack(alignment: .leading, spacing: 3) {
+          Text(context.state.workoutName.uppercased())
+            .font(.caption2.weight(.bold))
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+          Text(context.state.currentExerciseName)
+            .font(.headline)
+            .lineLimit(1)
+          FortomniaLiveActivityProgress(
+            completedSets: context.state.completedSets,
+            totalSets: context.state.totalSets,
+            restEndsAt: context.state.restEndsAt
+          )
+          .font(.caption)
+          .foregroundStyle(.secondary)
+        }
+        Spacer(minLength: 0)
+      }
+      .padding(.horizontal)
+      .activityBackgroundTint(Color(red: 0.043, green: 0.043, blue: 0.043))
+      .activitySystemActionForegroundColor(.orange)
+      .widgetURL(URL(string: "fortomnia://workout/\(context.attributes.workoutId)"))
+    } dynamicIsland: { context in
+      DynamicIsland {
+        DynamicIslandExpandedRegion(.leading) {
+          Image(systemName: "bolt.heart.fill").foregroundStyle(.orange)
+        }
+        DynamicIslandExpandedRegion(.center) {
+          Text(context.state.currentExerciseName)
+            .font(.headline)
+            .lineLimit(1)
+        }
+        DynamicIslandExpandedRegion(.bottom) {
+          FortomniaLiveActivityProgress(
+            completedSets: context.state.completedSets,
+            totalSets: context.state.totalSets,
+            restEndsAt: context.state.restEndsAt
+          )
+          .font(.caption)
+        }
+      } compactLeading: {
+        Image(systemName: "bolt.fill").foregroundStyle(.orange)
+      } compactTrailing: {
+        Text("\(context.state.completedSets)/\(context.state.totalSets)")
+          .font(.caption2.monospacedDigit())
+      } minimal: {
+        Image(systemName: "bolt.fill").foregroundStyle(.orange)
+      }
+      .widgetURL(URL(string: "fortomnia://workout/\(context.attributes.workoutId)"))
+    }
+  }
+}
 
 private let appGroup = "group.com.grc0830source.fortomnia.widgets"
 private let snapshotKey = "fortomniaWidgetSnapshot"
@@ -225,5 +318,6 @@ struct FortomniaWidgetBundle: WidgetBundle {
   var body: some Widget {
     FortomniaStatusWidget()
     FortomniaRecoveryWidget()
+    FortomniaWorkoutLiveActivity()
   }
 }

@@ -11,6 +11,7 @@ import { AnalyticsTracker } from '../src/components/AnalyticsTracker';
 import { AppleHealthBackgroundSync } from '../src/components/AppleHealthBackgroundSync';
 import { WorkoutSyncProvider } from '../src/components/WorkoutMutationSync';
 import { WidgetSnapshotSync } from '../src/components/WidgetSnapshotSync';
+import { NotificationResponseHandler } from '../src/components/notification-response-handler';
 import { getPostHogConfig } from '../src/lib/analytics';
 import { configureNotificationHandler } from '../src/lib/notificationService';
 import {
@@ -63,6 +64,7 @@ function AppContent({ analyticsEnabled }: { analyticsEnabled: boolean }) {
     <AuthProvider>
       <WorkoutSyncProvider>
         <WidgetSnapshotSync />
+        <NotificationResponseHandler />
         {analyticsEnabled ? <AnalyticsTracker /> : null}
         <AppleHealthBackgroundSync />
         <StatusBar style="light" />
