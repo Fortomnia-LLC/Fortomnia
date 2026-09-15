@@ -8,6 +8,7 @@ import {
   type WatchConnectivityAdapter,
 } from "../src/lib/watchConnectivity.ts";
 import type { WatchWorkoutAction, WatchWorkoutSnapshot } from "../src/lib/watchWorkoutContract.ts";
+import { WATCH_WORKOUT_CONTRACT_VERSION } from "../src/lib/watchWorkoutContract.ts";
 
 function action(actionId: string): WatchWorkoutAction {
   return {
@@ -40,7 +41,13 @@ function adapter() {
 test("serializes the versioned workout snapshot for the native transport", async () => {
   const mock = adapter();
   const snapshot: WatchWorkoutSnapshot = {
-    version: 1, sessionId: "session-1", name: "Push", startedAt: "2026-09-03T12:00:00.000Z", exercises: [],
+    version: WATCH_WORKOUT_CONTRACT_VERSION,
+    sessionId: "session-1",
+    name: "Push",
+    startedAt: "2026-09-03T12:00:00.000Z",
+    completedSetsByExercise: {},
+    currentExerciseId: null,
+    exercises: [],
   };
   const state = await transferWorkoutSnapshot(mock.value, snapshot);
   assert.deepEqual(JSON.parse(mock.calls.snapshots[0]), snapshot);

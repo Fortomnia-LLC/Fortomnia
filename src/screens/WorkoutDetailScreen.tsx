@@ -43,8 +43,13 @@ import {
 } from "../lib/restTimer";
 import { useEffect, useRef, useState } from "react";
 import { useWatchWorkoutSync } from "../hooks/useWatchWorkoutSync";
+import { useWorkoutLiveActivity } from "../hooks/use-workout-live-activity";
 import { useWorkoutSync } from "../components/WorkoutMutationSync";
 import { getWorkoutSyncPresentation } from "../lib/workoutSyncStatus";
+import {
+  cancelRestTimerNotification,
+  scheduleRestTimerNotification,
+} from "../lib/notificationService";
 
 const REST_TIMER_STORAGE_KEY = "fortomnia.restTimerDurationSeconds";
 
@@ -268,9 +273,12 @@ export default function WorkoutDetailScreen() {
   useWatchWorkoutSync({
     plannedExercises,
     refreshWorkout,
+    sets,
     userId: session?.user.id,
     workout,
   });
+
+  useWorkoutLiveActivity({ plannedExercises, restEndsAt, sets, workout });
 
   function startRestTimer(durationSeconds = restDurationSeconds) {
     completedRestEndRef.current = null;
@@ -413,6 +421,22 @@ export default function WorkoutDetailScreen() {
       clearInterval(interval);
     };
   }, [restEndsAt]);
+
+  useEffect(() => {
+    if (!workoutId) return;
+    if (restEndsAt === null) {
+      void cancelRestTimerNotification().catch(() => undefined);
+      return;
+    }
+    void scheduleRestTimerNotification(restEndsAt, workoutId).catch(
+      (error: unknown) => {
+        console.warn(
+          "Unable to schedule rest timer alert:",
+          error instanceof Error ? error.message : "Unknown error",
+        );
+      },
+    );
+  }, [restEndsAt, workoutId]);
 
   useEffect(() => {
     if (isLoading || errorMessage) {
@@ -629,6 +653,7 @@ export default function WorkoutDetailScreen() {
           text: "Complete",
           onPress: async () => {
             setIsCompleting(true);
+            await cancelRestTimerNotification().catch(() => undefined);
 
             try {
               const result = await workoutRepository.completeWorkout(

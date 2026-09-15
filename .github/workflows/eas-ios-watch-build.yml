@@ -9,9 +9,17 @@ on:
     paths:
       - .github/workflows/eas-ios-watch-build.yml
       - app.json
+      - modules/fortomnia-live-activity/**
+      - modules/fortomnia-watch/**
       - targets/fortomnia-watch/**
       - targets/fortomnia-widgets/**
       - src/components/WidgetSnapshotSync.tsx
+      - src/components/notification-response-handler.tsx
+      - src/hooks/use-workout-live-activity.ts
+      - src/hooks/useWatchWorkoutSync.ts
+      - src/lib/notificationService.ts
+      - src/lib/watchConnectivity.ts
+      - src/lib/watchWorkoutContract.ts
 
 concurrency:
   group: eas-ios-extensions-build

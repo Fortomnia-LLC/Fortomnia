@@ -5,7 +5,7 @@ module.exports = (config) => ({
   displayName: "Fortomnia",
   bundleIdentifier: ".widgets",
   deploymentTarget: "17.0",
-  frameworks: ["SwiftUI", "WidgetKit"],
+  frameworks: ["ActivityKit", "SwiftUI", "WidgetKit"],
   colors: {
     $accent: "#FF6B35",
     $widgetBackground: "#0B0B0B",

@@ -17,6 +17,8 @@ const PREFERENCES_KEY = "fortomnia.reminder-preferences.v1";
 const IDENTIFIERS_KEY = "fortomnia.reminder-identifiers.v1";
 const SUPPLEMENT_PROTOCOLS_KEY = "fortomnia.supplement-reminder-protocols.v1";
 const CHANNEL_ID = "fortomnia-reminders";
+const REST_TIMER_CHANNEL_ID = "fortomnia-rest-timers";
+const REST_TIMER_IDENTIFIER_KEY = "fortomnia.rest-timer-notification.v1";
 
 export type NotificationPermissionState =
   | "granted"
@@ -28,8 +30,9 @@ export function configureNotificationHandler() {
   if (Platform.OS === "web") return;
 
   Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldPlaySound: false,
+    handleNotification: async (notification) => ({
+      shouldPlaySound:
+        notification.request.content.data?.category === "rest_timer",
       shouldSetBadge: false,
       shouldShowBanner: true,
       shouldShowList: true,
@@ -58,6 +61,60 @@ async function ensureAndroidChannel() {
     importance: Notifications.AndroidImportance.DEFAULT,
     name: "Fortomnia reminders",
   });
+}
+
+async function ensureRestTimerChannel() {
+  if (Platform.OS !== "android") return;
+
+  await Notifications.setNotificationChannelAsync(REST_TIMER_CHANNEL_ID, {
+    importance: Notifications.AndroidImportance.HIGH,
+    name: "Workout rest timers",
+    sound: "default",
+  });
+}
+
+export async function cancelRestTimerNotification(): Promise<void> {
+  if (Platform.OS === "web") return;
+  const identifier = await AsyncStorage.getItem(REST_TIMER_IDENTIFIER_KEY);
+  if (!identifier) return;
+  await Notifications.cancelScheduledNotificationAsync(identifier);
+  await AsyncStorage.removeItem(REST_TIMER_IDENTIFIER_KEY);
+}
+
+export async function scheduleRestTimerNotification(
+  endsAt: number,
+  workoutId: string,
+): Promise<NotificationPermissionState> {
+  if (Platform.OS === "web") return "unavailable";
+  await cancelRestTimerNotification();
+  if (!Number.isFinite(endsAt) || endsAt <= Date.now()) {
+    return getNotificationPermissionState();
+  }
+
+  await ensureRestTimerChannel();
+  const granted = await requestNotificationPermission();
+  if (!granted) return getNotificationPermissionState();
+
+  const identifier = await Notifications.scheduleNotificationAsync({
+    content: {
+      body: "Time for your next set.",
+      data: {
+        category: "rest_timer",
+        url: `fortomnia://workout/${workoutId}`,
+        workoutId,
+      },
+      sound: "default",
+      title: "Rest complete",
+    },
+    trigger: {
+      channelId:
+        Platform.OS === "android" ? REST_TIMER_CHANNEL_ID : undefined,
+      date: new Date(endsAt),
+      type: Notifications.SchedulableTriggerInputTypes.DATE,
+    },
+  });
+  await AsyncStorage.setItem(REST_TIMER_IDENTIFIER_KEY, identifier);
+  return "granted";
 }
 
 export async function getNotificationPermissionState(): Promise<NotificationPermissionState> {

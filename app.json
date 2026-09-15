@@ -11,7 +11,7 @@
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": { "image": "./assets/splash-icon.png", "resizeMode": "contain", "backgroundColor": "#0B0B0B" },
-    "ios": { "appleTeamId": "U8WXSCKNDN", "buildNumber": "27", "supportsTablet": false, "bundleIdentifier": "com.grc0830source.fortomnia", "entitlements": { "com.apple.security.application-groups": ["group.com.grc0830source.fortomnia.widgets"] }, "infoPlist": { "ITSAppUsesNonExemptEncryption": false } },
+    "ios": { "appleTeamId": "U8WXSCKNDN", "buildNumber": "27", "supportsTablet": false, "bundleIdentifier": "com.grc0830source.fortomnia", "entitlements": { "com.apple.security.application-groups": ["group.com.grc0830source.fortomnia.widgets"] }, "infoPlist": { "ITSAppUsesNonExemptEncryption": false, "NSSupportsLiveActivities": true } },
     "android": {
       "package": "com.grc0830source.fortomnia",
       "blockedPermissions": [

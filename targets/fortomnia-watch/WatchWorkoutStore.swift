@@ -68,7 +68,7 @@ final class WatchWorkoutStore: NSObject, ObservableObject {
         ? exercise.targetMetricUnit : nil
     )
     let action = WatchWorkoutAction(
-      version: 1,
+      version: 2,
       actionId: UUID().uuidString,
       sessionId: snapshot.sessionId,
       createdAt: ISO8601DateFormatter().string(from: Date()),
@@ -123,7 +123,7 @@ final class WatchWorkoutStore: NSObject, ObservableObject {
   private func receiveSnapshot(_ json: String) {
     guard let data = json.data(using: .utf8),
           let incoming = try? decoder.decode(WatchWorkoutSnapshot.self, from: data),
-          incoming.version == 1,
+          incoming.version == 2,
           !incoming.sessionId.isEmpty else { return }
     if snapshot?.sessionId != incoming.sessionId {
       pendingActions = []
@@ -131,8 +131,23 @@ final class WatchWorkoutStore: NSObject, ObservableObject {
       persistActions()
     }
     snapshot = incoming
-    exerciseIndex = min(exerciseIndex, max(0, incoming.exercises.count - 1))
+    completedSetCounts = incoming.completedSetsByExercise
+    for action in pendingActions where action.sessionId == incoming.sessionId {
+      completedSetCounts[action.payload.exerciseId] = max(
+        completedSetCounts[action.payload.exerciseId] ?? 0,
+        action.payload.setNumber
+      )
+    }
+    if let currentExerciseId = incoming.currentExerciseId,
+       let currentIndex = incoming.exercises.firstIndex(
+         where: { $0.exerciseId == currentExerciseId }
+       ) {
+      exerciseIndex = currentIndex
+    } else {
+      exerciseIndex = min(exerciseIndex, max(0, incoming.exercises.count - 1))
+    }
     if let encoded = try? encoder.encode(incoming) { defaults.set(encoded, forKey: storedSnapshotKey) }
+    persistActions()
     loadExerciseDefaults()
   }
 

@@ -63,6 +63,7 @@ export type CreateWorkoutInput = {
 };
 
 export type SaveWorkoutSetInput = {
+  clientSetId?: string;
   durationSeconds: number | null;
   exerciseId: string;
   exerciseName: string;

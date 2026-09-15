@@ -21,6 +21,8 @@ struct WatchWorkoutSnapshot: Codable, Equatable {
   let sessionId: String
   let name: String
   let startedAt: String
+  let completedSetsByExercise: [String: Int]
+  let currentExerciseId: String?
   let exercises: [WatchPlannedExercise]
 }
 

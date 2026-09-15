@@ -1,6 +1,12 @@
-import type { MetricUnit, PerformanceType } from "./performanceMetrics";
+import type { MetricUnit, PerformanceType } from "./performanceMetrics.ts";
+import type {
+  LoggedSet,
+  PlannedExercise,
+  WorkoutDetail,
+} from "../domain/workouts.ts";
+import { getNextWorkoutSet } from "./workoutSets.ts";
 
-export const WATCH_WORKOUT_CONTRACT_VERSION = 1 as const;
+export const WATCH_WORKOUT_CONTRACT_VERSION = 2 as const;
 const MAX_WATCH_ACTIONS = 500;
 
 export type WatchPlannedExercise = {
@@ -22,6 +28,8 @@ export type WatchWorkoutSnapshot = {
   sessionId: string;
   name: string;
   startedAt: string;
+  completedSetsByExercise: Record<string, number>;
+  currentExerciseId: string | null;
   exercises: WatchPlannedExercise[];
 };
 
@@ -39,7 +47,7 @@ export type WatchSetPayload = {
 };
 
 export type WatchWorkoutAction = {
-  version: typeof WATCH_WORKOUT_CONTRACT_VERSION;
+  version: 1 | typeof WATCH_WORKOUT_CONTRACT_VERSION;
   actionId: string;
   sessionId: string;
   createdAt: string;
@@ -47,6 +55,46 @@ export type WatchWorkoutAction = {
   kind: "log_set";
   payload: WatchSetPayload;
 };
+
+export function buildWatchWorkoutSnapshot(
+  workout: WorkoutDetail,
+  plannedExercises: PlannedExercise[],
+  sets: LoggedSet[],
+): WatchWorkoutSnapshot {
+  const completedSetsByExercise = sets.reduce<Record<string, number>>(
+    (counts, set) => {
+      if (set.set_variant === "standard") {
+        counts[set.exercise_id] = (counts[set.exercise_id] ?? 0) + 1;
+      }
+      return counts;
+    },
+    {},
+  );
+  const currentExerciseId =
+    getNextWorkoutSet(sets, plannedExercises)?.exercise.exercise_id ?? null;
+
+  return {
+    version: WATCH_WORKOUT_CONTRACT_VERSION,
+    sessionId: workout.id,
+    name: workout.name,
+    startedAt: workout.started_at,
+    completedSetsByExercise,
+    currentExerciseId,
+    exercises: plannedExercises.map((exercise) => ({
+      exerciseId: exercise.exercise_id,
+      name: exercise.exercise_name,
+      performanceType: exercise.performance_type,
+      position: exercise.position,
+      repMin: exercise.rep_min,
+      repMax: exercise.rep_max,
+      targetDurationSeconds: exercise.target_duration_seconds,
+      targetMetricValue: exercise.target_metric_value ?? null,
+      targetMetricUnit: exercise.target_metric_unit ?? null,
+      targetRir: exercise.target_rir,
+      targetSets: exercise.target_sets,
+    })),
+  };
+}
 
 function validId(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0 && value.length <= 128;
@@ -77,7 +125,7 @@ export function isWatchWorkoutAction(value: unknown): value is WatchWorkoutActio
   const action = value as Partial<WatchWorkoutAction>;
   const payload = action.payload as Partial<WatchSetPayload> | undefined;
   if (
-    action.version !== WATCH_WORKOUT_CONTRACT_VERSION || action.kind !== "log_set" ||
+    ![1, WATCH_WORKOUT_CONTRACT_VERSION].includes(action.version as number) || action.kind !== "log_set" ||
     !validId(action.actionId) || !validId(action.sessionId) || !validDate(action.createdAt) ||
     !Number.isSafeInteger(action.sequence) || (action.sequence as number) < 0 || !payload ||
     !validId(payload.exerciseId) || !positiveInteger(payload.setNumber) ||
@@ -123,4 +171,3 @@ export function acknowledgeWatchWorkoutActions(
   const acknowledged = new Set(acknowledgedIds);
   return queue.filter((action) => !acknowledged.has(action.actionId));
 }
-
