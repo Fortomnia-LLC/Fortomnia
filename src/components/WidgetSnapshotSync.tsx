@@ -36,9 +36,10 @@ export function WidgetSnapshotSync() {
       latestState = state;
       const sequence = ++publishSequence;
       const workout = activeWorkout(state);
-      const [health, nextWorkout] = await Promise.all([
+      const [health, nextWorkout, recovery] = await Promise.all([
         loadAppleHealthConnection().catch(() => null),
         widgetSnapshotRepository.loadNextWorkout(userId).catch(() => null),
+        widgetSnapshotRepository.loadRecovery(userId).catch(() => null),
       ]);
       if (!active || sequence !== publishSequence) return;
       storage.set(FORTOMNIA_WIDGET_SNAPSHOT_KEY, {
@@ -55,6 +56,10 @@ export function WidgetSnapshotSync() {
         nextWorkoutId: nextWorkout?.id ?? "",
         nextWorkoutLocationName: nextWorkout?.locationName ?? "",
         nextWorkoutName: nextWorkout?.name ?? "",
+        recoveryBand: recovery?.band ?? "",
+        recoveryCheckInDate: recovery?.checkInDate ?? "",
+        recoveryLabel: recovery?.label ?? "",
+        recoveryScore: recovery?.score ?? -1,
         updatedAt: new Date().toISOString(),
       });
       ExtensionStorage.reloadWidget("FortomniaStatusWidget");
