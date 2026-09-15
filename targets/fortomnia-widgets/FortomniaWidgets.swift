@@ -14,13 +14,19 @@ struct FortomniaSnapshot: Codable {
   let nextWorkoutId: String?
   let nextWorkoutLocationName: String?
   let nextWorkoutName: String?
+  let recoveryBand: String?
+  let recoveryCheckInDate: String?
+  let recoveryLabel: String?
+  let recoveryScore: Int?
   let updatedAt: String
 
   static let empty = FortomniaSnapshot(
     activeWorkoutId: "", activeWorkoutName: "", activeWorkoutSets: 0,
     activeWorkoutPlannedSets: 0, healthLastSyncedAt: "",
     nextWorkoutExerciseCount: 0, nextWorkoutId: "",
-    nextWorkoutLocationName: "", nextWorkoutName: "", updatedAt: ""
+    nextWorkoutLocationName: "", nextWorkoutName: "",
+    recoveryBand: "", recoveryCheckInDate: "", recoveryLabel: "",
+    recoveryScore: -1, updatedAt: ""
   )
 }
 
@@ -140,7 +146,84 @@ struct FortomniaStatusWidget: Widget {
   }
 }
 
+struct FortomniaRecoveryView: View {
+  @Environment(\.widgetFamily) private var family
+  let entry: FortomniaEntry
+
+  private var score: Int? {
+    guard let value = entry.snapshot.recoveryScore, value >= 0 else { return nil }
+    return value
+  }
+
+  private var label: String {
+    guard let value = entry.snapshot.recoveryLabel, !value.isEmpty else {
+      return "Check in"
+    }
+    return value
+  }
+
+  var body: some View {
+    if family == .accessoryCircular {
+      if let score {
+        Gauge(value: Double(score), in: 0...100) {
+          Image(systemName: "heart.fill")
+        } currentValueLabel: {
+          Text("\(score)").font(.headline).privacySensitive()
+        }
+        .gaugeStyle(.accessoryCircularCapacity)
+      } else {
+        Image(systemName: "heart.text.square")
+          .font(.title2)
+      }
+    } else if family == .accessoryRectangular {
+      VStack(alignment: .leading, spacing: 2) {
+        Text("Recovery").font(.headline)
+        Text(score.map { "\(label) • \($0)/100" } ?? "Complete today's check-in")
+          .font(.caption)
+          .privacySensitive()
+      }
+    } else {
+      VStack(alignment: .leading, spacing: 8) {
+        Label("RECOVERY", systemImage: "heart.fill")
+          .font(.caption.bold()).foregroundStyle(.orange)
+        Spacer()
+        if let score {
+          Text("\(score)")
+            .font(.system(size: 42, weight: .bold, design: .rounded))
+            .privacySensitive()
+          Text(label)
+            .font(.caption).foregroundStyle(.secondary).privacySensitive()
+        } else {
+          Text("Check in")
+            .font(.headline)
+          Text("See today's readiness")
+            .font(.caption).foregroundStyle(.secondary)
+        }
+      }
+      .containerBackground(Color(red: 0.043, green: 0.043, blue: 0.043), for: .widget)
+    }
+  }
+}
+
+struct FortomniaRecoveryWidget: Widget {
+  let kind = "FortomniaRecoveryWidget"
+  var body: some WidgetConfiguration {
+    StaticConfiguration(kind: kind, provider: FortomniaProvider()) { entry in
+      FortomniaRecoveryView(entry: entry)
+        .widgetURL(URL(string: (entry.snapshot.recoveryScore ?? -1) >= 0
+          ? "fortomnia://recovery"
+          : "fortomnia://recovery-check-in"))
+    }
+    .configurationDisplayName("Fortomnia Recovery")
+    .description("See today's readiness without exposing raw health inputs.")
+    .supportedFamilies([.systemSmall, .systemMedium, .accessoryCircular, .accessoryRectangular])
+  }
+}
+
 @main
 struct FortomniaWidgetBundle: WidgetBundle {
-  var body: some Widget { FortomniaStatusWidget() }
+  var body: some Widget {
+    FortomniaStatusWidget()
+    FortomniaRecoveryWidget()
+  }
 }

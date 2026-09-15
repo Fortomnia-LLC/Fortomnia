@@ -26,6 +26,7 @@ test("widget supports Home and Lock Screen families with privacy-safe links", ()
   assert.match(widget, /\.systemSmall/);
   assert.match(widget, /\.systemMedium/);
   assert.match(widget, /\.accessoryRectangular/);
+  assert.match(widget, /\.accessoryCircular/);
   assert.match(widget, /\.privacySensitive\(\)/);
   assert.match(widget, /fortomnia:\/\/health-recovery/);
   assert.match(widget, /fortomnia:\/\/workout\//);
@@ -39,6 +40,9 @@ test("the app publishes only a minimal widget snapshot", () => {
   assert.match(sync, /nextWorkoutName/);
   assert.match(sync, /nextWorkoutExerciseCount/);
   assert.match(sync, /nextWorkoutLocationName/);
+  assert.match(sync, /recoveryBand/);
+  assert.match(sync, /recoveryLabel/);
+  assert.match(sync, /recoveryScore/);
   assert.doesNotMatch(sync, /sleep|heartRate|hrv|weight/i);
 });
 
@@ -50,6 +54,16 @@ test("next-workout widget data uses the existing templates and active location",
   assert.match(repository, /eq\("is_active", true\)/);
   assert.match(widget, /fortomnia:\/\/template\//);
   assert.match(widget, /Workout ready/);
+});
+
+test("recovery widget reuses readiness while publishing no raw inputs", () => {
+  assert.match(repository, /from\("daily_recovery_checkins"\)/);
+  assert.match(repository, /calculateReadiness/);
+  assert.match(widget, /FortomniaRecoveryWidget/);
+  assert.match(widget, /fortomnia:\/\/recovery/);
+  assert.match(widget, /fortomnia:\/\/recovery-check-in/);
+  assert.match(widget, /\.privacySensitive\(\)/);
+  assert.doesNotMatch(sync, /sleepDuration|sleepQuality|energyLevel|muscleSoreness|stressLevel|mood/);
 });
 
 test("widget changes trigger the signed iOS extensions build", () => {
