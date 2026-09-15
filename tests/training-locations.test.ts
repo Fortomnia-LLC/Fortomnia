@@ -42,3 +42,19 @@ test("migration exposes only ownership-protected location access", () => {
   assert.match(sql, /revoke all on function public\.set_active_training_location\(uuid\) from public/);
   assert.match(sql, /equipment <@ array\[/);
 });
+
+test("workout sessions snapshot the active location without breaking old rows", () => {
+  const sql = readFileSync(
+    "supabase/migrations/20260913234434_add_workout_location_snapshot.sql",
+    "utf8",
+  ).toLowerCase();
+
+  assert.match(sql, /add column training_location_id uuid/);
+  assert.match(sql, /on delete set null/);
+  assert.match(sql, /before insert on public\.workout_sessions/);
+  assert.match(sql, /where user_id = new\.user_id/);
+  assert.match(sql, /and is_active/);
+  assert.match(sql, /security invoker/);
+  assert.match(sql, /revoke all on function public\.snapshot_active_training_location\(\) from public/);
+  assert.doesNotMatch(sql, /add column training_location_(?:id|name|type|equipment)[^,;]*not null/);
+});

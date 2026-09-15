@@ -287,7 +287,7 @@ class SupabaseWorkoutRepository implements WorkoutRepository {
   async listRecentWorkouts(userId: string, limit = 5) {
     const { data, error } = await supabase
       .from("workout_sessions")
-      .select("id, user_id, name, started_at, completed_at, notes, created_at")
+      .select("id, user_id, name, started_at, completed_at, notes, created_at, training_location_id, training_location_name, training_location_type, training_location_equipment")
       .eq("user_id", userId)
       .is("deleted_at", null)
       .order("started_at", { ascending: false })
@@ -300,7 +300,7 @@ class SupabaseWorkoutRepository implements WorkoutRepository {
     const [workoutResult, setsResult, planResult] = await Promise.all([
       supabase
         .from("workout_sessions")
-        .select("id, name, started_at, completed_at, notes")
+        .select("id, name, started_at, completed_at, notes, training_location_id, training_location_name, training_location_type, training_location_equipment")
         .eq("id", workoutId)
         .eq("user_id", userId)
         .is("deleted_at", null)
