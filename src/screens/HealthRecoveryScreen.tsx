@@ -25,6 +25,7 @@ import {
   getHealthConnectAuthorizationRequestStatus,
   HEALTH_CONNECT_RECOVERY_METRICS,
   healthConnectProvider,
+  summarizeHealthConnectRange,
   syncHealthConnectSamples,
 } from "../lib/health/healthConnectProvider";
 import {
@@ -156,7 +157,7 @@ export default function HealthRecoveryScreen() {
       metrics: HEALTH_CONNECT_RECOVERY_METRICS,
       ...range,
     });
-    applySummaries(summarizeHealthRange(startDate, today, samples));
+    applySummaries(await summarizeHealthConnectRange(startDate, today, samples));
     const syncedAt = new Date().toISOString();
     setLastSyncedAt(syncedAt);
     void saveHealthConnectConnection(syncedAt).catch((error) => {

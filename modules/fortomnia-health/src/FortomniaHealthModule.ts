@@ -3,6 +3,7 @@ import type {
   NativeHealthAnchors,
   NativeHealthChanges,
   NativeHealthDataChangedEvent,
+  NativeDailyHealthAggregate,
   NativeHealthMetric,
   NativeHealthSample,
 } from "./FortomniaHealth.types";
@@ -40,6 +41,11 @@ type FortomniaHealthNativeModule = {
     startAt: string,
     endAt: string,
   ): Promise<NativeHealthSample[]>;
+  readDailyAggregates(
+    dates: string[],
+    startAts: string[],
+    endAts: string[],
+  ): Promise<NativeDailyHealthAggregate[]>;
   readAnchoredSamples(
     metrics: NativeHealthMetric[],
     startAt: string,
