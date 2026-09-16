@@ -137,6 +137,8 @@ test("applies an idempotent set upsert to the cached workout", () => {
       durationSeconds: null,
       exerciseId: "exercise-1",
       exerciseName: "Bench Press",
+      exerciseVariantId: "variant-1",
+      exerciseVariationName: "Medium Grip",
       intensityRpe: null,
       metricUnit: null,
       metricValue: null,
@@ -160,6 +162,14 @@ test("applies an idempotent set upsert to the cached workout", () => {
   });
   assert.equal(updated.activeWorkouts["workout-1"]?.detail.sets.length, 1);
   assert.equal(updated.activeWorkouts["workout-1"]?.detail.sets[0]?.reps, 9);
+  assert.equal(
+    updated.activeWorkouts["workout-1"]?.detail.sets[0]?.exercise_variant_id,
+    "variant-1",
+  );
+  assert.equal(
+    updated.activeWorkouts["workout-1"]?.detail.sets[0]?.variation_name,
+    "Medium Grip",
+  );
 });
 
 test("rejects malformed queued set upserts during restore", () => {

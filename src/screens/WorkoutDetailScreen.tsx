@@ -90,6 +90,9 @@ function SetCard({
     <View style={styles.setCard}>
       <View style={styles.setHeader}>
         <Text style={styles.exerciseName}>{set.exercise_name}</Text>
+        {set.variation_name ? (
+          <Text style={styles.variationName}>{set.variation_name}</Text>
+        ) : null}
         <View style={styles.setLabels}>
           <Text
             style={[
@@ -511,6 +514,7 @@ export default function WorkoutDetailScreen() {
             ? ""
             : String(set.duration_seconds),
         exerciseId: set.exercise_id,
+        exerciseVariantId: set.exercise_variant_id ?? undefined,
         id: workoutId,
         parentSetId: set.id,
         metricUnit: set.metric_unit ?? undefined,
@@ -538,6 +542,7 @@ export default function WorkoutDetailScreen() {
             ? ""
             : String(set.duration_seconds),
         exerciseId: set.exercise_id,
+        exerciseVariantId: set.exercise_variant_id ?? undefined,
         id: workoutId,
         metricUnit: set.metric_unit ?? undefined,
         metricValue: set.metric_value === null ? "" : String(set.metric_value),
@@ -615,6 +620,7 @@ export default function WorkoutDetailScreen() {
             ? ""
             : String(set.duration_seconds),
         exerciseId: set.exercise_id,
+        exerciseVariantId: set.exercise_variant_id ?? undefined,
         id: workoutId,
         metricUnit: set.metric_unit ?? undefined,
         metricValue: set.metric_value === null ? "" : String(set.metric_value),
@@ -1559,6 +1565,12 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 17,
     fontWeight: "700",
+  },
+  variationName: {
+    color: "#FDBA74",
+    fontSize: 12,
+    fontWeight: "700",
+    marginTop: 3,
   },
   setLabels: {
     alignItems: "flex-end",

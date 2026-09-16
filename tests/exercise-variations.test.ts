@@ -1,0 +1,44 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import test from "node:test";
+
+import {
+  defaultExerciseVariation,
+  formatExerciseVariation,
+  type ExerciseVariation,
+} from "../src/lib/exerciseVariations.ts";
+
+const variation = (overrides: Partial<ExerciseVariation> = {}): ExerciseVariation => ({
+  aliases: [], attachment: "v-bar", execution_style: "standard",
+  exercise_id: "lat-pulldown", grip: "neutral", id: "neutral-v-bar",
+  is_default: false, laterality: "bilateral", name: "Narrow Neutral V-Bar",
+  sort_order: 20, stance: "seated", ...overrides,
+});
+
+test("formats a variation without replacing the canonical exercise", () => {
+  assert.equal(
+    formatExerciseVariation("Lat Pulldown", variation()),
+    "Lat Pulldown — Narrow Neutral V-Bar",
+  );
+  assert.equal(formatExerciseVariation("Lat Pulldown", null), "Lat Pulldown");
+});
+
+test("selects the explicit default and falls back to the first option", () => {
+  const first = variation({ id: "first" });
+  const preferred = variation({ id: "default", is_default: true });
+  assert.equal(defaultExerciseVariation([first, preferred])?.id, "default");
+  assert.equal(defaultExerciseVariation([first])?.id, "first");
+  assert.equal(defaultExerciseVariation([]), null);
+});
+
+test("migration keeps variants normalized and bound to their parent exercise", () => {
+  const sql = readFileSync(
+    "supabase/migrations/20260915183000_add_exercise_variations.sql",
+    "utf8",
+  );
+  assert.match(sql, /create table public\.exercise_variants/i);
+  assert.match(sql, /foreign key \(exercise_variant_id, exercise_id\)/i);
+  assert.match(sql, /where lower\(exercises\.name\) = 'lat pulldown'/i);
+  assert.match(sql, /exercise_variant_id = \(p_set->>'exercise_variant_id'\)::uuid/i);
+  assert.match(sql, /enable row level security/i);
+});

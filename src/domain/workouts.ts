@@ -22,6 +22,7 @@ export type LoggedSet = {
   metric_value?: number | null;
   exercise_id: string;
   exercise_name: string;
+  exercise_variant_id?: string | null;
   id: string;
   parent_set_id: string | null;
   performance_type: PerformanceType;
@@ -33,6 +34,7 @@ export type LoggedSet = {
   sync_revision?: number;
   weight: number;
   weight_unit: "lb" | "kg";
+  variation_name?: string | null;
 };
 
 export type PlannedExercise = {
@@ -67,6 +69,8 @@ export type SaveWorkoutSetInput = {
   durationSeconds: number | null;
   exerciseId: string;
   exerciseName: string;
+  exerciseVariantId?: string | null;
+  exerciseVariationName?: string | null;
   intensityRpe: number | null;
   metricUnit: MetricUnit | null;
   metricValue: number | null;

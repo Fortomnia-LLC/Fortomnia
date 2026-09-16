@@ -64,6 +64,7 @@ class SupabaseWorkoutRepository implements WorkoutRepository {
       p_set: set ? {
         duration_seconds: set.durationSeconds,
         exercise_id: set.exerciseId,
+        exercise_variant_id: set.exerciseVariantId ?? null,
         intensity_rpe: set.intensityRpe,
         metric_unit: set.metricUnit,
         metric_value: set.metricValue,
@@ -256,6 +257,8 @@ class SupabaseWorkoutRepository implements WorkoutRepository {
         durationSeconds: input.durationSeconds,
         exerciseId: input.exerciseId,
         exerciseName: input.exerciseName,
+        exerciseVariantId: input.exerciseVariantId ?? null,
+        exerciseVariationName: input.exerciseVariationName ?? null,
         intensityRpe: input.intensityRpe,
         metricUnit: input.metricUnit,
         metricValue: input.metricValue,
@@ -315,11 +318,11 @@ class SupabaseWorkoutRepository implements WorkoutRepository {
       supabase
         .from("workout_sets")
         .select(`
-          id, exercise_id, duration_seconds, intensity_rpe, metric_unit,
+          id, exercise_id, exercise_variant_id, duration_seconds, intensity_rpe, metric_unit,
           metric_value, parent_set_id, performance_type, set_number,
           set_variant, set_type, reps, weight, weight_unit, reps_in_reserve,
           sync_revision,
-          exercises (name)
+          exercises (name), exercise_variants (name)
         `)
         .eq("session_id", workoutId)
         .eq("user_id", userId)

@@ -24,6 +24,7 @@ export function usePreviousExerciseSet(
   exerciseId: string | null,
   currentWorkoutId: string | undefined,
   performanceType: PerformanceType = "reps",
+  exerciseVariantId: string | null = null,
 ) {
   const [previousSets, setPreviousSets] = useState<PreviousExerciseSet[]>([]);
   const [isLoadingPrevious, setIsLoadingPrevious] = useState(false);
@@ -42,7 +43,7 @@ export function usePreviousExerciseSet(
       setIsLoadingPrevious(true);
       setPreviousError(null);
 
-      const { data, error } = await supabase
+      let query = supabase
         .from("workout_sets")
         .select(
           "session_id, weight, weight_unit, reps, reps_in_reserve, performed_at, set_type, set_variant, performance_type, duration_seconds, metric_value, metric_unit",
@@ -55,6 +56,12 @@ export function usePreviousExerciseSet(
         .neq("session_id", currentWorkoutId)
         .order("performed_at", { ascending: false })
         .limit(12);
+
+      query = exerciseVariantId
+        ? query.eq("exercise_variant_id", exerciseVariantId)
+        : query.is("exercise_variant_id", null);
+
+      const { data, error } = await query;
 
       if (!isCurrent) {
         return;
@@ -89,7 +96,7 @@ export function usePreviousExerciseSet(
     return () => {
       isCurrent = false;
     };
-  }, [currentWorkoutId, exerciseId, performanceType]);
+  }, [currentWorkoutId, exerciseId, exerciseVariantId, performanceType]);
 
   return {
     isLoadingPrevious,
