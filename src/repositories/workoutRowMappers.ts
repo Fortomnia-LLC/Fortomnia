@@ -1,12 +1,14 @@
 import type { LoggedSet, PlannedExercise } from "../domain/workouts";
 
 type ExerciseRelation = { name: string } | { name: string }[] | null;
+type VariationRelation = { name: string } | { name: string }[] | null;
 
 export type WorkoutSetRow = Omit<
   LoggedSet,
   "exercise_name" | "metric_value" | "weight"
 > & {
   exercises: ExerciseRelation;
+  exercise_variants?: VariationRelation;
   metric_value?: number | string | null;
   weight: number | string;
 };
@@ -25,12 +27,16 @@ function exerciseName(relation: ExerciseRelation) {
 }
 
 export function mapWorkoutSetRow(row: WorkoutSetRow): LoggedSet {
-  const { exercises, ...set } = row;
+  const { exercises, exercise_variants, ...set } = row;
+  const variation = Array.isArray(exercise_variants)
+    ? exercise_variants[0]
+    : exercise_variants;
   return {
     ...set,
     exercise_name: exerciseName(exercises),
     metric_value: set.metric_value == null ? null : Number(set.metric_value),
     weight: Number(set.weight),
+    variation_name: variation?.name ?? null,
   };
 }
 
