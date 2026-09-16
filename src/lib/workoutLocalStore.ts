@@ -14,6 +14,8 @@ export type OfflineWorkoutSet = {
   durationSeconds: number | null;
   exerciseId: string;
   exerciseName: string;
+  exerciseVariantId?: string | null;
+  exerciseVariationName?: string | null;
   intensityRpe: number | null;
   metricUnit: MetricUnit | null;
   metricValue: number | null;
@@ -102,6 +104,8 @@ function isOfflineWorkoutSet(value: unknown): value is OfflineWorkoutSet {
   const set = value as Partial<OfflineWorkoutSet>;
   return (
     validId(set.exerciseId) && validId(set.exerciseName) && validDate(set.performedAt) &&
+    (set.exerciseVariantId == null || validId(set.exerciseVariantId)) &&
+    (set.exerciseVariationName == null || validId(set.exerciseVariationName)) &&
     Number.isSafeInteger(set.setNumber) && (set.setNumber as number) > 0 &&
     Number.isSafeInteger(set.reps) && (set.reps as number) > 0 &&
     typeof set.weight === "number" && Number.isFinite(set.weight) && set.weight >= 0 &&
@@ -278,6 +282,7 @@ export function applyWorkoutMutationLocally(
       duration_seconds: mutation.set.durationSeconds,
       exercise_id: mutation.set.exerciseId,
       exercise_name: mutation.set.exerciseName,
+      exercise_variant_id: mutation.set.exerciseVariantId ?? null,
       id: mutation.entityId,
       intensity_rpe: mutation.set.intensityRpe,
       metric_unit: mutation.set.metricUnit,
@@ -292,6 +297,7 @@ export function applyWorkoutMutationLocally(
       sync_revision: (mutation.expectedRevision ?? 0) + 1,
       weight: mutation.set.weight,
       weight_unit: mutation.set.weightUnit,
+      variation_name: mutation.set.exerciseVariationName ?? null,
     };
     const sets = snapshot.detail.sets.filter(({ id }) => id !== mutation.entityId);
     return {

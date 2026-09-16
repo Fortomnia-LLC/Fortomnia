@@ -13,6 +13,8 @@ import {
   View,
 } from "react-native";
 import { ExercisePicker } from "../components/ExercisePicker";
+import { ExerciseVariationPicker } from "../components/ExerciseVariationPicker";
+import { useExerciseVariations } from "../hooks/useExerciseVariations";
 import { useExercises } from "../hooks/useExercises";
 import { useProfile } from "../hooks/useProfile";
 import { usePreviousExerciseSet } from "../hooks/usePreviousExerciseSet";
@@ -35,11 +37,13 @@ import {
 } from "../lib/progression";
 import { useAuth } from "../providers/AuthProvider";
 import { workoutRepository } from "../repositories/supabaseWorkoutRepository";
+import { defaultExerciseVariation } from "../lib/exerciseVariations";
 
 export default function AddSetScreen() {
   const router = useRouter();
   const {
     exerciseId: initialExerciseId,
+    exerciseVariantId: initialExerciseVariantId,
     durationSeconds: initialDurationSeconds,
     id,
     intensityRpe: initialIntensityRpe,
@@ -58,6 +62,7 @@ export default function AddSetScreen() {
   } = useLocalSearchParams<{
     durationSeconds?: string;
     exerciseId?: string;
+    exerciseVariantId?: string;
     id: string;
     intensityRpe?: string;
     metricUnit?: MetricUnit;
@@ -86,6 +91,16 @@ export default function AddSetScreen() {
   const [exerciseId, setExerciseId] = useState<string | null>(
     initialExerciseId ?? null,
   );
+  const [exerciseVariantId, setExerciseVariantId] = useState<string | null>(
+    initialExerciseVariantId ?? null,
+  );
+  const {
+    hasLoadedVariations,
+    isLoadingVariations,
+    variationError,
+    variations,
+  } =
+    useExerciseVariations(exerciseId);
   const parentSetId = Array.isArray(initialParentSetId)
     ? initialParentSetId[0]
     : initialParentSetId;
@@ -120,7 +135,12 @@ export default function AddSetScreen() {
     previousError,
     previousSet,
     previousSets,
-  } = usePreviousExerciseSet(exerciseId, workoutId, performanceType);
+  } = usePreviousExerciseSet(
+    exerciseId,
+    workoutId,
+    performanceType,
+    exerciseVariantId,
+  );
 
   const selectedExercise = exercises.find(
     (exercise) => exercise.id === exerciseId,
@@ -128,6 +148,9 @@ export default function AddSetScreen() {
   const cardioExercise = selectedExercise
     ? isCardioExercise(selectedExercise)
     : false;
+  const selectedVariation = variations.find(
+    (variation) => variation.id === exerciseVariantId,
+  );
 
   const parsedRepMin = initialRepMin === undefined
     ? undefined
@@ -214,6 +237,17 @@ export default function AddSetScreen() {
   }, [exerciseId, exercises]);
 
   useEffect(() => {
+    if (!hasLoadedVariations) return;
+    if (variations.length === 0) {
+      setExerciseVariantId(null);
+      return;
+    }
+    if (!variations.some(({ id }) => id === exerciseVariantId)) {
+      setExerciseVariantId(defaultExerciseVariation(variations)?.id ?? null);
+    }
+  }, [exerciseVariantId, hasLoadedVariations, variations]);
+
+  useEffect(() => {
     if (isEditing || initialPerformanceType || !selectedExercise) {
       return;
     }
@@ -246,6 +280,11 @@ export default function AddSetScreen() {
   async function handleSave() {
     if (!session?.user.id || !workoutId || !exerciseId) {
       setErrorMessage("Workout, user, or exercise is missing.");
+      return;
+    }
+
+    if (!hasLoadedVariations) {
+      setErrorMessage("Wait for exercise variations to finish loading.");
       return;
     }
 
@@ -339,6 +378,8 @@ export default function AddSetScreen() {
         durationSeconds: savedDuration,
         exerciseId,
         exerciseName: exercises.find(({ id }) => id === exerciseId)?.name ?? "Unknown exercise",
+        exerciseVariantId,
+        exerciseVariationName: selectedVariation?.name ?? null,
         intensityRpe: savedIntensityRpe,
         metricUnit: savedMetricUnit,
         metricValue: savedMetricValue,
@@ -417,9 +458,31 @@ export default function AddSetScreen() {
 
           <ExercisePicker
             exercises={exercises}
-            onSelect={setExerciseId}
+            onSelect={(selectedId) => {
+              setExerciseId(selectedId);
+              setExerciseVariantId(null);
+            }}
             selectedExerciseId={exerciseId}
           />
+
+          {variations.length > 0 || isLoadingVariations ? (
+            <>
+              <Text style={[styles.label, styles.variationLabel]}>Variation</Text>
+              <ExerciseVariationPicker
+                isLoading={isLoadingVariations}
+                onSelect={setExerciseVariantId}
+                selectedVariationId={exerciseVariantId}
+                variations={variations}
+              />
+              <Text style={styles.variationHelp}>
+                Progress and recommendations are tracked for this exact setup.
+              </Text>
+            </>
+          ) : null}
+
+          {variationError ? (
+            <Text style={styles.error}>{variationError}</Text>
+          ) : null}
 
           {cardioExercise ? (
             <View style={styles.cardioBanner}>
@@ -684,9 +747,12 @@ export default function AddSetScreen() {
           ) : null}
 
           <Pressable
-            disabled={isSaving}
+            disabled={isSaving || !hasLoadedVariations}
             onPress={handleSave}
-            style={[styles.saveButton, isSaving && styles.disabled]}
+            style={[
+              styles.saveButton,
+              (isSaving || !hasLoadedVariations) && styles.disabled,
+            ]}
           >
             {isSaving ? (
               <ActivityIndicator color="#0B0B0B" />
@@ -750,6 +816,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     marginBottom: 8,
+  },
+  variationLabel: {
+    marginTop: 18,
+  },
+  variationHelp: {
+    color: "#9CA3AF",
+    fontSize: 12,
+    marginBottom: 20,
+    marginTop: 8,
   },
   cardioBanner: {
     backgroundColor: "#10253A",

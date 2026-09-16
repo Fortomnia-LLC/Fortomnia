@@ -14,7 +14,9 @@ test("maps database workout sets into stable domain values", () => {
     metric_unit: null,
     metric_value: "42.5",
     exercise_id: "exercise-1",
+    exercise_variant_id: "variant-1",
     exercises: [{ name: "Bench Press" }],
+    exercise_variants: [{ name: "Medium Grip" }],
     id: "set-1",
     parent_set_id: null,
     performance_type: "reps",
@@ -28,6 +30,8 @@ test("maps database workout sets into stable domain values", () => {
   });
 
   assert.equal(set.exercise_name, "Bench Press");
+  assert.equal(set.exercise_variant_id, "variant-1");
+  assert.equal(set.variation_name, "Medium Grip");
   assert.equal(set.metric_value, 42.5);
   assert.equal(set.weight, 225.5);
 });
