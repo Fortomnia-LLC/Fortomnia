@@ -134,6 +134,37 @@ export function emptyWorkoutLocalState(userId: string): WorkoutLocalState {
   };
 }
 
+export function compactWorkoutMutations(
+  mutations: PendingWorkoutMutation[],
+): PendingWorkoutMutation[] {
+  const newestByMutationId = new Map(
+    mutations.map((mutation) => [mutation.id, mutation]),
+  );
+  const ordered = [...newestByMutationId.values()].sort(
+    (a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id),
+  );
+  const winningSetMutation = new Map<string, PendingWorkoutMutation>();
+
+  for (const mutation of ordered) {
+    if (mutation.kind === "complete_workout") continue;
+    const setKey = `${mutation.sessionId}:${mutation.entityId}`;
+    const current = winningSetMutation.get(setKey);
+    if (!current || mutation.kind === "delete_set") {
+      winningSetMutation.set(setKey, mutation);
+    } else if (current.kind !== "delete_set") {
+      winningSetMutation.set(setKey, mutation);
+    }
+  }
+
+  const winners = new Set([
+    ...ordered
+      .filter(({ kind }) => kind === "complete_workout")
+      .map(({ id }) => id),
+    ...[...winningSetMutation.values()].map(({ id }) => id),
+  ]);
+  return ordered.filter(({ id }) => winners.has(id));
+}
+
 export function normalizeWorkoutLocalState(
   value: unknown,
   userId: string,
@@ -165,17 +196,10 @@ export function normalizeWorkoutLocalState(
   const mutations = Array.isArray(state.pendingMutations)
     ? state.pendingMutations.filter(isPendingMutation)
     : [];
-  const uniqueMutations = new Map(
-    mutations.map((mutation) => [mutation.id, mutation]),
-  );
 
   return {
     activeWorkouts,
-    pendingMutations: [...uniqueMutations.values()]
-      .sort(
-        (a, b) =>
-          a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id),
-      ),
+    pendingMutations: compactWorkoutMutations(mutations),
     userId,
     version: WORKOUT_LOCAL_STORE_VERSION,
   };
