@@ -106,6 +106,21 @@ test("specialty bars extend canonical press and lower-body exercises", () => {
   assert.doesNotMatch(sql, /insert into public\.exercises/i);
 });
 
+test("row hinge and carry variations stay under canonical exercises", () => {
+  const sql = readFileSync(
+    "supabase/migrations/20260917210000_seed_row_hinge_carry_variations.sql",
+    "utf8",
+  );
+
+  assert.match(sql, /'Barbell Row', 'Cambered Bar'/);
+  assert.match(sql, /'Seal Row', 'Swiss \/ Football Bar'/);
+  assert.match(sql, /'Deadlift', 'Deadlift Bar'/);
+  assert.match(sql, /'Romanian Deadlift', 'Axle Bar'/);
+  assert.match(sql, /'Farmer Carry', 'Farmer Handles'/);
+  assert.match(sql, /'Farmer Carry', 'Suitcase Single-Arm'/);
+  assert.doesNotMatch(sql, /insert into public\.exercises/i);
+});
+
 test("variation loading never exposes results from a previous exercise", () => {
   const hook = readFileSync("src/hooks/useExerciseVariations.ts", "utf8");
 
