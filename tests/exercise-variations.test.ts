@@ -59,6 +59,22 @@ test("bench press specialty bars extend the canonical exercise instead of duplic
   assert.doesNotMatch(sql, /insert into public\.exercises/i);
 });
 
+test("seated cable row attachments extend the canonical exercise instead of duplicating it", () => {
+  const sql = readFileSync(
+    "supabase/migrations/20260917190000_seed_cable_row_variations.sql",
+    "utf8",
+  );
+
+  assert.match(sql, /insert into public\.exercise_variants/i);
+  assert.match(sql, /where lower\(exercises\.name\) = 'seated cable row'/i);
+  assert.match(sql, /'Neutral V-Bar'/);
+  assert.match(sql, /'Medium Neutral MAG-Style Grip'/);
+  assert.match(sql, /'Wide Overhand Bar'/);
+  assert.match(sql, /'Independent D-Handles'/);
+  assert.match(sql, /'Single-Arm D-Handle'/);
+  assert.doesNotMatch(sql, /insert into public\.exercises/i);
+});
+
 test("variation loading never exposes results from a previous exercise", () => {
   const hook = readFileSync("src/hooks/useExerciseVariations.ts", "utf8");
 
