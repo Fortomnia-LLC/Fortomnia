@@ -151,6 +151,28 @@ test("back machine and cable variations expand grips and unilateral options", ()
   assert.doesNotMatch(sql, /insert into public\.exercises/i);
 });
 
+test("Olympic lifting seed covers competition lifts and common derivatives", () => {
+  const sql = readFileSync(
+    "supabase/migrations/20260917223000_seed_olympic_lifts.sql",
+    "utf8",
+  );
+
+  assert.match(sql, /'Snatch'/);
+  assert.match(sql, /'Power Snatch'/);
+  assert.match(sql, /'Hang Power Snatch'/);
+  assert.match(sql, /'Snatch Pull'/);
+  assert.match(sql, /'Clean'/);
+  assert.match(sql, /'Power Clean'/);
+  assert.match(sql, /'Hang Power Clean'/);
+  assert.match(sql, /'Clean Pull'/);
+  assert.match(sql, /'Clean and Jerk'/);
+  assert.match(sql, /'Power Jerk'/);
+  assert.match(sql, /'Squat Jerk'/);
+  assert.match(sql, /'Dumbbell Snatch'/);
+  assert.match(sql, /'Kettlebell Clean and Jerk'/);
+  assert.match(sql, /'olympic_lift'/);
+});
+
 test("variation loading never exposes results from a previous exercise", () => {
   const hook = readFileSync("src/hooks/useExerciseVariations.ts", "utf8");
 
