@@ -75,6 +75,21 @@ test("seated cable row attachments extend the canonical exercise instead of dupl
   assert.doesNotMatch(sql, /insert into public\.exercises/i);
 });
 
+test("cable accessory attachments stay normalized under their canonical exercises", () => {
+  const sql = readFileSync(
+    "supabase/migrations/20260917200000_seed_cable_accessory_variations.sql",
+    "utf8",
+  );
+
+  assert.match(sql, /insert into public\.exercise_variants/i);
+  assert.match(sql, /'Triceps Pushdown', 'V-Bar'/);
+  assert.match(sql, /'Triceps Pushdown', 'Single D-Handle'/);
+  assert.match(sql, /'Overhead Cable Triceps Extension', 'Rope'/);
+  assert.match(sql, /'Face Pull', 'Dual D-Handles'/);
+  assert.match(sql, /'Cable Curl', 'Rope Hammer Grip'/);
+  assert.doesNotMatch(sql, /insert into public\.exercises/i);
+});
+
 test("variation loading never exposes results from a previous exercise", () => {
   const hook = readFileSync("src/hooks/useExerciseVariations.ts", "utf8");
 
