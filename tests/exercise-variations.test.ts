@@ -90,6 +90,22 @@ test("cable accessory attachments stay normalized under their canonical exercise
   assert.doesNotMatch(sql, /insert into public\.exercises/i);
 });
 
+test("specialty bars extend canonical press and lower-body exercises", () => {
+  const sql = readFileSync(
+    "supabase/migrations/20260917203000_seed_specialty_bar_variations.sql",
+    "utf8",
+  );
+
+  assert.match(sql, /insert into public\.exercise_variants/i);
+  assert.match(sql, /'Overhead Press', 'Swiss \/ Football Bar'/);
+  assert.match(sql, /'Overhead Press', 'Log'/);
+  assert.match(sql, /'Back Squat', 'Safety Squat Bar'/);
+  assert.match(sql, /'Back Squat', 'Buffalo Bar'/);
+  assert.match(sql, /'Good Morning', 'Cambered Bar'/);
+  assert.match(sql, /'Barbell Hip Thrust', 'Safety Squat Bar'/);
+  assert.doesNotMatch(sql, /insert into public\.exercises/i);
+});
+
 test("variation loading never exposes results from a previous exercise", () => {
   const hook = readFileSync("src/hooks/useExerciseVariations.ts", "utf8");
 
