@@ -137,6 +137,20 @@ test("unilateral variants expand existing machine and dumbbell movements", () =>
   assert.doesNotMatch(sql, /insert into public\.exercises/i);
 });
 
+test("back machine and cable variations expand grips and unilateral options", () => {
+  const sql = readFileSync(
+    "supabase/migrations/20260917220000_seed_back_machine_cable_variations.sql",
+    "utf8",
+  );
+
+  assert.match(sql, /'T-Bar Row', 'Wide Overhand Handle'/);
+  assert.match(sql, /'Machine Row', 'Single-Arm Neutral'/);
+  assert.match(sql, /'Straight-Arm Pulldown', 'Rope'/);
+  assert.match(sql, /'Straight-Arm Pulldown', 'Single D-Handle'/);
+  assert.match(sql, /'Cable Pullover', 'Single D-Handle'/);
+  assert.doesNotMatch(sql, /insert into public\.exercises/i);
+});
+
 test("variation loading never exposes results from a previous exercise", () => {
   const hook = readFileSync("src/hooks/useExerciseVariations.ts", "utf8");
 
