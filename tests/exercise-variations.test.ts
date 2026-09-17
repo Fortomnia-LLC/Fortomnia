@@ -121,6 +121,22 @@ test("row hinge and carry variations stay under canonical exercises", () => {
   assert.doesNotMatch(sql, /insert into public\.exercises/i);
 });
 
+test("unilateral variants expand existing machine and dumbbell movements", () => {
+  const sql = readFileSync(
+    "supabase/migrations/20260917213000_seed_unilateral_variations.sql",
+    "utf8",
+  );
+
+  assert.match(sql, /'Leg Press', 'Single-Leg'/);
+  assert.match(sql, /'Leg Extension', 'Single-Leg'/);
+  assert.match(sql, /'Lying Leg Curl', 'Single-Leg'/);
+  assert.match(sql, /'Seated Leg Curl', 'Single-Leg'/);
+  assert.match(sql, /'Standing Calf Raise', 'Single-Leg'/);
+  assert.match(sql, /'Dumbbell Shoulder Press', 'Single-Arm Standing'/);
+  assert.match(sql, /'Dumbbell Lateral Raise', 'Single-Arm Lean-Away'/);
+  assert.doesNotMatch(sql, /insert into public\.exercises/i);
+});
+
 test("variation loading never exposes results from a previous exercise", () => {
   const hook = readFileSync("src/hooks/useExerciseVariations.ts", "utf8");
 
