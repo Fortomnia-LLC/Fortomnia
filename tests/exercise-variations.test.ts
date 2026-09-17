@@ -43,6 +43,22 @@ test("migration keeps variants normalized and bound to their parent exercise", (
   assert.match(sql, /enable row level security/i);
 });
 
+test("bench press specialty bars extend the canonical exercise instead of duplicating it", () => {
+  const sql = readFileSync(
+    "supabase/migrations/20260917183000_seed_bench_press_variations.sql",
+    "utf8",
+  );
+
+  assert.match(sql, /insert into public\.exercise_variants/i);
+  assert.match(sql, /where lower\(exercises\.name\) = 'barbell bench press'/i);
+  assert.match(sql, /'Bull Bar'/);
+  assert.match(sql, /'Hurricane Bar'/);
+  assert.match(sql, /'Buffalo Bar'/);
+  assert.match(sql, /'Swiss \/ Football Bar'/);
+  assert.match(sql, /'Bamboo \/ Earthquake Bar'/);
+  assert.doesNotMatch(sql, /insert into public\.exercises/i);
+});
+
 test("variation loading never exposes results from a previous exercise", () => {
   const hook = readFileSync("src/hooks/useExerciseVariations.ts", "utf8");
 
