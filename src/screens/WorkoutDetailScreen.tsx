@@ -868,6 +868,11 @@ if (isLoading) {
               Started{" "}
               {new Date(workout.started_at).toLocaleString()}
             </Text>
+            {workout.training_location_name ? (
+              <Text style={styles.location}>
+                📍 {workout.training_location_name}
+              </Text>
+            ) : null}
 
             {errorMessage ? (
               <Text style={styles.error}>{errorMessage}</Text>
@@ -1187,8 +1192,13 @@ const styles = StyleSheet.create({
   date: {
     color: "#9CA3AF",
     fontSize: 14,
-    marginBottom: 22,
     marginTop: 8,
+  },
+  location: {
+    color: "#60A5FA",
+    fontSize: 14,
+    marginBottom: 22,
+    marginTop: 7,
   },
   recapCard: {
     backgroundColor: "#15120F",
