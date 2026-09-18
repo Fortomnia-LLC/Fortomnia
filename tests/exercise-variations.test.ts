@@ -286,6 +286,23 @@ test("athletic performance seed covers speed agility deceleration power and spor
   assert.match(sql, /'Repeated Sprint Shuttle'/);
 });
 
+test("conditioning seed covers machines ropes sleds bodyweight and loaded endurance", () => {
+  const sql = readFileSync(
+    "supabase/migrations/20260918004500_seed_conditioning_cardio_exercises.sql",
+    "utf8",
+  );
+
+  assert.match(sql, /'Jump Rope'/);
+  assert.match(sql, /'Battle Rope Alternating Waves'/);
+  assert.match(sql, /'Rowing Ergometer'/);
+  assert.match(sql, /'Ski Ergometer'/);
+  assert.match(sql, /'Air Bike'/);
+  assert.match(sql, /'Stair Climber'/);
+  assert.match(sql, /'Backward Sled Drag'/);
+  assert.match(sql, /'Burpee Box Jump'/);
+  assert.match(sql, /'Ruck Walk'/);
+});
+
 test("variation loading never exposes results from a previous exercise", () => {
   const hook = readFileSync("src/hooks/useExerciseVariations.ts", "utf8");
 
