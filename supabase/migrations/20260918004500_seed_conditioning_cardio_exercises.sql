@@ -1,0 +1,50 @@
+insert into public.exercises (
+  name, muscle_group, equipment, aliases, secondary_muscles,
+  movement_pattern, is_unilateral
+)
+values
+  ('Jump Rope', 'Full Body', 'Jump Rope', array['Skipping Rope'], array['Calves','Shoulders','Forearms','Core'], 'conditioning', false),
+  ('Double-Under', 'Full Body', 'Jump Rope', array['Double Under'], array['Calves','Shoulders','Forearms','Core'], 'conditioning', false),
+  ('Single-Leg Jump Rope', 'Full Body', 'Jump Rope', array['Single Leg Skipping'], array['Calves','Core'], 'conditioning', true),
+  ('Battle Rope Alternating Waves', 'Full Body', 'Battle Rope', array['Alternating Rope Waves'], array['Shoulders','Arms','Core'], 'conditioning', true),
+  ('Battle Rope Double Waves', 'Full Body', 'Battle Rope', array['Double Rope Waves'], array['Shoulders','Arms','Core'], 'conditioning', false),
+  ('Battle Rope Slams', 'Full Body', 'Battle Rope', array['Rope Slams'], array['Shoulders','Back','Core','Glutes'], 'conditioning', false),
+  ('Battle Rope Lateral Waves', 'Full Body', 'Battle Rope', array['Side to Side Rope Waves'], array['Shoulders','Core','Obliques'], 'conditioning', false),
+  ('Rowing Ergometer', 'Full Body', 'Rowing Ergometer', array['RowErg','Indoor Rowing','Rowing Machine'], array['Back','Glutes','Hamstrings','Quadriceps','Biceps','Core'], 'conditioning', false),
+  ('Ski Ergometer', 'Full Body', 'Ski Ergometer', array['SkiErg','Ski Erg'], array['Lats','Triceps','Core','Glutes'], 'conditioning', false),
+  ('Air Bike', 'Full Body', 'Air Bike', array['Assault Bike','Fan Bike'], array['Quadriceps','Glutes','Hamstrings','Shoulders','Arms'], 'conditioning', false),
+  ('Stationary Bike', 'Quadriceps', 'Stationary Bike', array['Exercise Bike','Spin Bike'], array['Glutes','Hamstrings','Calves'], 'conditioning', false),
+  ('Recumbent Bike', 'Quadriceps', 'Recumbent Bike', array['Recumbent Cycle'], array['Glutes','Hamstrings','Calves'], 'conditioning', false),
+  ('Elliptical Trainer', 'Full Body', 'Elliptical', array['Cross Trainer'], array['Quadriceps','Glutes','Hamstrings','Calves'], 'conditioning', false),
+  ('Stair Climber', 'Quadriceps', 'Stair Climber', array['StairMaster','StepMill'], array['Glutes','Hamstrings','Calves'], 'conditioning', false),
+  ('Treadmill Run', 'Full Body', 'Treadmill', array['Treadmill Running'], array['Glutes','Hamstrings','Quadriceps','Calves'], 'conditioning', false),
+  ('Treadmill Walk', 'Full Body', 'Treadmill', array['Treadmill Walking'], array['Glutes','Hamstrings','Quadriceps','Calves'], 'conditioning', false),
+  ('Incline Treadmill Walk', 'Full Body', 'Treadmill', array['Incline Walking'], array['Glutes','Hamstrings','Quadriceps','Calves'], 'conditioning', false),
+  ('Backward Treadmill Walk', 'Quadriceps', 'Treadmill', array['Reverse Treadmill Walk'], array['Calves','Glutes'], 'conditioning', false),
+  ('Jacobs Ladder Climb', 'Full Body', 'Jacobs Ladder', array['Jacobs Ladder'], array['Back','Shoulders','Glutes','Quadriceps','Core'], 'conditioning', false),
+  ('VersaClimber', 'Full Body', 'VersaClimber', array['Vertical Climber'], array['Back','Shoulders','Glutes','Quadriceps','Core'], 'conditioning', false),
+  ('Arc Trainer', 'Full Body', 'Arc Trainer', array['Cybex Arc Trainer'], array['Quadriceps','Glutes','Hamstrings'], 'conditioning', false),
+  ('Upper Body Ergometer', 'Upper Body', 'Arm Ergometer', array['UBE','Arm Bike'], array['Shoulders','Chest','Back','Arms'], 'conditioning', false),
+  ('Sled Push Sprint', 'Full Body', 'Sled', array['Prowler Sprint'], array['Quadriceps','Glutes','Calves','Core'], 'conditioning', false),
+  ('Backward Sled Drag', 'Quadriceps', 'Sled', array['Reverse Sled Drag'], array['Glutes','Calves'], 'conditioning', false),
+  ('Lateral Sled Drag', 'Full Body', 'Sled', array['Sideways Sled Drag'], array['Glutes','Adductors','Quadriceps','Core'], 'conditioning', true),
+  ('Bear Crawl', 'Full Body', 'Bodyweight', array['Bear Crawl Drill'], array['Shoulders','Core','Quadriceps','Glutes'], 'conditioning', false),
+  ('Crab Walk', 'Full Body', 'Bodyweight', array['Crab Crawl'], array['Shoulders','Triceps','Core','Glutes'], 'conditioning', false),
+  ('Mountain Climber Sprint', 'Full Body', 'Bodyweight', array['Fast Mountain Climbers'], array['Core','Shoulders','Hip Flexors','Quadriceps'], 'conditioning', true),
+  ('Burpee', 'Full Body', 'Bodyweight', array['Burpees'], array['Chest','Shoulders','Triceps','Quadriceps','Glutes','Core'], 'conditioning', false),
+  ('Burpee Box Jump', 'Full Body', 'Plyo Box', array['Box Jump Burpee'], array['Chest','Shoulders','Quadriceps','Glutes','Calves','Core'], 'conditioning', false),
+  ('Burpee Broad Jump', 'Full Body', 'Bodyweight', array['Broad Jump Burpee'], array['Chest','Shoulders','Quadriceps','Glutes','Calves','Core'], 'conditioning', false),
+  ('Shuttle Run', 'Full Body', 'Cones', array['Line Shuttle'], array['Glutes','Hamstrings','Quadriceps','Calves'], 'conditioning', false),
+  ('Beep Test Shuttle', 'Full Body', 'Cones', array['PACER Run','Multi-Stage Fitness Test'], array['Glutes','Hamstrings','Quadriceps','Calves'], 'conditioning', false),
+  ('Loaded Stair Climb', 'Full Body', 'Stairs', array['Weighted Stair Climb'], array['Quadriceps','Glutes','Calves','Core','Grip'], 'conditioning', false),
+  ('Ruck Walk', 'Full Body', 'Ruck', array['Rucking','Loaded Walk'], array['Back','Core','Glutes','Quadriceps','Calves'], 'conditioning', false),
+  ('Ruck Run', 'Full Body', 'Ruck', array['Loaded Run'], array['Back','Core','Glutes','Hamstrings','Quadriceps','Calves'], 'conditioning', false)
+on conflict (lower(name))
+where owner_id is null
+do update set
+  muscle_group = excluded.muscle_group,
+  equipment = excluded.equipment,
+  aliases = excluded.aliases,
+  secondary_muscles = excluded.secondary_muscles,
+  movement_pattern = excluded.movement_pattern,
+  is_unilateral = excluded.is_unilateral;
