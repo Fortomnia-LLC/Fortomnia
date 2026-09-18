@@ -192,6 +192,26 @@ test("grip seed covers crush pinch support wrist and finger strength", () => {
   assert.match(sql, /'Rope Climb'/);
 });
 
+test("strongman seed covers carries loads presses pulls and classic events", () => {
+  const sql = readFileSync(
+    "supabase/migrations/20260917233000_seed_strongman_exercises.sql",
+    "utf8",
+  );
+
+  assert.match(sql, /'Atlas Stone Load'/);
+  assert.match(sql, /'Yoke Carry'/);
+  assert.match(sql, /'Husafell Carry'/);
+  assert.match(sql, /'Sandbag Load'/);
+  assert.match(sql, /'Tire Flip'/);
+  assert.match(sql, /'Arm-Over-Arm Pull'/);
+  assert.match(sql, /'Log Clean and Press'/);
+  assert.match(sql, /'Circus Dumbbell Press'/);
+  assert.match(sql, /'Car Deadlift'/);
+  assert.match(sql, /'Power Stairs'/);
+  assert.match(sql, /'Fingal Fingers'/);
+  assert.match(sql, /'Strongman Medley'/);
+});
+
 test("variation loading never exposes results from a previous exercise", () => {
   const hook = readFileSync("src/hooks/useExerciseVariations.ts", "utf8");
 
