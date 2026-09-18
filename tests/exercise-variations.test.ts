@@ -212,6 +212,24 @@ test("strongman seed covers carries loads presses pulls and classic events", () 
   assert.match(sql, /'Strongman Medley'/);
 });
 
+test("plyometric seed covers jumps bounds hops throws and explosive upper body work", () => {
+  const sql = readFileSync(
+    "supabase/migrations/20260917234500_seed_plyometric_exercises.sql",
+    "utf8",
+  );
+
+  assert.match(sql, /'Box Jump'/);
+  assert.match(sql, /'Depth Jump'/);
+  assert.match(sql, /'Broad Jump'/);
+  assert.match(sql, /'Single-Leg Pogo Jump'/);
+  assert.match(sql, /'Lateral Bound'/);
+  assert.match(sql, /'Hurdle Hop'/);
+  assert.match(sql, /'Medicine Ball Chest Pass'/);
+  assert.match(sql, /'Medicine Ball Rotational Throw'/);
+  assert.match(sql, /'Plyometric Push-Up'/);
+  assert.match(sql, /'Explosive Step-Up'/);
+});
+
 test("variation loading never exposes results from a previous exercise", () => {
   const hook = readFileSync("src/hooks/useExerciseVariations.ts", "utf8");
 
