@@ -267,6 +267,25 @@ test("mobility and prehab seed covers shoulders hips knees ankles and trunk", ()
   assert.match(sql, /'McGill Curl-Up'/);
 });
 
+test("athletic performance seed covers speed agility deceleration power and sport drills", () => {
+  const sql = readFileSync(
+    "supabase/migrations/20260918003000_seed_athletic_performance_exercises.sql",
+    "utf8",
+  );
+
+  assert.match(sql, /'A-Skip'/);
+  assert.match(sql, /'Flying Sprint'/);
+  assert.match(sql, /'Pro Agility Shuttle'/);
+  assert.match(sql, /'Sprint to Deceleration'/);
+  assert.match(sql, /'Reactive Cone Shuffle'/);
+  assert.match(sql, /'Approach Jump'/);
+  assert.match(sql, /'Baseball Rotational Throw'/);
+  assert.match(sql, /'Basketball Defensive Slide'/);
+  assert.match(sql, /'Volleyball Approach Jump'/);
+  assert.match(sql, /'Combat Sprawl'/);
+  assert.match(sql, /'Repeated Sprint Shuttle'/);
+});
+
 test("variation loading never exposes results from a previous exercise", () => {
   const hook = readFileSync("src/hooks/useExerciseVariations.ts", "utf8");
 
