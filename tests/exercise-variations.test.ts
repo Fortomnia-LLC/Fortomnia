@@ -230,6 +230,25 @@ test("plyometric seed covers jumps bounds hops throws and explosive upper body w
   assert.match(sql, /'Explosive Step-Up'/);
 });
 
+test("calisthenics and gymnastics seed covers skills holds rings and unilateral strength", () => {
+  const sql = readFileSync(
+    "supabase/migrations/20260917235900_seed_calisthenics_gymnastics.sql",
+    "utf8",
+  );
+
+  assert.match(sql, /'Muscle-Up'/);
+  assert.match(sql, /'Ring Muscle-Up'/);
+  assert.match(sql, /'Handstand Push-Up'/);
+  assert.match(sql, /'Full Planche'/);
+  assert.match(sql, /'Front Lever'/);
+  assert.match(sql, /'Back Lever'/);
+  assert.match(sql, /'L-Sit'/);
+  assert.match(sql, /'Toes-to-Bar'/);
+  assert.match(sql, /'One-Arm Pull-Up'/);
+  assert.match(sql, /'One-Arm Push-Up'/);
+  assert.match(sql, /'Cossack Squat'/);
+});
+
 test("variation loading never exposes results from a previous exercise", () => {
   const hook = readFileSync("src/hooks/useExerciseVariations.ts", "utf8");
 
