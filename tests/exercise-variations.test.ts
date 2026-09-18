@@ -173,6 +173,25 @@ test("Olympic lifting seed covers competition lifts and common derivatives", () 
   assert.match(sql, /'olympic_lift'/);
 });
 
+test("grip seed covers crush pinch support wrist and finger strength", () => {
+  const sql = readFileSync(
+    "supabase/migrations/20260917230000_seed_grip_strength_exercises.sql",
+    "utf8",
+  );
+
+  assert.match(sql, /'Hand Gripper Close'/);
+  assert.match(sql, /'Plate Pinch Hold'/);
+  assert.match(sql, /'Rolling Handle Lift'/);
+  assert.match(sql, /'Axle Bar Static Hold'/);
+  assert.match(sql, /'Dead Hang'/);
+  assert.match(sql, /'Single-Arm Dead Hang'/);
+  assert.match(sql, /'Wrist Roller'/);
+  assert.match(sql, /'Finger Curl'/);
+  assert.match(sql, /'Finger Extension Band'/);
+  assert.match(sql, /'Rice Bucket Grip Drill'/);
+  assert.match(sql, /'Rope Climb'/);
+});
+
 test("variation loading never exposes results from a previous exercise", () => {
   const hook = readFileSync("src/hooks/useExerciseVariations.ts", "utf8");
 
