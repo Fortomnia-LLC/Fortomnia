@@ -83,6 +83,14 @@ Priority legend: **P0** = foundation required before dependent feature work expa
 - Made Recovery connection, refresh, empty-data, disconnect, privacy, and error states provider-correct for Apple Health and Health Connect.
 - Replaced Apple-only sample-cache validation with provider-keyed normalization and reconciliation so valid Health Connect samples persist without cross-provider contamination.
 
+### Completed increments — 2026-09-17
+
+- Expanded the exercise library in PR #72 with 84 canonical Olympic-lifting, grip-strength, and strongman exercises, followed by dedicated plyometric/explosive, calisthenics/gymnastics, mobility/prehab, athletic-performance, and conditioning/cardio families.
+- Added normalized selectable exercise variations for cable rows/accessories, specialty bars, presses, squats, hinges, carries, back machines, and unilateral machine/dumbbell work while preserving canonical exercise identity and variation-specific history.
+- Added substantial single-limb, rehabilitation-friendly, athletic-development, sport-oriented, grip, strongman, gymnastics, and conditioning coverage without replacing the existing exercise library.
+- Added regression coverage for each new exercise/variation migration; the complete PR #72 batch passed hosted Quality checks run #378 before squash merge.
+- Squash-merged PR #72 into `milestone/15-health-wearables` as commit `a3052644fee29c8f64665189b07049ae66432767`.
+
 ### Objective ledger
 
 | Objective | Status on `milestone/15-health-wearables` | Existing foundation | Remaining acceptance target |
@@ -102,7 +110,7 @@ Priority legend: **P0** = foundation required before dependent feature work expa
 | AI coaching runtime | Required | Premium AI design and `user_entitlements` architecture are documented in [PREMIUM_AI_COACH.md](./PREMIUM_AI_COACH.md) | Add protected server-side model execution, structured training/recovery context, consent, rate limits, cost controls, auditability, data deletion, and graceful deterministic fallback |
 | AI coaching behaviors | Required | Deterministic progression and recovery guidance already provide safe inputs | Add weekly review, readiness-aware recommendations, exercise substitutions, explanations and confidence, explicit user confirmation before plan changes, and conversational history boundaries |
 | AI safety | Required | Recovery screen includes wellness/medical framing | AI must not diagnose, treat injury, or prescribe/change peptide, TRT, AAS, or other medication dosing; escalate red-flag health signals and retain non-AI fallback |
-| Exercise library | In progress | Expanded `exercises` schema and seeds include aliases, muscles, movement patterns, instructions, unilateral movements, athletic/functional work, conditioning, grip, and strongman | Audit coverage and quality; expand single-limb options across upper body, lower body, core, carries, and rehabilitation-friendly patterns; add structured media/technique metadata, movement constraints, equipment compatibility, substitutions, and versioned editorial review rather than creating a replacement exercise table |
+| Exercise library | In progress | Expanded `exercises` schema and seeds now cover Olympic lifting, grip, strongman, plyometrics, calisthenics/gymnastics, mobility/prehab, sport-oriented athletic performance, conditioning, broad single-limb work, plus normalized attachment/specialty-bar/unilateral variations that preserve canonical exercise history | Audit coverage, naming, aliases, and legacy variation-like canonical rows; continue toward broad catalog depth without duplication; add structured media/technique metadata, movement constraints, equipment compatibility, substitutions, and versioned editorial review rather than creating a replacement exercise table |
 | General equipment preferences | In progress | `profiles.available_equipment` contains broad categories | Normalize equipment into catalog entities while preserving compatibility with existing profiles |
 | Specialty equipment | Complete foundation | `specialty_implements`, events, mappings, transfer scores, and RLS-protected `user_specialty_equipment` | Bridge this model to the general catalog and substitution engine; do not create another user-equipment table |
 | Gym profiles and session equipment | In progress | Users can save, edit, and safely delete home, gym, hotel, outdoor, and other locations with equipment and notes; deleting the active location promotes another saved location; active-location selection drives equipment-aware program generation | Bridge specialty implements into each location, attach the chosen location to workout history, and validate travel workflows on devices |
