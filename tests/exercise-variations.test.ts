@@ -249,6 +249,24 @@ test("calisthenics and gymnastics seed covers skills holds rings and unilateral 
   assert.match(sql, /'Cossack Squat'/);
 });
 
+test("mobility and prehab seed covers shoulders hips knees ankles and trunk", () => {
+  const sql = readFileSync(
+    "supabase/migrations/20260918001500_seed_mobility_prehab_exercises.sql",
+    "utf8",
+  );
+
+  assert.match(sql, /'Band External Rotation'/);
+  assert.match(sql, /'Scapular Push-Up'/);
+  assert.match(sql, /'Shoulder CAR'/);
+  assert.match(sql, /'90\/90 Hip Switch'/);
+  assert.match(sql, /'Ankle Dorsiflexion Mobilization'/);
+  assert.match(sql, /'Copenhagen Plank'/);
+  assert.match(sql, /'Terminal Knee Extension'/);
+  assert.match(sql, /'Single-Leg Glute Bridge'/);
+  assert.match(sql, /'Banded Eversion'/);
+  assert.match(sql, /'McGill Curl-Up'/);
+});
+
 test("variation loading never exposes results from a previous exercise", () => {
   const hook = readFileSync("src/hooks/useExerciseVariations.ts", "utf8");
 
